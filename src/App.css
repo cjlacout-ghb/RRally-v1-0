@@ -1,0 +1,135 @@
+.app-container {
+  width: 100%;
+  max-width: var(--app-max-width);
+  margin: 0 auto;
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  background-color: var(--color-background);
+}
+
+/* Header */
+.app-header {
+  height: var(--header-height);
+  margin: 0 var(--spacing-margin);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-gutter);
+  flex: none;
+}
+
+.header-logo {
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-size: var(--typography-headline-md-font-size);
+  line-height: 24px;
+  color: var(--color-primary);
+  letter-spacing: var(--logo-letter-spacing);
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-gutter);
+}
+
+.btn-icon-secondary {
+  width: var(--header-button-size);
+  min-width: var(--header-button-size);
+  height: var(--header-button-size);
+  min-height: var(--header-button-size);
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: var(--border-width) solid var(--color-outline);
+  border-radius: var(--rounded-default);
+  color: var(--color-on-surface);
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-size: 22px;
+  line-height: 24px;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.btn-icon-secondary:active {
+  background-color: var(--color-surface-container-high);
+  transform: translateY(var(--pressed-shift));
+}
+
+.btn-icon-secondary svg {
+  display: block;
+  width: var(--icon-size);
+  height: var(--icon-size);
+}
+
+/* Content Area */
+.app-content {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: var(--spacing-gutter) var(--spacing-margin);
+  padding-bottom: calc(var(--tab-bar-min-height) + env(safe-area-inset-bottom, 0px));
+}
+
+/* Tab Bar */
+.app-tab-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: center;
+  background-color: var(--color-background);
+  border-top: var(--border-width) solid var(--color-outline-variant);
+  z-index: 100;
+  height: calc(var(--tab-bar-min-height) + env(safe-area-inset-bottom, 0px));
+  min-height: var(--tab-bar-min-height);
+}
+
+.tab-bar-inner {
+  width: 100%;
+  max-width: var(--app-max-width);
+  display: flex;
+  gap: var(--spacing-gutter);
+  padding: 0 var(--spacing-margin);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  align-items: center;
+  height: 100%;
+}
+
+.tab-button {
+  flex: 1;
+  height: var(--tab-item-height);
+  min-height: var(--tab-bar-min-height);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  color: var(--color-on-surface-variant);
+  border: none;
+  border-radius: var(--rounded-default);
+  font-family: var(--font-sans);
+  font-size: var(--typography-body-md-font-size);
+  font-weight: 700;
+  line-height: 18px;
+  letter-spacing: var(--tab-bar-letter-spacing);
+  text-transform: uppercase;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.tab-button.active {
+  background-color: var(--color-primary-container);
+  color: var(--color-on-primary-container);
+}
+
+.tab-button:active:not(.active) {
+  background-color: var(--color-surface-container-high);
+  transform: translateY(var(--pressed-shift));
+}

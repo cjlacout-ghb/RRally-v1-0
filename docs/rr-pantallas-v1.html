@@ -1,0 +1,204 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>RR · Pantallas v1</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Chivo:wght@400;700&family=Space+Mono:wght@700&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0}
+:root{--bg:#0a122a;--lo:#050d25;--c:#171e37;--ch:#212942;--os:#dbe1ff;--osv:#c4c5d9;--ol:#8e90a2;--ov:#434656;--p:#b8c4ff;--pc:#0e4bef;--opc:#d1d7ff;--s:#eec14b;--ah:#10B981;--oah:#0a122a;--bh:#EF4444;--obh:#FFFFFF;--iv:#FBF7EE;
+--m:'Space Mono',ui-monospace,Menlo,monospace;--b:Chivo,system-ui,-apple-system,sans-serif;
+--pg:#e9ebf3;--pt:#171e37;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--pg:#030816;--pt:#c4c5d9}}
+:root[data-theme="dark"]{--pg:#030816;--pt:#c4c5d9}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{background:var(--pg);color:var(--pt);font:400 14px/20px var(--b);padding:24px 16px}
+h1{font:700 20px/26px var(--b);text-align:center}
+.n{text-align:center;margin-top:4px}
+.g{display:flex;flex-wrap:wrap;gap:32px;justify-content:center;margin-top:24px}
+figure{display:flex;flex-direction:column;gap:8px;max-width:100%;overflow-x:auto}
+figcaption{font:700 11px/14px var(--m);letter-spacing:.1em;text-transform:uppercase}
+.tg{display:flex;gap:8px;flex-wrap:wrap}
+.tg button{font:700 11px/14px var(--m);letter-spacing:.1em;padding:8px 10px;border:1px solid currentColor;background:none;color:inherit;border-radius:4px;cursor:pointer}
+.tg button[aria-pressed="true"]{background:var(--pt);color:var(--pg)}
+.ph{width:390px;height:844px;flex:none;background:var(--bg);color:var(--os);border:1px solid var(--ov);border-radius:4px;display:flex;flex-direction:column;overflow:hidden;padding-top:47px;font-family:var(--b)}
+.hd{height:48px;margin:0 16px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex:none}
+.hd h2{flex:1;font:700 20px/26px var(--b);letter-spacing:.06em}
+.logo{font:700 20px/24px var(--m);color:var(--p);letter-spacing:-.02em}
+.ic{display:flex;gap:12px}
+.sc{flex:1;min-height:0;overflow-y:auto;padding:8px 16px 12px;display:flex;flex-direction:column;gap:12px;scrollbar-width:none}
+.sc::-webkit-scrollbar{display:none}
+.nb{padding-bottom:34px}
+.cd{background:var(--c);border:1px solid var(--ov);border-radius:4px;padding:12px}
+.lb{font:700 11px/14px var(--m);letter-spacing:.1em;text-transform:uppercase;color:var(--osv)}
+.r{display:flex;align-items:center;justify-content:space-between}
+.t1{font:700 26px/32px var(--m);letter-spacing:-.02em}
+.t2{font:700 40px/44px var(--m);letter-spacing:-.03em}
+.dsp{font:700 56px/56px var(--m);letter-spacing:-.03em}
+.br{color:var(--s)}
+.bd{font:400 14px/20px var(--b);color:var(--osv)}
+.btn{display:flex;align-items:center;justify-content:center;min-width:64px;min-height:64px;padding:0 12px;background:var(--pc);color:var(--opc);border:0;border-radius:4px;font:700 16px/20px var(--b);letter-spacing:.06em;text-transform:uppercase;cursor:pointer}
+.btn:active{background:#0a38b8;transform:translateY(2px)}
+.btn.sec{background:transparent;border:1px solid var(--ol);color:var(--os);min-height:48px}
+.btn.sec:active{background:var(--ch)}
+.sq{width:48px;min-width:48px;padding:0;font:700 22px/24px var(--m)}
+.rnd{width:64px;border-radius:9999px;padding:0;font:700 22px/24px var(--m)}
+.bs{display:flex;gap:12px}.bs .btn{flex:1}
+.dw{position:relative;width:168px;height:168px;margin:0 auto}
+.dw svg{display:block}
+#dial text{font:700 11px var(--m);fill:var(--iv)}
+.dc{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px}
+.rd{display:grid;grid-template-columns:1fr 1fr;gap:8px 12px;margin-top:8px}
+.rb{background:var(--lo);border:1px solid var(--ov);border-radius:4px;padding:8px}
+.ab{display:flex;gap:12px;justify-content:center}
+.dp{border:1px solid transparent;border-radius:4px;padding:8px 12px;text-align:center}
+.dp.a{background:var(--ah);color:var(--oah)}
+.dp.b{background:var(--bh);color:var(--obh)}
+.dp.n{background:var(--ch);color:var(--os);border-color:var(--ov)}
+.u{font:700 20px var(--m);letter-spacing:.1em;margin-left:8px}
+.lab{font:700 20px/26px var(--b);letter-spacing:.12em}
+.tb{display:flex;gap:12px;padding:0 16px 34px;flex:none;border-top:1px solid var(--ov);padding-top:0;height:90px}
+.tb a{flex:1;height:56px;margin-top:0;display:flex;align-items:center;justify-content:center;font:700 14px/18px var(--b);letter-spacing:.08em;color:var(--osv);border-radius:4px}
+.tb a.on{background:var(--pc);color:var(--opc)}
+.in{display:flex;justify-content:space-between;align-items:baseline;background:var(--lo);border:1px solid var(--ol);border-radius:4px;padding:12px;margin:8px 0}
+.mt{margin-top:auto;display:flex;flex-direction:column;gap:12px}
+.kp{display:grid;grid-template-columns:repeat(4,1fr);grid-auto-rows:1fr;gap:12px;flex:1}
+.kp .btn{font:700 28px/32px var(--m);padding:0}
+.kp .w2{grid-column:span 2}
+.st{display:flex;gap:12px;padding:10px 0;border-top:1px solid var(--ov);font:400 16px/24px var(--b)}
+.st:first-of-type{border-top:0}
+.st b{font:700 26px/24px var(--m);width:20px;flex:none}
+.wl{list-style:none;padding:0;margin-top:8px;display:flex;flex-direction:column;gap:8px}
+.wl li{padding-left:16px;position:relative}
+.wl li::before{content:"–";position:absolute;left:0;color:var(--s)}
+.kv{display:flex;justify-content:space-between;align-items:baseline;padding:6px 0}
+</style>
+</head>
+<body>
+<h1>RR · Pantallas v1</h1>
+<p class="n">Maqueta en código del sistema de diseño (marcos de 390 × 844).</p>
+<div class="g">
+
+<figure>
+<figcaption>1 · Carrera</figcaption>
+<div class="tg"><button data-s="a" aria-pressed="true">ADELANTADO</button><button data-s="b" aria-pressed="false">ATRASADO</button><button data-s="n" aria-pressed="false">EN TIEMPO</button></div>
+<div class="ph">
+<div class="hd"><b class="logo">RR</b><div class="ic"><button class="btn sec sq" aria-label="Preparar etapa"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h10M18 7h2M4 17h2M10 17h10"/><circle cx="16" cy="7" r="2"/><circle cx="8" cy="17" r="2"/></svg></button><button class="btn sec sq" aria-label="Ayuda">?</button></div></div>
+<div class="sc">
+<div class="cd"><div class="r"><span class="lb">HORA</span><span class="t1 br">07:50:46,7</span></div>
+<div class="t2" style="text-align:center;margin:8px 0">18:42,34</div>
+<div class="bs"><button class="btn">PARAR</button><button class="btn">REINICIAR</button></div></div>
+<div class="cd"><div class="dw"><svg id="dial" viewBox="0 0 176 176" width="168" height="168"></svg><div class="dc"><span class="dsp">49,8</span><span class="lb br">KM/H</span></div></div>
+<div class="rd">
+<div class="rb"><div class="lb">PROMEDIO</div><div><span class="t1 br">49,6</span> <span class="lb">KM/H</span></div></div>
+<div class="rb"><div class="lb">DISTANCIA</div><div><span class="t1 br">14,820</span> <span class="lb">KM</span></div></div>
+<div></div><div class="ab"><button class="btn rnd">-1</button><button class="btn rnd">+1</button></div></div></div>
+<div id="dp" class="dp a"><div><b class="dsp">+1,8</b><span class="u">SEG</span></div><div class="lab">ADELANTADO</div></div>
+<div class="cd"><div class="lb">CRONÓMETRO 2</div><div class="t1" style="margin:4px 0 8px">02:14,80</div><div class="bs"><button class="btn">INICIAR</button><button class="btn">REINICIAR</button></div></div>
+</div>
+<nav class="tb"><a class="on">CARRERA</a><a>CALCULADORA</a></nav>
+</div>
+</figure>
+
+<figure>
+<figcaption>2 · Preparar etapa</figcaption>
+<div class="ph">
+<div class="hd"><button class="btn sec sq" aria-label="Volver">‹</button><h2>PREPARAR ETAPA</h2></div>
+<div class="sc nb">
+<div class="cd"><div class="lb">VELOCIDAD MEDIA DE LA ETAPA</div>
+<div class="in"><span class="t1">49,5</span><span class="lb br">KM/H</span></div>
+<p class="bd">Es la velocidad media que indica la organización para esta etapa.</p></div>
+<div class="mt"><button class="btn">APLICAR</button><button class="btn sec">CALIBRAR ODÓMETRO</button></div>
+</div></div>
+</figure>
+
+<figure>
+<figcaption>3 · Calibración 1/3</figcaption>
+<div class="ph">
+<div class="hd"><button class="btn sec sq" aria-label="Volver">‹</button><h2>CALIBRAR ODÓMETRO</h2><span class="lb">1/3</span></div>
+<div class="sc nb">
+<div class="cd"><div class="lb">DISTANCIA OFICIAL DE LA ZONA</div>
+<div class="in"><span class="t1">8,000</span><span class="lb br">KM</span></div>
+<p class="bd">La indica la organización (por ejemplo, 8 km al inicio del evento).</p></div>
+<div class="mt"><button class="btn">SIGUIENTE</button></div>
+</div></div>
+</figure>
+
+<figure>
+<figcaption>4 · Calibración 2/3</figcaption>
+<div class="ph">
+<div class="hd"><button class="btn sec sq" aria-label="Volver">‹</button><h2>CALIBRAR ODÓMETRO</h2><span class="lb">2/3</span></div>
+<div class="sc nb">
+<div class="cd"><div class="lb">MEDIDO POR LA APP</div>
+<div class="in"><span class="t2 br">7,892</span><span class="lb br">KM</span></div>
+<p class="bd">Iniciá al comienzo de la zona y parala al final.</p>
+<div class="bs" style="margin-top:12px"><button class="btn">INICIAR</button><button class="btn">PARAR</button></div></div>
+<div class="mt"><button class="btn">SIGUIENTE</button></div>
+</div></div>
+</figure>
+
+<figure>
+<figcaption>5 · Calibración 3/3</figcaption>
+<div class="ph">
+<div class="hd"><button class="btn sec sq" aria-label="Volver">‹</button><h2>CALIBRAR ODÓMETRO</h2><span class="lb">3/3</span></div>
+<div class="sc nb">
+<div class="cd">
+<div class="kv"><span class="lb">OFICIAL</span><span class="t1">8,000 <span class="lb">KM</span></span></div>
+<div class="kv"><span class="lb">MEDIDO</span><span class="t1">7,892 <span class="lb">KM</span></span></div>
+<div style="border-top:1px solid var(--ov);margin-top:8px;padding-top:12px"><div class="lb">FACTOR DE CORRECCIÓN</div><div class="dsp br" style="margin-top:4px">1,0137</div></div></div>
+<div class="mt"><button class="btn">APLICAR</button></div>
+</div></div>
+</figure>
+
+<figure>
+<figcaption>6 · Calculadora</figcaption>
+<div class="ph">
+<div class="hd"><b class="logo">RR</b><div class="ic"><button class="btn sec sq" aria-label="Preparar etapa"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h10M18 7h2M4 17h2M10 17h10"/><circle cx="16" cy="7" r="2"/><circle cx="8" cy="17" r="2"/></svg></button><button class="btn sec sq" aria-label="Ayuda">?</button></div></div>
+<div class="sc">
+<div class="cd"><div class="t2" style="text-align:right">12,5 × 4</div></div>
+<div class="kp">
+<button class="btn sec">C</button><button class="btn sec">⌫</button><button class="btn sec">%</button><button class="btn">÷</button>
+<button class="btn sec">7</button><button class="btn sec">8</button><button class="btn sec">9</button><button class="btn">×</button>
+<button class="btn sec">4</button><button class="btn sec">5</button><button class="btn sec">6</button><button class="btn">−</button>
+<button class="btn sec">1</button><button class="btn sec">2</button><button class="btn sec">3</button><button class="btn">+</button>
+<button class="btn sec">0</button><button class="btn sec">,</button><button class="btn w2">=</button>
+</div></div>
+<nav class="tb"><a>CARRERA</a><a class="on">CALCULADORA</a></nav>
+</div>
+</figure>
+
+<figure>
+<figcaption>7 · Ayuda</figcaption>
+<div class="ph">
+<div class="hd"><button class="btn sec sq" aria-label="Volver">‹</button><h2>AYUDA</h2></div>
+<div class="sc nb">
+<div class="cd"><div class="st"><b class="br">1</b><span>Calibrá el odómetro en la zona de control de la organización.</span></div>
+<div class="st"><b class="br">2</b><span>Cargá la velocidad media de la etapa.</span></div>
+<div class="st"><b class="br">3</b><span>Sincronizá con la hora oficial e iniciá el cronómetro.</span></div>
+<div class="st"><b class="br">4</b><span>Mantené la diferencia lo más cerca de cero.</span></div></div>
+<div class="cd"><div class="lb">ADVERTENCIAS</div>
+<ul class="wl bd"><li>El GPS del teléfono no es un odómetro de rueda.</li><li>Mantené la app abierta, con la pantalla encendida y el teléfono cargando.</li><li>Probala antes de la carrera.</li><li>Es para el copiloto: el piloto no debe usarla mientras maneja.</li></ul></div>
+</div></div>
+</figure>
+
+</div>
+<script>
+const P=(r,a)=>[88+r*Math.sin(a),88-r*Math.cos(a)],R=v=>(-135+v*2.25)*Math.PI/180;
+let h='<circle cx="88" cy="88" r="87" fill="#050d25" stroke="#8e90a2"/>';
+for(let v=0;v<=120;v+=10){const a=R(v),m=v%40==0,[x1,y1]=P(m?68:76,a),[x2,y2]=P(84,a);
+h+=`<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="#eec14b" stroke-width="${m?3:1.5}"/>`;
+if(m){const[x,y]=P(54,a);h+=`<text x="${x}" y="${y+4}" text-anchor="middle">${v}</text>`}}
+const[a1,b1]=P(62,R(49.8)),[a2,b2]=P(87,R(49.8));
+h+=`<line x1="${a1}" y1="${b1}" x2="${a2}" y2="${b2}" stroke="#b8c4ff" stroke-width="4"/>`;
+document.getElementById('dial').innerHTML=h;
+const S={a:['+1,8','ADELANTADO'],b:['-2,3','ATRASADO'],n:['0,0','EN TIEMPO']};
+const bt=document.querySelectorAll('.tg button');
+bt.forEach(b=>b.onclick=()=>{const[v,l]=S[b.dataset.s],d=document.getElementById('dp');
+d.className='dp '+b.dataset.s;d.querySelector('b').textContent=v;d.querySelector('.lab').textContent=l;
+bt.forEach(x=>x.setAttribute('aria-pressed',x===b))});
+</script>
+</body>
+</html>

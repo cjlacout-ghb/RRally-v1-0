@@ -1,0 +1,193 @@
+:root {
+  /* Colors from DESIGN.md frontmatter */
+  --color-background: #0a122a;
+  --color-surface: #0a122a;
+  --color-surface-container-lowest: #050d25;
+  --color-surface-container-low: #131a33;
+  --color-surface-container: #171e37;
+  --color-surface-container-high: #212942;
+  --color-on-surface: #dbe1ff;
+  --color-on-surface-variant: #c4c5d9;
+  --color-outline: #8e90a2;
+  --color-outline-variant: #434656;
+  --color-primary: #b8c4ff;
+  --color-on-primary: #002486;
+  --color-primary-container: #0e4bef;
+  --color-on-primary-container: #d1d7ff;
+  --color-secondary: #eec14b;
+  --color-on-secondary: #3e2e00;
+  --color-secondary-container: #b38b14;
+  --color-on-secondary-container: #362800;
+  --color-status-ahead: #10B981;
+  --color-on-status-ahead: #0a122a;
+  --color-status-behind: #EF4444;
+  --color-on-status-behind: #FFFFFF;
+
+  /* Ivory color from DESIGN.md Colors section */
+  --color-ivory: #FBF7EE;
+
+  /* Aliases with direct names */
+  --background: var(--color-background);
+  --surface: var(--color-surface);
+  --surface-container-lowest: var(--color-surface-container-lowest);
+  --surface-container-low: var(--color-surface-container-low);
+  --surface-container: var(--color-surface-container);
+  --surface-container-high: var(--color-surface-container-high);
+  --on-surface: var(--color-on-surface);
+  --on-surface-variant: var(--color-on-surface-variant);
+  --outline: var(--color-outline);
+  --outline-variant: var(--color-outline-variant);
+  --primary: var(--color-primary);
+  --on-primary: var(--color-on-primary);
+  --primary-container: var(--color-primary-container);
+  --on-primary-container: var(--color-on-primary-container);
+  --secondary: var(--color-secondary);
+  --on-secondary: var(--color-on-secondary);
+  --secondary-container: var(--color-secondary-container);
+  --on-secondary-container: var(--color-on-secondary-container);
+  --status-ahead: var(--color-status-ahead);
+  --on-status-ahead: var(--color-on-status-ahead);
+  --status-behind: var(--color-status-behind);
+  --on-status-behind: var(--color-on-status-behind);
+  --ivory: var(--color-ivory);
+
+  /* Fonts with system fallbacks */
+  --font-family-chivo: 'Chivo', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-family-space-mono: 'Space Mono', ui-monospace, Menlo, Monaco, Consolas, 'Liberation Mono', monospace;
+  --font-sans: var(--font-family-chivo);
+  --font-mono: var(--font-family-space-mono);
+
+  /* Typography: display */
+  --typography-display-font-family: 'Space Mono', ui-monospace, Menlo, Monaco, Consolas, 'Liberation Mono', monospace;
+  --typography-display-font-size: 56px;
+  --typography-display-font-weight: 700;
+  --typography-display-line-height: 56px;
+  --typography-display-letter-spacing: -0.03em;
+
+  /* Typography: headline-xl */
+  --typography-headline-xl-font-family: 'Space Mono', ui-monospace, Menlo, Monaco, Consolas, 'Liberation Mono', monospace;
+  --typography-headline-xl-font-size: 40px;
+  --typography-headline-xl-font-weight: 700;
+  --typography-headline-xl-line-height: 44px;
+  --typography-headline-xl-letter-spacing: -0.03em;
+
+  /* Typography: headline-lg */
+  --typography-headline-lg-font-family: 'Space Mono', ui-monospace, Menlo, Monaco, Consolas, 'Liberation Mono', monospace;
+  --typography-headline-lg-font-size: 26px;
+  --typography-headline-lg-font-weight: 700;
+  --typography-headline-lg-line-height: 32px;
+  --typography-headline-lg-letter-spacing: -0.02em;
+
+  /* Typography: headline-md */
+  --typography-headline-md-font-family: 'Chivo', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --typography-headline-md-font-size: 20px;
+  --typography-headline-md-font-weight: 700;
+  --typography-headline-md-line-height: 26px;
+
+  /* Typography: body-lg */
+  --typography-body-lg-font-family: 'Chivo', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --typography-body-lg-font-size: 16px;
+  --typography-body-lg-font-weight: 400;
+  --typography-body-lg-line-height: 24px;
+
+  /* Typography: body-md */
+  --typography-body-md-font-family: 'Chivo', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --typography-body-md-font-size: 14px;
+  --typography-body-md-font-weight: 400;
+  --typography-body-md-line-height: 20px;
+
+  /* Typography: label-lg */
+  --typography-label-lg-font-family: 'Space Mono', ui-monospace, Menlo, Monaco, Consolas, 'Liberation Mono', monospace;
+  --typography-label-lg-font-size: 13px;
+  --typography-label-lg-font-weight: 700;
+  --typography-label-lg-line-height: 16px;
+  --typography-label-lg-letter-spacing: 0.08em;
+
+  /* Typography: label-md */
+  --typography-label-md-font-family: 'Space Mono', ui-monospace, Menlo, Monaco, Consolas, 'Liberation Mono', monospace;
+  --typography-label-md-font-size: 11px;
+  --typography-label-md-font-weight: 700;
+  --typography-label-md-line-height: 14px;
+  --typography-label-md-letter-spacing: 0.1em;
+
+  /* Rounded from DESIGN.md frontmatter */
+  --rounded-DEFAULT: 0.25rem;
+  --rounded-default: 0.25rem;
+  --rounded-lg: 0.5rem;
+  --rounded-full: 9999px;
+
+  /* Spacing from DESIGN.md frontmatter */
+  --spacing-margin: 1rem;
+  --spacing-gutter: 0.75rem;
+  --spacing-space-xs: 0.25rem;
+  --spacing-space-sm: 0.5rem;
+  --spacing-space-md: 0.75rem;
+  --spacing-space-lg: 1.25rem;
+  --spacing-space-xl: 1.75rem;
+
+  /* Aliases for spacing */
+  --margin: var(--spacing-margin);
+  --gutter: var(--spacing-gutter);
+  --space-xs: var(--spacing-space-xs);
+  --space-sm: var(--spacing-space-sm);
+  --space-md: var(--spacing-space-md);
+  --space-lg: var(--spacing-space-lg);
+  --space-xl: var(--spacing-space-xl);
+
+  /* Component Dimensions from specs */
+  --header-height: 48px;
+  --header-button-size: 48px;
+  --tab-bar-min-height: 56px;
+  --tab-item-height: 56px;
+  --app-max-width: 480px;
+  --border-width: 1px;
+  --icon-size: 22px;
+  --icon-stroke-width: 2px;
+  --tab-bar-letter-spacing: 0.08em;
+  --logo-letter-spacing: -0.02em;
+  --pressed-shift: 2px;
+}
+
+/* Global Styles */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  height: 100%;
+  scroll-padding-top: env(safe-area-inset-top, 0px);
+}
+
+body {
+  min-height: 100%;
+  background-color: var(--color-background);
+  color: var(--color-on-surface);
+  font-family: var(--font-sans);
+  font-size: var(--typography-body-md-font-size);
+  line-height: var(--typography-body-md-line-height);
+  font-weight: var(--typography-body-md-font-weight);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+#root {
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+}
+
+button {
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: manipulation;
+  font-family: inherit;
+  border: none;
+  background: none;
+  cursor: pointer;
+  color: inherit;
+}
