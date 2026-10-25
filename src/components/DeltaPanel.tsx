@@ -27,7 +27,7 @@ export function DeltaPanel({ deltaSeconds, state, assignedSpeed }: DeltaPanelPro
         <span className="delta-panel__unit">SEG</span>
       </div>
       <div className="delta-panel__label">{label}</div>
-      <div className="delta-panel__assigned">
+      <div className="delta-panel__assigned-strip">
         <span className="delta-panel__assigned-label">ASIGNADO</span>
         <span className="delta-panel__assigned-speed">{assignedSpeedText}</span>
         <span className="delta-panel__assigned-unit">KM/H</span>

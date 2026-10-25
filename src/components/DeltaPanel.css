@@ -59,13 +59,20 @@
   margin-top: 2px;
 }
 
-.delta-panel__assigned {
+/* Dark inset strip — same surface-container-lowest background as readout boxes.
+   Brass cannot be placed directly on the status colors (orange/green) due to
+   insufficient contrast, so the strip always uses a fixed dark background. */
+.delta-panel__assigned-strip {
   margin-top: var(--spacing-space-sm);
   display: flex;
   align-items: baseline;
   justify-content: center;
   gap: var(--spacing-space-xs);
   white-space: nowrap;
+  background-color: var(--color-surface-container-lowest);
+  border: var(--border-width) solid var(--color-outline-variant);
+  border-radius: var(--rounded-default);
+  padding: var(--spacing-space-xs) var(--spacing-space-sm);
 }
 
 .delta-panel__assigned-label {
@@ -75,15 +82,15 @@
   line-height: var(--typography-label-lg-line-height);
   letter-spacing: var(--typography-label-lg-letter-spacing);
   text-transform: uppercase;
-  color: inherit;
+  color: var(--color-on-surface-variant);
 }
 
 .delta-panel__assigned-speed {
   font-family: var(--font-mono);
   font-weight: 700;
-  font-size: var(--typography-body-lg-font-size);
-  line-height: var(--typography-body-lg-line-height);
-  color: inherit;
+  font-size: 16px;
+  line-height: var(--typography-label-lg-line-height);
+  color: var(--color-secondary);
 }
 
 .delta-panel__assigned-unit {
@@ -93,5 +100,5 @@
   line-height: var(--typography-label-lg-line-height);
   letter-spacing: var(--typography-label-lg-letter-spacing);
   text-transform: uppercase;
-  color: inherit;
+  color: var(--color-on-surface-variant);
 }
