@@ -1,0 +1,38 @@
+/* CarreraTab-specific styles only. Shared utilities live in shared.css. */
+
+.carrera-tab {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-gutter);
+  /* The tab bar height is already accounted for in .app-content padding-bottom */
+}
+
+/* ── Time block ─────────────────────────────────────────────── */
+.time-block__hora-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.time-block__hora {
+  font-family: var(--font-mono);
+  font-weight: var(--typography-headline-lg-font-weight);
+  font-size: var(--typography-headline-lg-font-size);
+  line-height: var(--typography-headline-lg-line-height);
+  letter-spacing: var(--typography-headline-lg-letter-spacing);
+  color: var(--color-secondary);
+}
+
+.time-block__stopwatch {
+  margin: var(--spacing-space-sm) 0;
+}
+
+.time-centered {
+  text-align: center;
+  font-family: var(--font-mono);
+  font-weight: var(--typography-headline-xl-font-weight);
+  font-size: var(--typography-headline-xl-font-size);
+  line-height: var(--typography-headline-xl-line-height);
+  letter-spacing: var(--typography-headline-xl-letter-spacing);
+  color: var(--color-on-surface);
+}

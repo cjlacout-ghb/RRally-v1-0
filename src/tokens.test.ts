@@ -32,10 +32,12 @@ describe('Design Tokens Verification', () => {
       'on-secondary': '#3e2e00',
       'secondary-container': '#b38b14',
       'on-secondary-container': '#362800',
-      'status-ahead': '#10B981',
+      'status-ahead': '#F97316',
       'on-status-ahead': '#0a122a',
       'status-behind': '#EF4444',
       'on-status-behind': '#FFFFFF',
+      'status-ontime': '#10B981',
+      'on-status-ontime': '#0a122a',
       'ivory': '#FBF7EE'
     };
 

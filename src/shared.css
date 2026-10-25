@@ -1,0 +1,138 @@
+/**
+ * Shared utility CSS classes used across multiple screens/components.
+ * Imported once from main.tsx.
+ */
+
+/* ── Typography utility classes ─────────────────────────────── */
+
+.label-md {
+  font-family: var(--font-mono);
+  font-weight: var(--typography-label-md-font-weight);
+  font-size: var(--typography-label-md-font-size);
+  line-height: var(--typography-label-md-line-height);
+  letter-spacing: var(--typography-label-md-letter-spacing);
+  text-transform: uppercase;
+}
+
+.label-lg {
+  font-family: var(--font-mono);
+  font-weight: var(--typography-label-lg-font-weight);
+  font-size: var(--typography-label-lg-font-size);
+  line-height: var(--typography-label-lg-line-height);
+  letter-spacing: var(--typography-label-lg-letter-spacing);
+  text-transform: uppercase;
+}
+
+.headline-lg {
+  font-family: var(--font-mono);
+  font-weight: var(--typography-headline-lg-font-weight);
+  font-size: var(--typography-headline-lg-font-size);
+  line-height: var(--typography-headline-lg-line-height);
+  letter-spacing: var(--typography-headline-lg-letter-spacing);
+}
+
+/* ── Color utility classes ───────────────────────────────────── */
+
+.on-surface-variant {
+  color: var(--color-on-surface-variant);
+}
+
+.brass {
+  color: var(--color-secondary);
+}
+
+/* ── Shared card ─────────────────────────────────────────────── */
+
+.card {
+  background: var(--color-surface-container);
+  border: var(--border-width) solid var(--color-outline-variant);
+  border-radius: var(--rounded-default);
+  padding: var(--spacing-space-md);
+}
+
+/* ── Shared primary action button ────────────────────────────── */
+
+.btn-primary {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 64px;
+  min-height: 64px;
+  padding: 0 var(--spacing-space-md);
+  background: var(--color-primary-container);
+  color: var(--color-on-primary-container);
+  border: none;
+  border-radius: var(--rounded-default);
+  font-family: var(--font-sans);
+  font-weight: 700;
+  font-size: var(--typography-body-lg-font-size);
+  line-height: var(--typography-body-lg-line-height);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  cursor: pointer;
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.btn-primary:active {
+  background: #0a38b8;
+  transform: translateY(var(--pressed-shift));
+}
+
+/* Round variant (dial ±1 buttons) */
+.btn-round {
+  width: 64px;
+  min-width: 64px;
+  height: 64px;
+  min-height: 64px;
+  padding: 0;
+  border-radius: var(--rounded-full);
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-size: 22px;
+  line-height: 24px;
+}
+
+/* ── Shared secondary (outline) button ───────────────────────── */
+
+.btn-secondary {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 48px;
+  padding: 0 var(--spacing-space-md);
+  background: transparent;
+  color: var(--color-on-surface);
+  border: var(--border-width) solid var(--color-outline);
+  border-radius: var(--rounded-default);
+  font-family: var(--font-sans);
+  font-weight: 700;
+  font-size: var(--typography-body-md-font-size);
+  line-height: var(--typography-body-md-line-height);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  cursor: pointer;
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-user-select: none;
+  white-space: nowrap;
+}
+
+.btn-secondary:not(:disabled):active {
+  background: var(--color-surface-container-high);
+  transform: translateY(var(--pressed-shift));
+}
+
+.btn-secondary:disabled,
+.btn-secondary[aria-disabled='true'] {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* ── Row of buttons ──────────────────────────────────────────── */
+
+.btn-row {
+  display: flex;
+  gap: var(--spacing-gutter);
+}

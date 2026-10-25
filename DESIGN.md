@@ -19,10 +19,12 @@ colors:
   on-secondary: '#3e2e00'
   secondary-container: '#b38b14'
   on-secondary-container: '#362800'
-  status-ahead: '#10B981'
+  status-ahead: '#F97316'
   on-status-ahead: '#0a122a'
   status-behind: '#EF4444'
   on-status-behind: '#FFFFFF'
+  status-ontime: '#10B981'
+  on-status-ontime: '#0a122a'
 typography:
   display:
     fontFamily: Space Mono
@@ -96,7 +98,7 @@ Rules that apply everywhere:
 - Depth is expressed only with tonal surface layers and 1px borders.
 - Every screen has one clear primary element; nothing decorative competes with the numbers.
 - Never use color as the only signal. Always pair it with a text label.
-- All user-facing text is in Spanish (Argentina). Use short, plain words. Fixed labels: CARRERA and CALCULADORA (tabs), INICIAR, PARAR, REINICIAR, APLICAR, SIGUIENTE, ADELANTADO, ATRASADO, EN TIEMPO, HORA, PROMEDIO, DISTANCIA, CRONÓMETRO 2, KM/H, KM, SEG. Screen titles: PREPARAR ETAPA, CALIBRAR ODÓMETRO, AYUDA.
+- All user-facing text is in Spanish (Argentina). Use short, plain words. Fixed labels: CARRERA and CALCULADORA (tabs), INICIAR, PARAR, REINICIAR, APLICAR, SIGUIENTE, ADELANTADO, ATRASADO, EN TIEMPO, SIN DATOS, ASIGNADO, HORA, PROMEDIO, DISTANCIA, CRONÓMETRO 2, KM/H, KM, SEG. Screen titles: PREPARAR ETAPA, CALIBRAR ODÓMETRO, AYUDA.
 
 ## Colors
 
@@ -106,9 +108,11 @@ Dark-first. The structural backdrop is deep midnight navy (`background`). The co
 - **Secondary**: `secondary` (`#eec14b`, brass) is for secondary numeric readouts, dial tick marks, and calibration values.
 - **Text**: `on-surface` for primary text, `on-surface-variant` for supporting text and labels.
 - **Status colors (only for the ahead/behind indicator)**:
-  - `status-ahead` (emerald): ahead of schedule. Text on it uses `on-status-ahead`.
-  - `status-behind` (red): behind schedule. Text on it uses `on-status-behind`.
-  - Neutral state (within the tolerance band) uses `surface-container-high` with `on-surface` text.
+  In a regularity rally, both ahead and behind schedule are errors that penalize; only being on time is good.
+  - `status-ahead` (orange, `#F97316`): ahead of schedule (alert). Text on it uses `on-status-ahead` (`#0a122a`).
+  - `status-behind` (red, `#EF4444`): behind schedule. Text on it uses `on-status-behind` (`#FFFFFF`).
+  - `status-ontime` (emerald, `#10B981`): on time (within the tolerance band). Text on it uses `on-status-ontime` (`#0a122a`).
+  - No-data state uses `surface-container-high` with `on-surface` text. Color is never the only signal: text labels are mandatory.
 - Ivory (`#FBF7EE`) is reserved for numerals and tick marks on the odometer dial. Do not use large ivory surfaces, to avoid glare.
 
 ## Typography
@@ -123,7 +127,7 @@ Dark-first. The structural backdrop is deep midnight navy (`background`). The co
 
 Portrait only, designed for a 390x844 phone viewport; a tablet in portrait uses the same single-column layout, centered. Respect iOS safe areas at the top and bottom. Margins are 16px, the base rhythm is 4px, and gaps between touch targets are at least 12px.
 
-Header on the two main tabs: the text "RR" (Space Mono, `primary`) on the left; two 48px secondary icon buttons on the right: stage setup (sliders icon) and help ("?"). No avatar and no logo image. Secondary screens (stage setup, calibration, help) have no tab bar: a 48px back button (‹), the screen title in `headline-md` uppercase, and an optional step counter on the right.
+Header on the two main tabs: the text "RR" (Space Mono, `primary`) on the left; two buttons on the right: a secondary text button with visible label "PREPARAR ETAPA" (transparent, 1px `outline` border, `on-surface` text, Chivo bold uppercase, minimum height 48px) and a 48px secondary icon button for help ("?"). No avatar and no logo image. Secondary screens (stage setup, calibration, help) have no tab bar: a 48px back button (‹), the screen title in `headline-md` uppercase, and an optional step counter on the right.
 
 Main screen ("Carrera" tab), top to bottom:
 1. **Time block**: time of day, and the main stopwatch with INICIAR/PARAR and REINICIAR buttons.
@@ -159,7 +163,8 @@ Flat. Three tonal levels only: `background`, `surface-container` (cards and bloc
 
 ### Ahead / Behind panel
 - Full-width block with the signed difference in seconds (positive = ahead, negative = behind) in `display` size, plus a text label ("ADELANTADO", "ATRASADO" or "EN TIEMPO"). The label is mandatory so the state is readable without color.
-- Background: `status-ahead` when ahead, `status-behind` when behind, neutral within a small tolerance band around zero (default +/-0.10s).
+- Background: `status-ahead` (orange) when ahead, `status-behind` (red) when behind, `status-ontime` (green) when on time within the tolerance band around zero (default +/-0.10s) with the label EN TIEMPO. When there is no data, it uses the neutral background (`surface-container-high`) with "--,-" SEG and the label SIN DATOS (green is not used for no data).
+- Below the state label, an `ASIGNADO` line displays the assigned stage speed with the `KM/H` unit label (e.g., "ASIGNADO 49,8 KM/H"). When no stage speed is saved, it displays the placeholder ("ASIGNADO --,- KM/H"). The text uses the corresponding `on-*` color of the panel background for high contrast across all states.
 - Solid fill only, no glow.
 
 ### Stopwatches

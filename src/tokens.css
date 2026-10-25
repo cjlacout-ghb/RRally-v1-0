@@ -18,10 +18,12 @@
   --color-on-secondary: #3e2e00;
   --color-secondary-container: #b38b14;
   --color-on-secondary-container: #362800;
-  --color-status-ahead: #10B981;
+  --color-status-ahead: #F97316;
   --color-on-status-ahead: #0a122a;
   --color-status-behind: #EF4444;
   --color-on-status-behind: #FFFFFF;
+  --color-status-ontime: #10B981;
+  --color-on-status-ontime: #0a122a;
 
   /* Ivory color from DESIGN.md Colors section */
   --color-ivory: #FBF7EE;
@@ -49,6 +51,8 @@
   --on-status-ahead: var(--color-on-status-ahead);
   --status-behind: var(--color-status-behind);
   --on-status-behind: var(--color-on-status-behind);
+  --status-ontime: var(--color-status-ontime);
+  --on-status-ontime: var(--color-on-status-ontime);
   --ivory: var(--color-ivory);
 
   /* Fonts with system fallbacks */

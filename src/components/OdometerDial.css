@@ -1,0 +1,71 @@
+.odometer-block {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.dial-wrapper {
+  position: relative;
+  width: 168px;
+  height: 168px;
+  margin: 0 auto;
+}
+
+.dial-svg {
+  display: block;
+}
+
+.dial-numeral {
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-size: 11px;
+  fill: var(--color-ivory);
+}
+
+.dial-center {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  pointer-events: none;
+}
+
+.dial-speed {
+  font-family: var(--font-mono);
+  font-weight: var(--typography-display-font-weight);
+  font-size: var(--typography-display-font-size);
+  line-height: var(--typography-display-line-height);
+  letter-spacing: var(--typography-display-letter-spacing);
+  color: var(--color-on-surface);
+}
+
+.readouts-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--spacing-space-sm) var(--spacing-gutter);
+  margin-top: var(--spacing-space-sm);
+}
+
+.readout-cell {
+  background: var(--color-surface-container-lowest);
+  border: var(--border-width) solid var(--color-outline-variant);
+  border-radius: var(--rounded-default);
+  padding: var(--spacing-space-sm);
+}
+
+.readout-value {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 2px;
+}
+
+.adjust-buttons {
+  display: flex;
+  gap: var(--spacing-gutter);
+  justify-content: center;
+  align-items: center;
+}

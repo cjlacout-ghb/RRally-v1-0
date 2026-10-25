@@ -4,6 +4,7 @@ import '@fontsource/space-mono/700.css';
 import '@fontsource/chivo/400.css';
 import '@fontsource/chivo/700.css';
 import './tokens.css';
+import './shared.css';
 import App from './App';
 
 const container = document.getElementById('root');

@@ -1,0 +1,78 @@
+.delta-panel {
+  border: var(--border-width) solid transparent;
+  border-radius: var(--rounded-default);
+  padding: var(--spacing-space-sm) var(--spacing-space-md);
+  text-align: center;
+}
+
+.delta-panel--ahead {
+  background-color: var(--color-status-ahead);
+  color: var(--color-on-status-ahead);
+}
+
+.delta-panel--behind {
+  background-color: var(--color-status-behind);
+  color: var(--color-on-status-behind);
+}
+
+.delta-panel--neutral {
+  background-color: var(--color-status-ontime);
+  color: var(--color-on-status-ontime);
+}
+
+.delta-panel--no-data {
+  background-color: var(--color-surface-container-high);
+  color: var(--color-on-surface);
+  border-color: var(--color-outline-variant);
+}
+
+.delta-panel__value-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: var(--spacing-space-sm);
+}
+
+.delta-panel__seconds {
+  font-family: var(--font-mono);
+  font-weight: var(--typography-display-font-weight);
+  font-size: var(--typography-display-font-size);
+  line-height: var(--typography-display-line-height);
+  letter-spacing: var(--typography-display-letter-spacing);
+}
+
+.delta-panel__unit {
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-size: 20px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.delta-panel__label {
+  font-family: var(--font-sans);
+  font-weight: 700;
+  font-size: 20px;
+  line-height: 26px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  margin-top: 2px;
+}
+
+.delta-panel__assigned {
+  margin-top: var(--spacing-space-xs);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.delta-panel__assigned-text {
+  font-family: var(--font-mono);
+  font-weight: var(--typography-label-md-font-weight);
+  font-size: var(--typography-label-md-font-size);
+  line-height: var(--typography-label-md-line-height);
+  letter-spacing: var(--typography-label-md-letter-spacing);
+  text-transform: uppercase;
+  color: inherit;
+  opacity: 0.85;
+}

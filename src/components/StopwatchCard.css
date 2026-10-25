@@ -1,0 +1,39 @@
+.stopwatch-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-space-xs);
+}
+
+.stopwatch-card__label {
+  display: block;
+}
+
+.stopwatch-card__time {
+  text-align: center;
+  font-family: var(--font-mono);
+  font-weight: 700;
+  letter-spacing: var(--typography-headline-xl-letter-spacing);
+  margin: var(--spacing-space-sm) 0;
+}
+
+.stopwatch-time--main {
+  font-size: var(--typography-headline-xl-font-size);
+  line-height: var(--typography-headline-xl-line-height);
+  letter-spacing: var(--typography-headline-xl-letter-spacing);
+}
+
+.stopwatch-time--secondary {
+  font-size: var(--typography-headline-lg-font-size);
+  line-height: var(--typography-headline-lg-line-height);
+  letter-spacing: var(--typography-headline-lg-letter-spacing);
+  margin: var(--spacing-space-xs) 0 var(--spacing-space-sm);
+}
+
+.stopwatch-card__buttons {
+  display: flex;
+  gap: var(--spacing-gutter);
+}
+
+.stopwatch-btn {
+  flex: 1;
+}

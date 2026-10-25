@@ -53,9 +53,11 @@ Vite + React + TypeScript (strict) + vite-plugin-pwa (service worker precaching)
 
 ## Phases (status)
 - Phase 0: project scaffolding, tokens, app shell, offline/PWA setup, deploy pipeline. Pending.
-- Phase 1: Carrera UI with real stopwatches and time of day, delta panel states. Pending.
-- Phase 2: GPS odometer, corrected distance, speeds, live delta. Pending.
-- Phase 3: Preparar etapa and persistence. Pending.
+- Phase 1: Carrera UI with real stopwatches and time of day, delta panel states. Done.
+- Phase 2: Preparar etapa screen and stored stage speed (stored through storage module, consumed via useStageSpeed hook). Done.
+- Phase 2b: Header text button (PREPARAR ETAPA) and ASIGNADO line in Ahead/Behind panel. Done. Note: DESIGN.md was updated and must be re-uploaded to the Claude Project.
+- Phase 2c: Status colors for Ahead/Behind panel (ahead = orange, behind = red, on-time = green). Done. Note: DESIGN.md was updated and must be re-uploaded to the Claude Project.
+- Phase 3: GPS odometer, corrected distance, speeds, live delta. Pending.
 - Phase 4: guided calibration. Pending.
 - Phase 5: Calculadora. Pending.
 - Phase 6: Ayuda, polish, full iOS device test. Pending.

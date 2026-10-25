@@ -1,71 +1,81 @@
 import { useState } from 'react';
 import './App.css';
+import { CarreraTab } from './screens/CarreraTab';
+import { PrepararEtapaScreen } from './screens/PrepararEtapaScreen';
+import { useStageSpeed } from './hooks/useStageSpeed';
 
 type Tab = 'CARRERA' | 'CALCULADORA';
+type Screen = 'main' | 'preparar-etapa';
 
 export function App() {
   const [activeTab, setActiveTab] = useState<Tab>('CARRERA');
+  const [screen, setScreen] = useState<Screen>('main');
+
+  const { assignedSpeed, saveSpeed } = useStageSpeed();
 
   return (
     <div className="app-container">
-      <header className="app-header">
-        <span className="header-logo">RR</span>
-        <div className="header-actions">
-          <button
-            type="button"
-            className="btn-icon-secondary"
-            aria-label="Preparar etapa"
-          >
-            <svg
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              aria-hidden="true"
-            >
-              <path d="M4 7h10M18 7h2M4 17h2M10 17h10" />
-              <circle cx="16" cy="7" r="2" />
-              <circle cx="8" cy="17" r="2" />
-            </svg>
-          </button>
-          <button
-            type="button"
-            className="btn-icon-secondary"
-            aria-label="Ayuda"
-          >
-            ?
-          </button>
-        </div>
-      </header>
+      {screen === 'preparar-etapa' ? (
+        /* ── Preparar Etapa secondary screen ─────────────────── */
+        <PrepararEtapaScreen
+          savedSpeed={assignedSpeed}
+          onSave={saveSpeed}
+          onBack={() => setScreen('main')}
+        />
+      ) : (
+        /* ── Main tab layout ─────────────────────────────────── */
+        <>
+          <header className="app-header">
+            <span className="header-logo">RR</span>
+            <div className="header-actions">
+              <button
+                type="button"
+                className="btn-secondary"
+                onClick={() => setScreen('preparar-etapa')}
+              >
+                PREPARAR ETAPA
+              </button>
+              {/* Help screen — Phase 6. Button is rendered but does nothing yet. */}
+              <button
+                type="button"
+                className="btn-icon-secondary"
+                aria-label="Ayuda"
+              >
+                ?
+              </button>
+            </div>
+          </header>
 
-      <main className="app-content" role="main">
-        {activeTab === 'CARRERA' ? (
-          <div data-testid="carrera-content" />
-        ) : (
-          <div data-testid="calculadora-content" />
-        )}
-      </main>
+          <main className="app-content" role="main">
+            {activeTab === 'CARRERA' ? (
+              <CarreraTab isVisible={activeTab === 'CARRERA'} assignedSpeed={assignedSpeed} />
+            ) : (
+              <div data-testid="calculadora-content" />
+            )}
+          </main>
 
-      <nav className="app-tab-bar" aria-label="Navegación principal">
-        <div className="tab-bar-inner">
-          <button
-            type="button"
-            className={`tab-button ${activeTab === 'CARRERA' ? 'active' : ''}`}
-            onClick={() => setActiveTab('CARRERA')}
-            aria-pressed={activeTab === 'CARRERA'}
-          >
-            CARRERA
-          </button>
-          <button
-            type="button"
-            className={`tab-button ${activeTab === 'CALCULADORA' ? 'active' : ''}`}
-            onClick={() => setActiveTab('CALCULADORA')}
-            aria-pressed={activeTab === 'CALCULADORA'}
-          >
-            CALCULADORA
-          </button>
-        </div>
-      </nav>
+          <nav className="app-tab-bar" aria-label="Navegación principal">
+            <div className="tab-bar-inner">
+              <button
+                type="button"
+                className={`tab-button ${activeTab === 'CARRERA' ? 'active' : ''}`}
+                onClick={() => setActiveTab('CARRERA')}
+                aria-pressed={activeTab === 'CARRERA'}
+              >
+                CARRERA
+              </button>
+              <button
+                type="button"
+                className={`tab-button ${activeTab === 'CALCULADORA' ? 'active' : ''}`}
+                onClick={() => setActiveTab('CALCULADORA')}
+                aria-pressed={activeTab === 'CALCULADORA'}
+              >
+                CALCULADORA
+              </button>
+            </div>
+          </nav>
+        </>
+      )}
     </div>
   );
 }

@@ -1,0 +1,123 @@
+/* ── Secondary screen shell ─────────────────────────────────── */
+.secondary-screen {
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+}
+
+.secondary-header {
+  height: 48px;
+  margin: 0 var(--spacing-margin);
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-gutter);
+  flex: none;
+}
+
+.secondary-back-btn {
+  /* inherits .btn-icon-secondary from App.css */
+  flex: none;
+}
+
+.secondary-title {
+  font-family: var(--font-sans);
+  font-weight: var(--typography-headline-md-font-weight);
+  font-size: var(--typography-headline-md-font-size);
+  line-height: var(--typography-headline-md-line-height);
+  color: var(--color-on-surface);
+  text-transform: uppercase;
+}
+
+.secondary-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-gutter);
+  padding: var(--spacing-gutter) var(--spacing-margin);
+  padding-bottom: calc(var(--spacing-margin) + env(safe-area-inset-bottom, 0px));
+}
+
+/* ── Preparar Etapa form card ───────────────────────────────── */
+.preparar-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-space-sm);
+}
+
+.preparar-field-label {
+  font-family: var(--font-sans);
+  font-weight: 700;
+  font-size: var(--typography-label-lg-font-size);
+  line-height: var(--typography-label-lg-line-height);
+  letter-spacing: var(--typography-label-lg-letter-spacing);
+  color: var(--color-on-surface-variant);
+  text-transform: uppercase;
+  display: block;
+}
+
+.preparar-input-row {
+  display: flex;
+  align-items: baseline;
+  gap: var(--spacing-space-md);
+  background: var(--color-surface-container-lowest);
+  border: var(--border-width) solid var(--color-outline);
+  border-radius: var(--rounded-default);
+  padding: var(--spacing-space-md);
+}
+
+.preparar-input-row--error {
+  border-color: var(--color-status-behind);
+}
+
+.preparar-input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  font-family: var(--font-mono);
+  font-weight: var(--typography-headline-lg-font-weight);
+  font-size: var(--typography-headline-lg-font-size);
+  line-height: var(--typography-headline-lg-line-height);
+  letter-spacing: var(--typography-headline-lg-letter-spacing);
+  color: var(--color-on-surface);
+  width: 100%;
+  /* Prevent iOS zoom on focus (needs font-size ≥ 16px but we inherit from headline-lg 26px) */
+}
+
+.preparar-input--error {
+  /* Error state applied to input itself — parent row shows the red border via :has() */
+}
+
+.preparar-unit {
+  /* .label-lg .brass from CarreraTab.css — declared there as utility classes */
+  flex: none;
+}
+
+.preparar-error {
+  font-family: var(--font-sans);
+  font-size: var(--typography-body-md-font-size);
+  line-height: var(--typography-body-md-line-height);
+  color: var(--color-status-behind);
+  margin: 0;
+}
+
+.preparar-help {
+  font-family: var(--font-sans);
+  font-weight: var(--typography-body-md-font-weight);
+  font-size: var(--typography-body-md-font-size);
+  line-height: var(--typography-body-md-line-height);
+  color: var(--color-on-surface-variant);
+  margin: 0;
+}
+
+/* ── Bottom actions ─────────────────────────────────────────── */
+.preparar-actions {
+  margin-top: auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-gutter);
+}
+
+.btn-full {
+  width: 100%;
+}
