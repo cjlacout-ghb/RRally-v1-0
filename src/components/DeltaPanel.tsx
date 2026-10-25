@@ -28,9 +28,9 @@ export function DeltaPanel({ deltaSeconds, state, assignedSpeed }: DeltaPanelPro
       </div>
       <div className="delta-panel__label">{label}</div>
       <div className="delta-panel__assigned">
-        <span className="delta-panel__assigned-text">
-          ASIGNADO {assignedSpeedText} KM/H
-        </span>
+        <span className="delta-panel__assigned-label">ASIGNADO</span>
+        <span className="delta-panel__assigned-speed">{assignedSpeedText}</span>
+        <span className="delta-panel__assigned-unit">KM/H</span>
       </div>
     </div>
   );

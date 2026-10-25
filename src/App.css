@@ -10,6 +10,18 @@
   background-color: var(--color-background);
 }
 
+/* Fixed status bar cover for iOS safe-area-inset-top */
+.status-bar-cover {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: env(safe-area-inset-top, 0px);
+  background-color: var(--color-background);
+  z-index: 100;
+  pointer-events: none;
+}
+
 /* Header */
 .app-header {
   height: var(--header-height);
@@ -73,8 +85,9 @@
   flex: 1;
   min-height: 0;
   overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
   padding: var(--spacing-gutter) var(--spacing-margin);
-  padding-bottom: calc(var(--tab-bar-min-height) + env(safe-area-inset-bottom, 0px));
+  padding-bottom: calc(var(--tab-bar-min-height) + env(safe-area-inset-bottom, 0px) + var(--spacing-gutter));
 }
 
 /* Tab Bar */

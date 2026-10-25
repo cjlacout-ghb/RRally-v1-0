@@ -60,19 +60,38 @@
 }
 
 .delta-panel__assigned {
-  margin-top: var(--spacing-space-xs);
+  margin-top: var(--spacing-space-sm);
   display: flex;
-  align-items: center;
+  align-items: baseline;
   justify-content: center;
+  gap: var(--spacing-space-xs);
+  white-space: nowrap;
 }
 
-.delta-panel__assigned-text {
+.delta-panel__assigned-label {
   font-family: var(--font-mono);
-  font-weight: var(--typography-label-md-font-weight);
-  font-size: var(--typography-label-md-font-size);
-  line-height: var(--typography-label-md-line-height);
-  letter-spacing: var(--typography-label-md-letter-spacing);
+  font-weight: 700;
+  font-size: var(--typography-label-lg-font-size);
+  line-height: var(--typography-label-lg-line-height);
+  letter-spacing: var(--typography-label-lg-letter-spacing);
   text-transform: uppercase;
   color: inherit;
-  opacity: 0.85;
+}
+
+.delta-panel__assigned-speed {
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-size: var(--typography-body-lg-font-size);
+  line-height: var(--typography-body-lg-line-height);
+  color: inherit;
+}
+
+.delta-panel__assigned-unit {
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-size: var(--typography-label-lg-font-size);
+  line-height: var(--typography-label-lg-line-height);
+  letter-spacing: var(--typography-label-lg-letter-spacing);
+  text-transform: uppercase;
+  color: inherit;
 }

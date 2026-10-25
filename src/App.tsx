@@ -15,6 +15,7 @@ export function App() {
 
   return (
     <div className="app-container">
+      <div className="status-bar-cover" aria-hidden="true" />
       {screen === 'preparar-etapa' ? (
         /* ── Preparar Etapa secondary screen ─────────────────── */
         <PrepararEtapaScreen

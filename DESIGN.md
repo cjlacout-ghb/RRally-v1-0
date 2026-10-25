@@ -125,7 +125,7 @@ Dark-first. The structural backdrop is deep midnight navy (`background`). The co
 
 ## Layout & Spacing
 
-Portrait only, designed for a 390x844 phone viewport; a tablet in portrait uses the same single-column layout, centered. Respect iOS safe areas at the top and bottom. Margins are 16px, the base rhythm is 4px, and gaps between touch targets are at least 12px.
+Portrait only, designed for a 390x844 phone viewport; a tablet in portrait uses the same single-column layout, centered. Respect iOS safe areas at the top and bottom. Margins are 16px, the base rhythm is 4px, and gaps between touch targets are at least 12px. The app shell uses dynamic viewport height (dvh) so collapsing browser toolbars do not obscure elements, and scrollable content always reserves bottom space equal to the tab bar height plus the bottom safe area so the lowest content scrolls fully into view above the fixed tab bar. Scrolled content must never appear under the iOS status bar (top safe area is covered with the background color).
 
 Header on the two main tabs: the text "RR" (Space Mono, `primary`) on the left; two buttons on the right: a secondary text button with visible label "PREPARAR ETAPA" (transparent, 1px `outline` border, `on-surface` text, Chivo bold uppercase, minimum height 48px) and a 48px secondary icon button for help ("?"). No avatar and no logo image. Secondary screens (stage setup, calibration, help) have no tab bar: a 48px back button (‹), the screen title in `headline-md` uppercase, and an optional step counter on the right.
 
@@ -164,7 +164,7 @@ Flat. Three tonal levels only: `background`, `surface-container` (cards and bloc
 ### Ahead / Behind panel
 - Full-width block with the signed difference in seconds (positive = ahead, negative = behind) in `display` size, plus a text label ("ADELANTADO", "ATRASADO" or "EN TIEMPO"). The label is mandatory so the state is readable without color.
 - Background: `status-ahead` (orange) when ahead, `status-behind` (red) when behind, `status-ontime` (green) when on time within the tolerance band around zero (default +/-0.10s) with the label EN TIEMPO. When there is no data, it uses the neutral background (`surface-container-high`) with "--,-" SEG and the label SIN DATOS (green is not used for no data).
-- Below the state label, an `ASIGNADO` line displays the assigned stage speed with the `KM/H` unit label (e.g., "ASIGNADO 49,8 KM/H"). When no stage speed is saved, it displays the placeholder ("ASIGNADO --,- KM/H"). The text uses the corresponding `on-*` color of the panel background for high contrast across all states.
+- Below the state label, an `ASIGNADO` line displays the assigned stage speed. The word "ASIGNADO" uses `label-lg` (13px bold Space Mono, expanded tracking); the speed value is the most prominent element of the line in 16px Space Mono bold; followed by the unit "KM/H" at `label-lg` size. When no stage speed is saved, it displays the placeholder ("--,-") in the same 16px style. The line inherits the matching `on-*` text color of the current panel background (never brass or a fixed color) to guarantee sufficient contrast (at least 4.5:1) against orange, red, green and neutral surfaces.
 - Solid fill only, no glow.
 
 ### Stopwatches

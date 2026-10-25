@@ -57,6 +57,8 @@ Vite + React + TypeScript (strict) + vite-plugin-pwa (service worker precaching)
 - Phase 2: Preparar etapa screen and stored stage speed (stored through storage module, consumed via useStageSpeed hook). Done.
 - Phase 2b: Header text button (PREPARAR ETAPA) and ASIGNADO line in Ahead/Behind panel. Done. Note: DESIGN.md was updated and must be re-uploaded to the Claude Project.
 - Phase 2c: Status colors for Ahead/Behind panel (ahead = orange, behind = red, on-time = green). Done. Note: DESIGN.md was updated and must be re-uploaded to the Claude Project.
+- Phase 2d: iPhone layout fixes (bottom cut-off scroll padding, dvh) and enhanced ASIGNADO line readability. Done. Note: DESIGN.md was updated and must be re-uploaded to the Claude Project.
+- Phase 2e: Content overlapping iOS status bar when scrolling (fixed status bar cover). Done. Note: DESIGN.md was updated and must be re-uploaded to the Claude Project (together with 2d changes).
 - Phase 3: GPS odometer, corrected distance, speeds, live delta. Pending.
 - Phase 4: guided calibration. Pending.
 - Phase 5: Calculadora. Pending.
