@@ -31,13 +31,15 @@
   align-items: baseline;
   justify-content: center;
   gap: var(--spacing-space-sm);
+  white-space: nowrap;
 }
 
+/* Strings up to 5 characters (+12,3, -99,9, 0,0, --,-) use nominal display size (56px) */
 .delta-panel__seconds {
   font-family: var(--font-mono);
   font-weight: var(--typography-display-font-weight);
-  font-size: var(--typography-display-font-size);
-  line-height: var(--typography-display-line-height);
+  font-size: var(--typography-display-font-size); /* 56px */
+  line-height: 1;
   letter-spacing: var(--typography-display-letter-spacing);
 }
 
@@ -49,11 +51,21 @@
   text-transform: uppercase;
 }
 
+/* Longer strings (>5 chars, e.g. "-123,4"): scale fluidly so the entire line
+   maintains >=16px clearance from each side border at 320px viewport width */
+.delta-panel__value-row--long .delta-panel__seconds {
+  font-size: clamp(48px, calc(48px + 8 * (100vw - 320px) / 70px), 56px);
+}
+
+.delta-panel__value-row--long .delta-panel__unit {
+  font-size: clamp(17px, calc(17px + 3 * (100vw - 320px) / 70px), 20px);
+}
+
 .delta-panel__label {
   font-family: var(--font-sans);
   font-weight: 700;
-  font-size: 20px;
-  line-height: 26px;
+  font-size: clamp(16px, calc(16px + 4 * (100vw - 320px) / 70px), 20px);
+  line-height: 1.3;
   letter-spacing: 0.12em;
   text-transform: uppercase;
   margin-top: 2px;

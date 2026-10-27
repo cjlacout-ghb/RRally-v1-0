@@ -14,14 +14,16 @@ export function formatSpeed(speed: number | null | undefined): string {
 }
 
 /**
- * Formats a distance in km with 3 decimal places using a comma (e.g. "14,820").
- * Returns "--,---" if distance is null, undefined, or NaN.
+ * Formats a distance in km with decimal comma (e.g. "14,82" with 2 decimals, or "14,820" with 3 decimals).
+ * Rounds to the specified number of decimal places (default: 2).
+ * Returns placeholder with matching dash count (e.g. "--,--" for 2 decimals, "--,---" for 3 decimals)
+ * if distance is null, undefined, or NaN.
  */
-export function formatDistance(distance: number | null | undefined): string {
+export function formatDistance(distance: number | null | undefined, decimals: number = 2): string {
   if (distance === null || distance === undefined || Number.isNaN(distance)) {
-    return '--,---';
+    return `--${',' + '-'.repeat(decimals)}`;
   }
-  return distance.toFixed(3).replace('.', ',');
+  return distance.toFixed(decimals).replace('.', ',');
 }
 
 /**
@@ -74,13 +76,13 @@ export function formatStopwatch(elapsedMs: number): string {
 }
 
 /**
- * Formats time of day as "HH:MM:SS,d" where 'd' is tenths of a second (0-9).
+ * Formats time of day as "HH:MM:SS" (24-hour format, two digits per field).
+ * Seconds are truncated (floor), never rounded.
  */
 export function formatTimeOfDay(date: Date): string {
   const hh = date.getHours().toString().padStart(2, '0');
   const mm = date.getMinutes().toString().padStart(2, '0');
   const ss = date.getSeconds().toString().padStart(2, '0');
-  const tenths = Math.floor(date.getMilliseconds() / 100).toString();
 
-  return `${hh}:${mm}:${ss},${tenths}`;
+  return `${hh}:${mm}:${ss}`;
 }

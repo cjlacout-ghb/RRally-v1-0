@@ -20,9 +20,13 @@ export function DeltaPanel({ deltaSeconds, state, assignedSpeed }: DeltaPanelPro
   const label = DELTA_LABELS[state];
   const assignedSpeedText = formatSpeed(assignedSpeed);
 
+  // Content-driven class: strings longer than 5 chars (e.g. "-123,4") scale fluidly;
+  // standard strings up to 5 chars (e.g. "+12,3", "-99,9", "0,0", "--,-") use nominal display size.
+  const isLong = displayValue.length > 5;
+
   return (
     <div className={`delta-panel ${STATE_CLASS[state]}`} role="status" aria-live="polite">
-      <div className="delta-panel__value-row">
+      <div className={`delta-panel__value-row ${isLong ? 'delta-panel__value-row--long' : ''}`}>
         <b className="delta-panel__seconds">{displayValue}</b>
         <span className="delta-panel__unit">SEG</span>
       </div>

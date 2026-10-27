@@ -15,7 +15,7 @@ Users are hobbyists who race once or twice a year. The co-driver glances at the 
 - Portrait only. Respect iOS safe areas.
 - No haptics or vibration (not available on iOS). Pressed states are visual only.
 - The app only works with the screen on and the app in the foreground. Request a screen wake lock where the browser supports it, and degrade silently where it does not.
-- All user-facing text is Spanish (Argentina). Numbers use decimal comma (49,8 / 14,820 / 07:50:46,7).
+- All user-facing text is Spanish (Argentina). Numbers use decimal comma (49,8 / 14,82 / 07:50:46,25; distance readout on Carrera tab uses 2 decimals).
 - Never use color as the only signal; keep the text labels required by DESIGN.md.
 
 ## Scope

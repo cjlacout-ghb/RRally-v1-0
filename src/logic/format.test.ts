@@ -24,17 +24,36 @@ describe('formatSpeed', () => {
 });
 
 describe('formatDistance', () => {
-  it('formats distance with 3 decimal places and decimal comma', () => {
-    expect(formatDistance(14.82)).toBe('14,820');
-    expect(formatDistance(14.820)).toBe('14,820');
-    expect(formatDistance(0)).toBe('0,000');
-    expect(formatDistance(7.892)).toBe('7,892');
+  it('formats distance with 2 decimal places by default and decimal comma', () => {
+    expect(formatDistance(14.82)).toBe('14,82');
+    expect(formatDistance(14.820)).toBe('14,82');
+    expect(formatDistance(0)).toBe('0,00');
+    expect(formatDistance(7.892)).toBe('7,89');
+    expect(formatDistance(123.456)).toBe('123,46');
   });
 
-  it('returns "--,---" for null, undefined, or NaN', () => {
-    expect(formatDistance(null)).toBe('--,---');
-    expect(formatDistance(undefined)).toBe('--,---');
-    expect(formatDistance(NaN)).toBe('--,---');
+  it('supports custom decimal places (e.g. 3 for calibration)', () => {
+    expect(formatDistance(14.82, 3)).toBe('14,820');
+    expect(formatDistance(7.892, 3)).toBe('7,892');
+    expect(formatDistance(0, 3)).toBe('0,000');
+  });
+
+  it('rounds to the nearest hundredth (nearest 10 meters) avoiding floating-point truncation', () => {
+    // Value just above 0,005 km (e.g., 0.0051 km) rounds to 0,01 km
+    expect(formatDistance(0.0051)).toBe('0,01');
+    expect(formatDistance(0.005)).toBe('0,01');
+    // Value just below 0,01 km (e.g. 0.0099 km) rounds to 0,01 km
+    expect(formatDistance(0.0099)).toBe('0,01');
+    // Floating point noise near step boundary: 0.010000000000000002 or 0.009999999999999998
+    expect(formatDistance(0.009999999999999998)).toBe('0,01');
+  });
+
+  it('returns placeholder matching decimal count for null, undefined, or NaN', () => {
+    expect(formatDistance(null)).toBe('--,--');
+    expect(formatDistance(undefined)).toBe('--,--');
+    expect(formatDistance(NaN)).toBe('--,--');
+    expect(formatDistance(null, 3)).toBe('--,---');
+    expect(formatDistance(undefined, 3)).toBe('--,---');
   });
 });
 
@@ -92,11 +111,21 @@ describe('formatStopwatch', () => {
 });
 
 describe('formatTimeOfDay', () => {
-  it('formats Date as HH:MM:SS,d (tenths)', () => {
+  it('formats Date as HH:MM:SS without decimals', () => {
     const d = new Date(2026, 9, 25, 7, 50, 46, 742);
-    expect(formatTimeOfDay(d)).toBe('07:50:46,7');
+    expect(formatTimeOfDay(d)).toBe('07:50:46');
 
     const d2 = new Date(2026, 9, 25, 14, 5, 9, 50);
-    expect(formatTimeOfDay(d2)).toBe('14:05:09,0');
+    expect(formatTimeOfDay(d2)).toBe('14:05:09');
+  });
+
+  it('truncates (floors) seconds instead of rounding up near the second boundary', () => {
+    // 59,999 seconds should still show 59 seconds, not roll over to 00
+    const d = new Date(2026, 9, 25, 11, 59, 59, 999);
+    expect(formatTimeOfDay(d)).toBe('11:59:59');
+
+    // 00,999 seconds should show 00
+    const d2 = new Date(2026, 9, 25, 12, 0, 0, 999);
+    expect(formatTimeOfDay(d2)).toBe('12:00:00');
   });
 });

@@ -94,11 +94,11 @@ The visual style is **Flat Vintage Instrument**. The vintage identity comes only
 The reference mockup `docs/rr-pantallas-v1.html` is the visual reference for every screen (layout, copy, spacing). If the mockup and this file contradict each other, this file wins.
 
 Rules that apply everywhere:
-- No textures, gradients, bezels, rivets, knurling, glows, or decorative shadows.
+- No textures, gradients, bezels, rivets, knurling, glows, or decorative shadows. **Exception**: the Carrera odometer dial has two allowed ornaments: a faint 1px `outline-variant` ring just outside the dial face, and a thin dotted `outline-variant` guide ring just inside the ticks. These are the only ornaments permitted.
 - Depth is expressed only with tonal surface layers and 1px borders.
 - Every screen has one clear primary element; nothing decorative competes with the numbers.
 - Never use color as the only signal. Always pair it with a text label.
-- All user-facing text is in Spanish (Argentina). Use short, plain words. Fixed labels: CARRERA and CALCULADORA (tabs), INICIAR, PARAR, REINICIAR, APLICAR, SIGUIENTE, ADELANTADO, ATRASADO, EN TIEMPO, SIN DATOS, ASIGNADO, HORA, PROMEDIO, DISTANCIA, CRONÓMETRO 2, KM/H, KM, SEG. Screen titles: PREPARAR ETAPA, CALIBRAR ODÓMETRO, AYUDA.
+- All user-facing text is in Spanish (Argentina). Use short, plain words. Fixed labels: CARRERA and CALCULADORA (tabs), INICIAR, PARAR, REINICIAR, APLICAR, SIGUIENTE, ADELANTADO, ATRASADO, EN TIEMPO, SIN DATOS, ASIGNADO, HORA OFICIAL, PROMEDIO, DISTANCIA, CRONÓMETRO 2, KM/H, KM, SEG. Screen titles: PREPARAR ETAPA, CALIBRAR ODÓMETRO, AYUDA.
 
 ## Colors
 
@@ -120,7 +120,7 @@ Dark-first. The structural backdrop is deep midnight navy (`background`). The co
 - **Space Mono**: every number that updates (stopwatches, time of day, speeds, distance, delta). Monospaced digits prevent layout jitter.
 - **Chivo**: labels, buttons, form fields, help text.
 - Unit and section labels (`KM/H`, `KM`, `SEG`) use uppercase with expanded tracking.
-- Numbers use the Argentine format: decimal comma (49,8 km/h, 14,820 km, 07:50:46,7).
+- Numbers use the Argentine format: decimal comma (49,8 km/h, 14,82 km, 07:50:46,25).
 - Both fonts must be bundled with the app and served locally. The app works offline, so no font may load from a remote service. Provide a system monospace and sans-serif fallback.
 
 ## Layout & Spacing
@@ -130,8 +130,8 @@ Portrait only, designed for a 390x844 phone viewport; a tablet in portrait uses 
 Header on the two main tabs: the text "RR" (Space Mono, `primary`) on the left; two buttons on the right: a secondary text button with visible label "PREPARAR ETAPA" (transparent, 1px `outline` border, `on-surface` text, Chivo bold uppercase, minimum height 48px) and a 48px secondary icon button for help ("?"). No avatar and no logo image. Secondary screens (stage setup, calibration, help) have no tab bar: a 48px back button (‹), the screen title in `headline-md` uppercase, and an optional step counter on the right.
 
 Main screen ("Carrera" tab), top to bottom:
-1. **Time block**: time of day, and the main stopwatch with INICIAR/PARAR and REINICIAR buttons.
-2. **Odometer dial**: one circular dial with instantaneous speed as the dominant number; average speed and distance as digital readouts; manual distance adjustment with -1 and +1 buttons.
+1. **Time block**: time of day (label: HORA OFICIAL), and the main stopwatch with INICIAR/PARAR and REINICIAR buttons.
+2. **Odometer dial**: one circular dial with instantaneous speed as the dominant number; average speed and distance as digital readouts; manual distance adjustment with -1 (left of dial) and +1 (right of dial) buttons flanking the dial.
 3. **Ahead/behind panel**: the largest element on the screen after the dial; see Components.
 4. **Second stopwatch**: free use (splits or countdown), visually smaller than the main one.
 5. **Bottom tab bar**: two tabs, "Carrera" and "Calculadora".
@@ -142,33 +142,39 @@ Secondary screens, all using the same system: stage setup, odometer calibration,
 
 Flat. Three tonal levels only: `background`, `surface-container` (cards and blocks), and `surface-container-high` (pressed states, neutral delta panel). Blocks have a 1px `outline-variant` border. No shadows or glows.
 
+**Exception — Carrera odometer dial block**: uses `surface-container-lowest` background with no border (the dial face itself keeps its 1px `outline-variant` ring so it remains distinguishable). This file supersedes `docs/rr-pantallas-v1.html` for all styling of the Carrera odometer dial block.
+
 ## Shapes
 
 - Blocks, cards, inputs: `rounded.DEFAULT` (4px).
-- Dial and round buttons: `rounded.full`.
+- Dial: `rounded.full`.
+- **-1/+1 side buttons** (exception): `rounded.lg` (8px), 56x56px, not `rounded.full`.
 
 ## Components
 
 ### Buttons
-- **Primary action buttons** (INICIAR/PARAR, REINICIAR, -1, +1, APLICAR): filled with `primary-container`, text and icon in `on-primary-container`. Minimum touch target 64x64px.
+- **Primary action buttons** (INICIAR/PARAR, REINICIAR, APLICAR): filled with `primary-container`, text and icon in `on-primary-container`. Minimum touch target 64x64px.
+- **-1/+1 distance adjustment buttons** (exception): placed on both sides of the odometer dial (left: -1, right: +1), vertically centered on the dial. Fill: `surface-container-high`; text: `on-surface`; shape: `rounded.lg`; font: monospaced bold (minimum 20px); size 56x56px (explicit exception to the 64px touch target rule for primary buttons). No border.
 - **Secondary buttons**: transparent with a 1px `outline` border and `on-surface` text. Minimum height 48px.
 - **Pressed state**: darker fill and a 2px downward shift. No haptic or vibration feedback (it is not available on iOS).
 
 ### Odometer dial
-- Circular, flat dark face (`surface-container-lowest`) with a 1px `outline` ring, about 168px in diameter. No bezel, no glass reflection.
+- Circular, flat dark face (`surface-container-lowest`) with a 1px `outline-variant` ring. Diameter is fluid and fills the available width between the two side buttons; it is deliberately larger than the rest of the UI cards. No fixed pixel size. No bezel, no glass reflection.
 - Scale: a 270-degree clockwise sweep from 0 (lower left) to 120 (lower right). Brass (`secondary`) tick marks every 10 km/h, longer ones at 0, 40, 80 and 120. Ivory numerals only at 0, 40, 80 and 120, placed inside the ticks so they never touch the speed digits in the center.
 - A single short marker in `primary` on the outer ring shows the current speed. No needle.
-- Center: instantaneous speed in `display` size. Below the dial: average speed and distance in `headline-lg`, each with its unit label.
-- -1 and +1 buttons sit directly under the distance readout.
+- Allowed ornaments (exception to the no-ornament rule): one faint 1px `outline-variant` ring just outside the dial face, and one thin dotted 1px `outline-variant` guide ring just inside the ticks. No gradients, glows, bezels, or shadows.
+- Center: the instantaneous speed digits and **KM/H** (brass) below them. Both are rendered as SVG `<text>` elements in viewbox units so they scale proportionally with the dial diameter at every viewport size — no per-breakpoint duplication. The speed digits are vertically centered in the dial, occupying roughly half the dial's diameter in width for maximum legibility while maintaining at least 6px clearance from every numeral, tick, and ring at 320px width. KM/H sits directly below and clears the 0 and 120 numerals. The no-data state shows "--,-". Below the dial: average speed (PROMEDIO) and distance (DISTANCIA) in `headline-lg`, each with its unit label. On the Carrera tab, the DISTANCIA readout shows 2 decimal places (e.g. 14,82 KM; placeholder "--,--") rounded to the nearest 10 meters, while calculations retain full precision.
+- The -1 and +1 distance-adjustment buttons flank the dial on the left and right respectively, vertically centered on it.
 
 ### Ahead / Behind panel
-- Full-width block with the signed difference in seconds (positive = ahead, negative = behind) in `display` size, plus a text label ("ADELANTADO", "ATRASADO" or "EN TIEMPO"). The label is mandatory so the state is readable without color.
+- Full-width block with the signed difference in seconds (positive = ahead, negative = behind), plus a text label ("ADELANTADO", "ATRASADO", "EN TIEMPO" or "SIN DATOS"). The label is mandatory so the state is readable without color.
+- Sizing depends on string length: delta values up to 5 characters including sign (e.g., `+12,3`, `-99,9`, `0,0`, `--,-`) use the nominal `display` size (56px) with 20px SEG unit at all supported viewports (320px+). Longer strings (e.g., `-123,4`) scale fluidly (48px at 320px up to 56px at 390px, with SEG unit scaling from 17px to 20px) to keep the entire value on a single line with at least 16px clearance from each side border. The state label scales fluidly by ~20% on narrow widths (16px to 20px).
 - Background: `status-ahead` (orange) when ahead, `status-behind` (red) when behind, `status-ontime` (green) when on time within the tolerance band around zero (default +/-0.10s) with the label EN TIEMPO. When there is no data, it uses the neutral background (`surface-container-high`) with "--,-" SEG and the label SIN DATOS (green is not used for no data).
 - Below the state label, the `ASIGNADO` line lives inside a full-width dark inset strip using the same styling as the PROMEDIO/DISTANCIA readout boxes: `surface-container-lowest` background, 1px `outline-variant` border, 4px radius, no shadow or glow. Brass (`secondary`) cannot be placed directly on the status-color backgrounds (orange, green) because contrast is insufficient; the fixed dark strip solves this for all four states. Inside the strip: the word "ASIGNADO" in `label-lg` (13px bold Space Mono, expanded tracking) using `on-surface-variant`; the speed value in 16px Space Mono bold using `secondary` (brass); the unit "KM/H" in `label-lg` using `on-surface-variant`. When no stage speed is saved, the placeholder ("--,-") uses the same 16px brass style. The strip content and colors are identical in all four panel states (ahead, behind, on-time, no-data). The strip must not wrap at 320px width.
 - Solid fill only, no glow.
 
 ### Stopwatches
-- Main stopwatch: `headline-xl` digits, format MM:SS,cc (hours when needed). Second stopwatch: `headline-lg`.
+- Main stopwatch: `headline-xl` digits (40px) for MM:SS,cc. When hours are displayed (HH:MM:SS,cc), the digits scale fluidly (34px at 320px up to 40px at 390px) to maintain at least 16px free space on each side within the card. Time of day (HORA OFICIAL) is formatted as HH:MM:SS (seconds truncated, no decimals) in `headline-lg` (26px), updating strictly once per second. Second stopwatch: `headline-lg`.
 - Each has its own INICIAR/PARAR and REINICIAR buttons, using the same button spec.
 
 ### Tab bar

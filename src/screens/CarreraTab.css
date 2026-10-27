@@ -12,8 +12,18 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: var(--spacing-space-sm);
 }
 
+/* Prevent "HORA OFICIAL" from wrapping at narrow viewports */
+.time-block__hora-row .label-md {
+  white-space: nowrap;
+}
+
+/*
+ * Time of day: HH:MM:SS at nominal headline-lg (26px) size.
+ * Shorter string without tenths comfortably leaves >=12px gap to HORA OFICIAL at 320px+.
+ */
 .time-block__hora {
   font-family: var(--font-mono);
   font-weight: var(--typography-headline-lg-font-weight);
@@ -21,18 +31,32 @@
   line-height: var(--typography-headline-lg-line-height);
   letter-spacing: var(--typography-headline-lg-letter-spacing);
   color: var(--color-secondary);
+  white-space: nowrap;
 }
 
 .time-block__stopwatch {
   margin: var(--spacing-space-sm) 0;
 }
 
+/*
+ * Main stopwatch (MM:SS,cc): keep today's headline-xl (40px) size.
+ * When hours appear (HH:MM:SS,cc), the string is 11 chars and wider.
+ * The .has-hours modifier triggers fluid scaling for the hours format:
+ *   clamp(34px, 34 + 6×(vw−320)/70, 40px).
+ * Applied via JS className in CarreraTab when the string contains a second colon.
+ */
 .time-centered {
   text-align: center;
   font-family: var(--font-mono);
   font-weight: var(--typography-headline-xl-font-weight);
-  font-size: var(--typography-headline-xl-font-size);
+  font-size: var(--typography-headline-xl-font-size); /* 40px */
   line-height: var(--typography-headline-xl-line-height);
   letter-spacing: var(--typography-headline-xl-letter-spacing);
   color: var(--color-on-surface);
+}
+
+.time-centered.has-hours {
+  /* Fluid: 34px at 320px → 40px at 390px+ */
+  font-size: clamp(34px, calc(34px + 6 * (100vw - 320px) / 70px), 40px);
+  line-height: 1.1;
 }

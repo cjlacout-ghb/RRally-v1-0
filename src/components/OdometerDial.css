@@ -1,19 +1,51 @@
+/* ── Odometer block (dial card) ────────────────────────────────────── */
+
 .odometer-block {
   display: flex;
   flex-direction: column;
-  gap: 0;
+  gap: var(--spacing-space-sm);
+  /* Override .card border — dial block exception per DESIGN.md */
+  background: var(--color-surface-container-lowest);
+  border: none;
+  border-radius: var(--rounded-default);
+  padding: var(--spacing-space-md);
 }
+
+/* Explicit no-border variant class kept for clarity */
+.odometer-block--no-border {
+  border: none;
+}
+
+/* ── Dial row: [-1] [dial] [+1] ────────────────────────────────────── */
+
+.dial-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-space-sm); /* 8px — also the minimum gap between button and dial */
+}
+
+/* ── Dial wrapper: fluid square, fills space between buttons ────────── */
 
 .dial-wrapper {
   position: relative;
-  width: 168px;
-  height: 168px;
-  margin: 0 auto;
+  /* Fluid: fills all available width between buttons, but never overflows */
+  flex: 1 1 0;
+  /* Keep it square */
+  aspect-ratio: 1;
+  /* Cap size so it never grows absurdly on wide screens */
+  max-width: 280px;
+  /* Ensure the SVG viewBox scales correctly */
+  min-width: 0;
 }
 
 .dial-svg {
   display: block;
+  width: 100%;
+  height: 100%;
 }
+
+/* ── Dial numeral text (inside SVG, viewbox units) ──────────────────── */
 
 .dial-numeral {
   font-family: var(--font-mono);
@@ -22,31 +54,87 @@
   fill: var(--color-ivory);
 }
 
-.dial-center {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 2px;
-  pointer-events: none;
+/* ── Center speed text (inside SVG — scales with dial at all sizes) ─── */
+/*
+ * Font sizes are in SVG user units (viewbox units, out of 176).
+ * Because the SVG scales with the dial width, these proportions are
+ * maintained at every viewport size — no per-breakpoint duplication.
+ * 18 vu for speed: "119,9" (5 chars) ≈ 52 vu wide, well within the
+ * safe inner zone (±38 vu to the 40/80 numerals, ±38 vu to the 0/120).
+ */
+.dial-center-speed {
+  font-family: var(--font-mono);
+  font-weight: 700;
+  /* font-size is set as an SVG attribute (viewbox units) in OdometerDial.tsx — single source of truth */
+  letter-spacing: -0.03em;
+  fill: var(--color-on-surface);
 }
 
-.dial-speed {
+.dial-center-unit {
   font-family: var(--font-mono);
-  font-weight: var(--typography-display-font-weight);
-  font-size: var(--typography-display-font-size);
-  line-height: var(--typography-display-line-height);
-  letter-spacing: var(--typography-display-letter-spacing);
-  color: var(--color-on-surface);
+  font-weight: 700;
+  /* font-size is set as an SVG attribute (viewbox units) in OdometerDial.tsx — single source of truth */
+  letter-spacing: 0.08em;
+  fill: var(--color-secondary); /* brass */
+  text-transform: uppercase;
 }
+
+/* ── -1 / +1 side buttons ───────────────────────────────────────────── */
+/* Exception per DESIGN.md: surface-container-high fill, on-surface text,
+   rounded-lg, 56×56px (not primary-container like other primary buttons) */
+
+.btn-adjust {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 56px;
+  min-width: 56px;
+  height: 56px;
+  min-height: 56px;
+  padding: 0;
+  background: var(--color-surface-container-high);
+  color: var(--color-on-surface);
+  border: none;
+  border-radius: var(--rounded-lg);
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-size: 20px;
+  line-height: 1;
+  cursor: pointer;
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.btn-adjust:active {
+  background: var(--color-surface-container-lowest);
+  transform: translateY(var(--pressed-shift));
+}
+
+/* ── Narrow-viewport: tighter padding and gaps to maximize dial size ─── */
+/*
+ * At ≤360px the outer card padding and dial-row gap are reduced.
+ * The gap between each button and the dial stays at 8px (minimum).
+ * Buttons stay 56×56px; the dial fills all remaining width.
+ */
+@media (max-width: 360px) {
+  .odometer-block {
+    padding: var(--spacing-space-sm); /* 8px instead of 12px */
+  }
+
+  .dial-row {
+    gap: 8px; /* explicit minimum gap */
+  }
+}
+
+/* ── PROMEDIO / DISTANCIA readout grid ──────────────────────────────── */
 
 .readouts-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: var(--spacing-space-sm) var(--spacing-gutter);
-  margin-top: var(--spacing-space-sm);
+  margin-top: var(--spacing-space-xs);
 }
 
 .readout-cell {
@@ -61,11 +149,4 @@
   align-items: baseline;
   flex-wrap: wrap;
   gap: 2px;
-}
-
-.adjust-buttons {
-  display: flex;
-  gap: var(--spacing-gutter);
-  justify-content: center;
-  align-items: center;
 }
