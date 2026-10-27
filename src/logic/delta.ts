@@ -34,3 +34,45 @@ export function classifyDelta(
   }
   return deltaSeconds > 0 ? 'ahead' : 'behind';
 }
+
+/**
+ * Computes the ahead/behind delta in seconds.
+ *
+ * Formula:
+ * Ideal elapsed time = (displayedDistanceKm / assignedStageSpeedKmH) * 3600
+ * Delta in seconds = Ideal elapsed time - actualElapsedSeconds
+ *
+ * Positive delta means ahead of schedule.
+ * Negative delta means behind schedule.
+ *
+ * Returns null if:
+ * - assignedStageSpeedKmH is null, undefined, NaN, or <= 0
+ * - displayedDistanceKm is null, undefined, NaN, or < 0
+ * - actualElapsedSeconds is null, undefined, NaN, or < 0
+ */
+export function computeDeltaSeconds(
+  displayedDistanceKm: number | null | undefined,
+  assignedStageSpeedKmH: number | null | undefined,
+  actualElapsedSeconds: number | null | undefined
+): number | null {
+  if (
+    displayedDistanceKm === null ||
+    displayedDistanceKm === undefined ||
+    Number.isNaN(displayedDistanceKm) ||
+    displayedDistanceKm < 0 ||
+    assignedStageSpeedKmH === null ||
+    assignedStageSpeedKmH === undefined ||
+    Number.isNaN(assignedStageSpeedKmH) ||
+    assignedStageSpeedKmH <= 0 ||
+    actualElapsedSeconds === null ||
+    actualElapsedSeconds === undefined ||
+    Number.isNaN(actualElapsedSeconds) ||
+    actualElapsedSeconds < 0
+  ) {
+    return null;
+  }
+
+  const idealElapsedSeconds = (displayedDistanceKm / assignedStageSpeedKmH) * 3600;
+  return idealElapsedSeconds - actualElapsedSeconds;
+}
+
