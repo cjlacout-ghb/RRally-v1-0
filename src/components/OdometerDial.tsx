@@ -6,6 +6,7 @@ interface OdometerDialProps {
   speed: number | null;
   averageSpeed: number | null;
   distance: number | null;
+  gpsStatusText?: string;
   onAdjust?: (delta: -1 | 1) => void;
 }
 
@@ -36,7 +37,7 @@ const UNIT_FONT_SIZE = 11;  // viewbox units — single source of truth for KM/H
 const SPEED_Y = 91;
 const UNIT_Y = 107;
 
-export function OdometerDial({ speed, averageSpeed, distance, onAdjust }: OdometerDialProps) {
+export function OdometerDial({ speed, averageSpeed, distance, gpsStatusText = '', onAdjust }: OdometerDialProps) {
   const marker = getDialMarker(speed);
 
   const speedText = formatSpeed(speed);
@@ -166,6 +167,11 @@ export function OdometerDial({ speed, averageSpeed, distance, onAdjust }: Odomet
         >
           +1
         </button>
+      </div>
+
+      {/* ── GPS status line: directly under dial, above readouts ── */}
+      <div className="gps-status-line" role="status" aria-live="polite">
+        {gpsStatusText || '\u00A0'}
       </div>
 
       {/* Average + Distance readouts sit directly below the dial row */}

@@ -35,14 +35,16 @@ export class Stopwatch {
 
   /**
    * Starts or resumes the stopwatch.
+   * Optionally accepts explicit wall-clock and monotonic timestamps so multiple
+   * synchronized subsystems (e.g. RallyTracker) share the exact same start instant.
    */
-  start(): void {
+  start(startWallClock?: number, startMonotonic?: number): void {
     if (this.running) {
       return;
     }
     this.running = true;
-    this.startMonotonic = this.clocks.nowMonotonic();
-    this.startWallClock = this.clocks.nowWallClock();
+    this.startWallClock = startWallClock ?? this.clocks.nowWallClock();
+    this.startMonotonic = startMonotonic ?? this.clocks.nowMonotonic();
   }
 
   /**

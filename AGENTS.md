@@ -32,6 +32,10 @@ Out of v1: digital roadbook and tulip cards, sub-stages, race history, accounts,
 - Calibration step 2 measures GPS distance between INICIAR and PARAR over the control zone.
 - GPS: use high accuracy watching. Ignore fixes with poor accuracy (named threshold constant) and avoid accumulating jitter when the car is nearly stopped. Instantaneous speed comes from the device speed value when available, otherwise derived from positions, with light smoothing. If GPS is unavailable or permission is denied, show a short Spanish message and "--,-" instead of fake numbers.
 - Time: use a monotonic clock (performance.now) for stopwatches, never accumulate by counting timer ticks. Time of day comes from the system clock.
+- Single owner of race state (`RaceSessionBridge` / `RaceProvider`): owns exactly one `RallyTracker` and one `GpsReader` instance, hosted above the screens in `App.tsx`. Navigating between Carrera, Preparar Etapa, Calculadora, and Ayuda never interrupts, stops, or resets a running race.
+- Single start instant: when INICIAR is tapped, read the wall clock once (`Date.now()`) and use that single timestamp to start both the main stopwatch and the RallyTracker.
+- GPS reader lifecycle: the reader starts inside the INICIAR tap handler (on user gesture), only when not active. It stays active during PARAR (so instantaneous speed on the dial continues updating while distance and delta stay frozen), and stops only on REINICIAR. Tapping INICIAR retries starting the reader if its state was denied, unavailable, or timeout.
+- Dev-only simulator: query parameters `?sim=1` (or `?sim=true`), `&speed=<km/h>` (default 50), `&seed=<number>` (default 12345). Loaded via dev-guarded dynamic import, completely absent from production builds.
 - Persist only: assigned average speed and correction factor (local storage on the device). Stopwatch state is not persisted in v1.
 
 ## Proposed tech stack
@@ -60,7 +64,9 @@ Vite + React + TypeScript (strict) + vite-plugin-pwa (service worker precaching)
 - Phase 2d: iPhone layout fixes (bottom cut-off scroll padding, dvh) and enhanced ASIGNADO line readability. Done. Note: DESIGN.md was updated and must be re-uploaded to the Claude Project.
 - Phase 2e: Content overlapping iOS status bar when scrolling (fixed status bar cover). Done. Note: DESIGN.md was updated and must be re-uploaded to the Claude Project (together with 2d changes).
 - Phase 2f: ASIGNADO line moved into a dark inset strip (surface-container-lowest background, outline-variant border) with brass value on dark, so the label is legible on all four panel background colors. Done. Note: DESIGN.md was updated and must be re-uploaded to the Claude Project.
-- Phase 3: GPS odometer, corrected distance, speeds, live delta. Pending.
+- Phase 3B: Pure logic for GPS readings, distance, speeds, and delta with unit tests. Done.
+- Phase 3C-1: GPS logic wired to Carrera screen, GPS permission on first INICIAR, single start instant, GPS status line under dial, race state bridge above screens, dev-only simulator wiring. Done. Note: DESIGN.md was updated and must be re-uploaded to the Claude Project.
+- Phase 3C-2: Wake lock and background/foreground handling. Pending.
 - Phase 4: guided calibration. Pending.
 - Phase 5: Calculadora. Pending.
 - Phase 6: Ayuda, polish, full iOS device test. Pending.

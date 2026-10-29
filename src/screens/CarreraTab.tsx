@@ -1,12 +1,11 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { useStopwatch } from '../hooks/useStopwatch';
 import { StopwatchCard } from '../components/StopwatchCard';
 import { OdometerDial } from '../components/OdometerDial';
 import { DeltaPanel } from '../components/DeltaPanel';
 import { formatStopwatch, formatTimeOfDay } from '../logic/format';
-import { classifyDelta } from '../logic/delta';
 import type { DeltaState } from '../logic/delta';
 import { getDemoData } from '../demo';
+import { useRaceSession } from '../context/RaceContext';
 import './CarreraTab.css';
 
 // Demo mode is stripped in production by the build tool (import.meta.env.DEV guard inside getDemoData).
@@ -20,11 +19,18 @@ export function CarreraTab({
   isVisible: boolean;
   assignedSpeed?: number | null;
 }) {
-  // ── Stopwatches ────────────────────────────────────────────────
-  const main = useStopwatch();
-  const secondary = useStopwatch();
+  // ── Race session & Stopwatches (owned above this screen) ─────────
+  const {
+    snapshot,
+    mainStopwatch: main,
+    secondaryStopwatch: secondary,
+    onStartMain,
+    onStopMain,
+    onResetMain,
+    onAdjustDistance,
+  } = useRaceSession();
 
-  // ── Display state ──────────────────────────────────────────────
+  // ── Display state for centisecond timers ────────────────────────
   const [mainDisplay, setMainDisplay] = useState('00:00,00');
   const [secondaryDisplay, setSecondaryDisplay] = useState('00:00,00');
   const [timeOfDay, setTimeOfDay] = useState(() => formatTimeOfDay(new Date()));
@@ -88,26 +94,31 @@ export function CarreraTab({
     };
   }, [isVisible]);
 
-  // ── GPS / odometer data ─────────────────────────────────────────
-  // Demo mode in development feeds static sample values.
-  // In production demoData is null (getDemoData returns null) and these stay null.
-  // Phase 3 will supply real GPS values here.
-  let speed: number | null = null;
-  let averageSpeed: number | null = null;
-  let distance: number | null = null;
-  let deltaSeconds: number | null = null;
-  let deltaState: DeltaState = classifyDelta(null);
+  // ── Telemetry readouts from race session snapshot ───────────────
+  let speed: number | null = snapshot.speed;
+  let averageSpeed: number | null = snapshot.averageSpeed;
+  let distance: number | null = snapshot.distance;
+  let deltaSeconds: number | null = snapshot.deltaSeconds;
+  let deltaState: DeltaState = snapshot.deltaState;
+  let gpsStatusText: string = snapshot.gpsStatusText;
+
+  // ── Demo overrides for development mode ─────────────────────────
   if (import.meta.env.DEV && demoData !== null) {
     speed = demoData.speed;
     averageSpeed = demoData.averageSpeed;
     distance = demoData.distance;
     deltaSeconds = demoData.deltaSeconds;
     deltaState = demoData.deltaState;
+    if (demoData.gpsStatusText !== undefined) {
+      gpsStatusText = demoData.gpsStatusText;
+    }
   }
 
+  // Display distance rounded to nearest 10 m (2 decimals) for display only
+  const roundedDisplayDistance =
+    distance !== null ? Math.round(distance * 100) / 100 : null;
+
   // ── Demo overrides for display strings (static, no real timers) ─
-  // All demo-field accesses are inside the DEV guard so Vite eliminates
-  // the property names entirely from the production bundle.
   let displayTimeOfDay = timeOfDay;
   let displayMain = mainDisplay;
   let displaySecondary = secondaryDisplay;
@@ -137,14 +148,14 @@ export function CarreraTab({
           <button
             type="button"
             className="btn-primary stopwatch-btn"
-            onClick={main.isRunning ? main.stop : main.start}
+            onClick={main.isRunning ? onStopMain : onStartMain}
           >
             {main.isRunning ? 'PARAR' : 'INICIAR'}
           </button>
           <button
             type="button"
             className="btn-primary stopwatch-btn"
-            onClick={main.reset}
+            onClick={onResetMain}
           >
             REINICIAR
           </button>
@@ -155,7 +166,9 @@ export function CarreraTab({
       <OdometerDial
         speed={speed}
         averageSpeed={averageSpeed}
-        distance={distance}
+        distance={roundedDisplayDistance}
+        gpsStatusText={gpsStatusText}
+        onAdjust={onAdjustDistance}
       />
 
       {/* ── Ahead/behind panel ───────────────────────────────── */}

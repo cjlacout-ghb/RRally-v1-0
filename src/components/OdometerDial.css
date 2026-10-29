@@ -128,6 +128,20 @@
   }
 }
 
+/* ── GPS status line: directly under dial, above readouts ───────────── */
+
+.gps-status-line {
+  min-height: var(--typography-body-md-line-height);
+  line-height: var(--typography-body-md-line-height);
+  text-align: center;
+  font-family: var(--font-sans);
+  font-size: var(--typography-body-md-font-size);
+  font-weight: var(--typography-body-md-font-weight);
+  color: var(--color-on-surface-variant);
+  white-space: normal;
+  word-break: normal;
+}
+
 /* ── PROMEDIO / DISTANCIA readout grid ──────────────────────────────── */
 
 .readouts-grid {

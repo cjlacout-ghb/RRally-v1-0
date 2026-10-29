@@ -9,6 +9,7 @@
 
 import { destinationCoordinate } from './geo';
 import type { GpsReading, GpsReader, GpsStatus } from './gpsReader';
+import { type Clocks, defaultClocks } from './stopwatch';
 
 export type BadReadingType =
   | 'poor_accuracy'
@@ -33,8 +34,10 @@ export interface GpsSimulatorOptions {
   accuracyMeters?: number;
   /** Time step interval in milliseconds. Default: 1000. */
   intervalMs?: number;
-  /** Starting epoch timestamp in ms. Default: 1700000000000. */
+  /** Starting epoch timestamp in ms. If omitted, live wall clock is used. */
   startTimeMs?: number;
+  /** Time providers for testability and live simulation. */
+  clocks?: Clocks;
 }
 
 /**
@@ -62,10 +65,14 @@ export class GpsSimulator implements GpsReader {
   private readonly noiseMeters: number;
   private readonly accuracyMeters: number;
   private readonly intervalMs: number;
+  private readonly clocks: Clocks;
+  private readonly isExplicitStartTime: boolean;
+  private isLiveMode: boolean;
 
   private currentLat: number;
   private currentLon: number;
   private currentTimestamp: number;
+  private lastEmittedTimestamp: number | null = null;
   private pendingBadReading: BadReadingType | null = null;
 
   constructor(options: GpsSimulatorOptions = {}) {
@@ -77,9 +84,13 @@ export class GpsSimulator implements GpsReader {
     this.noiseMeters = options.noiseMeters ?? 0.5;
     this.accuracyMeters = options.accuracyMeters ?? 5;
     this.intervalMs = options.intervalMs ?? 1000;
+    this.clocks = options.clocks ?? defaultClocks;
 
     this.currentLat = options.startLatitude ?? -34.6037;
     this.currentLon = options.startLongitude ?? -58.3816;
+
+    this.isExplicitStartTime = options.startTimeMs !== undefined;
+    this.isLiveMode = options.startTimeMs === undefined && options.clocks !== undefined;
     this.currentTimestamp = options.startTimeMs ?? 1700000000000;
   }
 
@@ -116,35 +127,51 @@ export class GpsSimulator implements GpsReader {
     const badType = badReadingOverride ?? this.pendingBadReading;
     this.pendingBadReading = null;
 
+    let readingTimestamp: number;
+    if (this.isLiveMode) {
+      const now = this.clocks.nowWallClock();
+      if (this.lastEmittedTimestamp !== null && now <= this.lastEmittedTimestamp) {
+        readingTimestamp = this.lastEmittedTimestamp + 1;
+      } else {
+        readingTimestamp = now;
+      }
+      this.currentTimestamp = readingTimestamp;
+    } else {
+      this.currentTimestamp += this.intervalMs;
+      readingTimestamp = this.currentTimestamp;
+    }
+
     let reading: GpsReading;
 
     if (badType === 'poor_accuracy') {
-      this.currentTimestamp += this.intervalMs;
+      this.lastEmittedTimestamp = readingTimestamp;
       reading = {
         latitude: this.currentLat,
         longitude: this.currentLon,
         accuracy: 45, // > 30m threshold
         speed: this.speedKmH / 3.6,
-        timestamp: this.currentTimestamp,
+        timestamp: readingTimestamp,
       };
     } else if (badType === 'duplicate_timestamp') {
+      const duplicateTs = this.lastEmittedTimestamp ?? readingTimestamp;
       reading = {
         latitude: this.currentLat,
         longitude: this.currentLon,
         accuracy: this.accuracyMeters,
         speed: this.speedKmH / 3.6,
-        timestamp: this.currentTimestamp, // Same timestamp as previous
+        timestamp: duplicateTs, // Same timestamp as previous
       };
     } else if (badType === 'out_of_order_timestamp') {
+      const baseTs = this.lastEmittedTimestamp ?? readingTimestamp;
       reading = {
         latitude: this.currentLat,
         longitude: this.currentLon,
         accuracy: this.accuracyMeters,
         speed: this.speedKmH / 3.6,
-        timestamp: this.currentTimestamp - 1000, // Older timestamp
+        timestamp: baseTs - 1000, // Older timestamp
       };
     } else if (badType === 'implausible_jump') {
-      this.currentTimestamp += this.intervalMs;
+      this.lastEmittedTimestamp = readingTimestamp;
       // Jump 5000 meters in 1 second (implies 5000 m/s > 70 m/s)
       const jumped = destinationCoordinate(
         this.currentLat,
@@ -159,11 +186,11 @@ export class GpsSimulator implements GpsReader {
         longitude: this.currentLon,
         accuracy: this.accuracyMeters,
         speed: this.speedKmH / 3.6,
-        timestamp: this.currentTimestamp,
+        timestamp: readingTimestamp,
       };
     } else {
+      this.lastEmittedTimestamp = readingTimestamp;
       // Normal tick: advance position and add small pseudo-random noise
-      this.currentTimestamp += this.intervalMs;
       const speedMps = this.speedKmH / 3.6;
       const stepDistanceMeters = speedMps * (this.intervalMs / 1000);
 
@@ -192,7 +219,7 @@ export class GpsSimulator implements GpsReader {
         longitude: this.currentLon,
         accuracy: this.accuracyMeters,
         speed: speedMps,
-        timestamp: this.currentTimestamp,
+        timestamp: readingTimestamp,
       };
     }
 
@@ -206,6 +233,9 @@ export class GpsSimulator implements GpsReader {
   start(): void {
     if (this.status === 'active') return;
     this.status = 'active';
+    if (!this.isExplicitStartTime) {
+      this.isLiveMode = true;
+    }
     for (const listener of this.statusListeners) {
       listener('active');
     }
@@ -220,6 +250,7 @@ export class GpsSimulator implements GpsReader {
       this.timerId = null;
     }
     this.status = 'idle';
+    this.lastEmittedTimestamp = null;
     for (const listener of this.statusListeners) {
       listener('idle');
     }

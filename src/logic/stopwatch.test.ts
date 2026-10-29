@@ -51,6 +51,18 @@ describe('Stopwatch', () => {
     expect(sw.getElapsedMs()).toBe(3500);
   });
 
+  it('accepts explicit start timestamps for synchronized multi-subsystem starts', () => {
+    const { clocks, advanceBoth } = createMockClocks(1000, 50000);
+    const sw = new Stopwatch(clocks);
+
+    // Explicit start at wall clock 50000 and monotonic 1000
+    sw.start(50000, 1000);
+    expect(sw.isRunning()).toBe(true);
+
+    advanceBoth(500);
+    expect(sw.getElapsedMs()).toBe(500);
+  });
+
   it('stops and preserves accumulated time, then resumes with INICIAR', () => {
     const { clocks, advanceBoth } = createMockClocks(1000, 50000);
     const sw = new Stopwatch(clocks);

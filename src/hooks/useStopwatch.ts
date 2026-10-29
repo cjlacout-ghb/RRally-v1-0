@@ -10,7 +10,7 @@ import { Stopwatch } from '../logic/stopwatch';
 export interface UseStopwatchResult {
   stopwatch: Stopwatch;
   isRunning: boolean;
-  start: () => void;
+  start: (startWallClock?: number, startMonotonic?: number) => void;
   stop: () => void;
   reset: () => void;
   /** Call this when a tick fires to get the updated elapsed time in ms. */
@@ -21,8 +21,8 @@ export function useStopwatch(): UseStopwatchResult {
   const stopwatchRef = useRef<Stopwatch>(new Stopwatch());
   const [isRunning, setIsRunning] = useState(false);
 
-  const start = useCallback(() => {
-    stopwatchRef.current.start();
+  const start = useCallback((startWallClock?: number, startMonotonic?: number) => {
+    stopwatchRef.current.start(startWallClock, startMonotonic);
     setIsRunning(true);
   }, []);
 

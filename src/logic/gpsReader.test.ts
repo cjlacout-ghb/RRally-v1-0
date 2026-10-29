@@ -152,6 +152,22 @@ describe('BrowserGpsReader', () => {
     expect(statuses).toEqual(['active', 'timeout', 'active', 'unavailable', 'active']);
   });
 
+  it('re-tries starting geolocation when start() is called from denied, unavailable, or timeout', () => {
+    const reader = new BrowserGpsReader();
+    reader.start();
+    expect(watchPositionMock).toHaveBeenCalledTimes(1);
+
+    // Simulate permission denied
+    const errorCb = watchPositionMock.mock.calls[0][1];
+    errorCb({ code: 1, PERMISSION_DENIED: 1, POSITION_UNAVAILABLE: 2, TIMEOUT: 3 });
+    expect(reader.getStatus()).toBe('denied');
+
+    // User taps INICIAR again -> re-try start()
+    reader.start();
+    expect(watchPositionMock).toHaveBeenCalledTimes(2);
+    expect(reader.getStatus()).toBe('active');
+  });
+
   it('stops watch and restores "idle" status on stop()', () => {
     watchPositionMock.mockReturnValue(42);
     const reader = new BrowserGpsReader();

@@ -78,6 +78,11 @@ export class BrowserGpsReader implements GpsReader {
     };
 
     try {
+      if (this.watchId !== null) {
+        navigator.geolocation.clearWatch(this.watchId);
+        this.watchId = null;
+      }
+
       this.watchId = navigator.geolocation.watchPosition(
         (position: GeolocationPosition) => {
           this.updateStatus('active');

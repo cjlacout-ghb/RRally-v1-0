@@ -254,6 +254,40 @@ describe('RallyTracker', () => {
       // 5.1 seconds later: stale
       expect(tracker.getInstantaneousSpeedKmH(105100)).toBeNull();
     });
+
+    it('updates instantaneous speed from readings arriving while stopped (PARAR), with distance and delta frozen', () => {
+      const tracker = new RallyTracker({
+        clocks: mockClocks,
+        assignedSpeedKmH: 60,
+      });
+      tracker.start(100000);
+
+      const r1 = createReading(0, 0, 10, 100000);
+      tracker.processReading(r1);
+
+      const dest = destinationCoordinate(0, 0, 100, 0);
+      const r2 = createReading(dest.latitude, dest.longitude, 10, 105000);
+      tracker.processReading(r2);
+
+      const distBeforeStop = tracker.getDisplayedDistanceKm();
+      const deltaBeforeStop = tracker.getDeltaSeconds();
+
+      // PARAR
+      tracker.stop(106000);
+      expect(tracker.isRunning()).toBe(false);
+
+      // Readings arrive while stopped with new speed (e.g. 20 m/s = 72 km/h)
+      const destWhileStopped = destinationCoordinate(dest.latitude, dest.longitude, 20, 0);
+      const r3 = createReading(destWhileStopped.latitude, destWhileStopped.longitude, 20, 107000);
+      tracker.processReading(r3);
+
+      // Instantaneous speed updates to 72 km/h (smoothed)
+      expect(tracker.getInstantaneousSpeedKmH(107000)).toBeGreaterThan(50);
+
+      // Distance and delta remain strictly frozen
+      expect(tracker.getDisplayedDistanceKm()).toBe(distBeforeStop);
+      expect(tracker.getDeltaSeconds()).toBe(deltaBeforeStop);
+    });
   });
 
   describe('Average speed', () => {

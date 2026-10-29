@@ -98,7 +98,7 @@ Rules that apply everywhere:
 - Depth is expressed only with tonal surface layers and 1px borders.
 - Every screen has one clear primary element; nothing decorative competes with the numbers.
 - Never use color as the only signal. Always pair it with a text label.
-- All user-facing text is in Spanish (Argentina). Use short, plain words. Fixed labels: CARRERA and CALCULADORA (tabs), INICIAR, PARAR, REINICIAR, APLICAR, SIGUIENTE, ADELANTADO, ATRASADO, EN TIEMPO, SIN DATOS, ASIGNADO, HORA OFICIAL, PROMEDIO, DISTANCIA, CRONÓMETRO 2, KM/H, KM, SEG. Screen titles: PREPARAR ETAPA, CALIBRAR ODÓMETRO, AYUDA.
+- All user-facing text is in Spanish (Argentina). Use short, plain words. Fixed labels: CARRERA and CALCULADORA (tabs), INICIAR, PARAR, REINICIAR, APLICAR, SIGUIENTE, ADELANTADO, ATRASADO, EN TIEMPO, SIN DATOS, ASIGNADO, HORA OFICIAL, PROMEDIO, DISTANCIA, CRONÓMETRO 2, KM/H, KM, SEG. GPS status line messages: BUSCANDO GPS…, GPS SIN PERMISO: activalo en Ajustes de iOS, GPS NO DISPONIBLE. Screen titles: PREPARAR ETAPA, CALIBRAR ODÓMETRO, AYUDA.
 
 ## Colors
 
@@ -131,7 +131,7 @@ Header on the two main tabs: the text "RR" (Space Mono, `primary`) on the left; 
 
 Main screen ("Carrera" tab), top to bottom:
 1. **Time block**: time of day (label: HORA OFICIAL), and the main stopwatch with INICIAR/PARAR and REINICIAR buttons.
-2. **Odometer dial**: one circular dial with instantaneous speed as the dominant number; average speed and distance as digital readouts; manual distance adjustment with -1 (left of dial) and +1 (right of dial) buttons flanking the dial.
+2. **Odometer dial**: one circular dial with instantaneous speed as the dominant number; the GPS status line directly below the dial; average speed and distance as digital readouts; manual distance adjustment with -1 (left of dial) and +1 (right of dial) buttons flanking the dial.
 3. **Ahead/behind panel**: the largest element on the screen after the dial; see Components.
 4. **Second stopwatch**: free use (splits or countdown), visually smaller than the main one.
 5. **Bottom tab bar**: two tabs, "Carrera" and "Calculadora".
@@ -165,6 +165,17 @@ Flat. Three tonal levels only: `background`, `surface-container` (cards and bloc
 - Allowed ornaments (exception to the no-ornament rule): one faint 1px `outline-variant` ring just outside the dial face, and one thin dotted 1px `outline-variant` guide ring just inside the ticks. No gradients, glows, bezels, or shadows.
 - Center: the instantaneous speed digits and **KM/H** (brass) below them. Both are rendered as SVG `<text>` elements in viewbox units so they scale proportionally with the dial diameter at every viewport size — no per-breakpoint duplication. The speed digits are vertically centered in the dial, occupying roughly half the dial's diameter in width for maximum legibility while maintaining at least 6px clearance from every numeral, tick, and ring at 320px width. KM/H sits directly below and clears the 0 and 120 numerals. The no-data state shows "--,-". Below the dial: average speed (PROMEDIO) and distance (DISTANCIA) in `headline-lg`, each with its unit label. On the Carrera tab, the DISTANCIA readout shows 2 decimal places (e.g. 14,82 KM; placeholder "--,--") rounded to the nearest 10 meters, while calculations retain full precision.
 - The -1 and +1 distance-adjustment buttons flank the dial on the left and right respectively, vertically centered on it.
+
+### GPS status line
+- Position: directly below the odometer dial, above the PROMEDIO and DISTANCIA readouts. Centered, Chivo, `body-md` (14px, line-height 20px), color `on-surface-variant`. No icon, no background, no animation.
+- Reserved height: always reserves one line of height (20px) so elements below never shift when text appears or disappears. At 320px width the permission-denied message may wrap to two lines; the block may grow only in this state.
+- Visibility rules:
+  - Idle (before first INICIAR, or after REINICIAR): empty.
+  - Reader started and no valid reading yet, or no valid reading for `STALE_SPEED_TIMEOUT_MS` (5s), or reader state is timeout: "BUSCANDO GPS…". A reading suppressed as stationary jitter counts as valid for this purpose.
+  - Reader state denied: "GPS SIN PERMISO: activalo en Ajustes de iOS".
+  - Reader state unavailable: "GPS NO DISPONIBLE".
+  - Receiving valid, fresh readings: empty.
+- Color is never the only signal; this status line is text only.
 
 ### Ahead / Behind panel
 - Full-width block with the signed difference in seconds (positive = ahead, negative = behind), plus a text label ("ADELANTADO", "ATRASADO", "EN TIEMPO" or "SIN DATOS"). The label is mandatory so the state is readable without color.

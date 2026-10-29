@@ -42,6 +42,8 @@ export interface DemoData {
   mainStopwatch: string;
   /** Static secondary stopwatch display string. e.g. "01:59:59,99". */
   secondaryStopwatch: string;
+  /** Optional GPS status line override. e.g. "BUSCANDO GPS…" */
+  gpsStatusText?: string;
 }
 
 /** Returns demo data if running in development with ?demo=<preset>, otherwise null. */
@@ -106,7 +108,65 @@ export function getDemoData(): DemoData | null {
       averageSpeed: null,
       distance: null,
       deltaSeconds: null,
-      deltaState: 'neutral',
+      deltaState: 'no-data',
+    },
+
+    // GPS status line presets (Phase 3C-1)
+    searching: {
+      ...WORST_COMMON,
+      speed: null,
+      averageSpeed: null,
+      distance: null,
+      deltaSeconds: null,
+      deltaState: 'no-data',
+      gpsStatusText: 'BUSCANDO GPS…',
+    },
+    gps_searching: {
+      ...WORST_COMMON,
+      speed: null,
+      averageSpeed: null,
+      distance: null,
+      deltaSeconds: null,
+      deltaState: 'no-data',
+      gpsStatusText: 'BUSCANDO GPS…',
+    },
+
+    denied: {
+      ...WORST_COMMON,
+      speed: null,
+      averageSpeed: null,
+      distance: null,
+      deltaSeconds: null,
+      deltaState: 'no-data',
+      gpsStatusText: 'GPS SIN PERMISO: activalo en Ajustes de iOS',
+    },
+    gps_denied: {
+      ...WORST_COMMON,
+      speed: null,
+      averageSpeed: null,
+      distance: null,
+      deltaSeconds: null,
+      deltaState: 'no-data',
+      gpsStatusText: 'GPS SIN PERMISO: activalo en Ajustes de iOS',
+    },
+
+    unavailable: {
+      ...WORST_COMMON,
+      speed: null,
+      averageSpeed: null,
+      distance: null,
+      deltaSeconds: null,
+      deltaState: 'no-data',
+      gpsStatusText: 'GPS NO DISPONIBLE',
+    },
+    gps_unavailable: {
+      ...WORST_COMMON,
+      speed: null,
+      averageSpeed: null,
+      distance: null,
+      deltaSeconds: null,
+      deltaState: 'no-data',
+      gpsStatusText: 'GPS NO DISPONIBLE',
     },
 
     // Typical values — for visual comparison against worst-case
