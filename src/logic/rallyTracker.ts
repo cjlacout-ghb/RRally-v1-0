@@ -288,7 +288,39 @@ export class RallyTracker {
     return this.running;
   }
 
-  getDeltaSeconds(): number | null {
+  /**
+   * Returns whether the last accepted reading is stale (> STALE_SPEED_TIMEOUT_MS)
+   * relative to the given timestamp (or wall clock).
+   * Returns false if no reading has been accepted yet.
+   */
+  isStale(currentTimeMs?: number): boolean {
+    if (!this.lastAcceptedReading) return false;
+    const now = currentTimeMs ?? this.clocks.nowWallClock();
+    return now - this.lastAcceptedReading.timestamp > STALE_SPEED_TIMEOUT_MS;
+  }
+
+  /**
+   * Returns the ahead/behind delta in seconds.
+   *
+   * - If no reading has arrived yet or assignedSpeedKmH is missing, returns null (SIN DATOS).
+   * - If running and currentElapsedMs is provided and the latest reading is stale
+   *   (> STALE_SPEED_TIMEOUT_MS), computes the delta using current elapsed race time
+   *   and the last known displayed distance so the delta keeps drifting while stationary.
+   * - Otherwise, returns the delta evaluated at the exact physical timestamp of the latest fix.
+   */
+  getDeltaSeconds(currentElapsedMs?: number, currentTimeMs?: number): number | null {
+    if (this.latestReadingElapsedSeconds === null) {
+      return null;
+    }
+
+    if (this.running && currentElapsedMs !== undefined && this.isStale(currentTimeMs)) {
+      return computeDeltaSeconds(
+        this.getDisplayedDistanceKm(),
+        this.assignedSpeedKmH,
+        currentElapsedMs / 1000
+      );
+    }
+
     return this.deltaSeconds;
   }
 
@@ -298,14 +330,13 @@ export class RallyTracker {
 
   /**
    * Returns smoothed instantaneous speed in km/h.
-   * Returns null if no accepted reading has arrived for > 5000 ms (stale).
+   * Returns null if no accepted reading has arrived for > STALE_SPEED_TIMEOUT_MS (stale).
    */
   getInstantaneousSpeedKmH(currentTimeMs?: number): number | null {
     if (!this.lastAcceptedReading || this.latestSmoothedSpeedKmH === null) {
       return null;
     }
-    const now = currentTimeMs ?? this.clocks.nowWallClock();
-    if (now - this.lastAcceptedReading.timestamp > STALE_SPEED_TIMEOUT_MS) {
+    if (this.isStale(currentTimeMs)) {
       return null;
     }
     return this.latestSmoothedSpeedKmH;

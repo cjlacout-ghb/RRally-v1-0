@@ -121,24 +121,43 @@ function RaceProviderInner({
 
   // Subscribe to bridge updates
   useEffect(() => {
+    // 1-second refresh ticker for stale speed and time-based status/delta rules.
+    // Only runs while the stopwatch is running and page is visible, so it doesn't waste battery.
+    let interval: number | null = null;
+
+    const syncTicker = () => {
+      const shouldRun = bridge.stopwatch.isRunning() && document.visibilityState === 'visible';
+      if (shouldRun && interval === null) {
+        interval = window.setInterval(() => {
+          bridge.tick();
+        }, 1000);
+      } else if (!shouldRun && interval !== null) {
+        window.clearInterval(interval);
+        interval = null;
+      }
+    };
+
+    syncTicker();
+
     const unsub = bridge.subscribe((nextSnapshot) => {
       setSnapshot(nextSnapshot);
+      syncTicker();
     });
-
-    // 1-second refresh ticker for stale speed and time-based status rules
-    const interval = window.setInterval(() => {
-      bridge.tick();
-    }, 1000);
 
     // Foreground recovery and wake lock re-acquisition on visibility change
     const handleVisibilityChange = () => {
-      bridge.onVisibilityChange(document.visibilityState === 'visible');
+      const isVisible = document.visibilityState === 'visible';
+      bridge.onVisibilityChange(isVisible);
+      syncTicker();
     };
     document.addEventListener('visibilitychange', handleVisibilityChange);
 
     return () => {
       unsub();
-      window.clearInterval(interval);
+      if (interval !== null) {
+        window.clearInterval(interval);
+        interval = null;
+      }
       document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
   }, [bridge]);

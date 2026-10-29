@@ -27,14 +27,15 @@ Out of v1: digital roadbook and tulip cards, sub-stages, race history, accounts,
 - Corrected distance D = accumulated GPS distance x correction factor + manual adjustments.
 - Manual adjustment: the -1 and +1 buttons change the corrected distance by one step. The step size is a single named constant, default 10 meters.
 - Average speed = D / main stopwatch time.
-- Ahead/behind delta in seconds = (D / V x 3600) - elapsed seconds. Positive means ahead, negative means behind. Show one decimal with sign. Neutral band is +/-0,10 s (a single named constant) and shows EN TIEMPO; otherwise ADELANTADO or ATRASADO. Refresh the delta about 10 times per second.
+- Ahead/behind delta in seconds = (D / V x 3600) - elapsed seconds. Positive means ahead, negative means behind. Show one decimal with sign. Neutral band is +/-0,10 s (a single named constant) and shows EN TIEMPO; otherwise ADELANTADO or ATRASADO. Refresh the delta about 10 times per second. While readings are fresh, delta uses the physical fix timestamp; during stale gaps (> STALE_SPEED_TIMEOUT_MS, 5s), it drifts with the wall clock using current elapsed race time and last known distance.
+- Shared stale threshold: `STALE_SPEED_TIMEOUT_MS` (5000 ms) is defined once in `gpsConstants.ts` and shared by the 0,0 km/h stationary speed rule, the status line visibility rule, and the stale delta drift rule.
 - Correction factor = official zone distance / distance measured by the app, rounded to 4 decimals, default 1,0000. It is persisted and applied to all subsequent GPS distance.
 - Calibration step 2 measures GPS distance between INICIAR and PARAR over the control zone.
 - GPS: use high accuracy watching. Ignore fixes with poor accuracy (named threshold constant) and avoid accumulating jitter when the car is nearly stopped. Instantaneous speed comes from the device speed value when available, otherwise derived from positions, with light smoothing. If GPS is unavailable or permission is denied, show a short Spanish message and "--,-" instead of fake numbers.
 - Time: use a monotonic clock (performance.now) for stopwatches, never accumulate by counting timer ticks. Time of day comes from the system clock.
 - Single owner of race state (`RaceSessionBridge` / `RaceProvider`): owns exactly one `RallyTracker` and one `GpsReader` instance, hosted above the screens in `App.tsx`. Navigating between Carrera, Preparar Etapa, Calculadora, and Ayuda never interrupts, stops, or resets a running race.
 - Single start instant: when INICIAR is tapped, read the wall clock once (`Date.now()`) and use that single timestamp to start both the main stopwatch and the RallyTracker.
-- GPS reader lifecycle: the reader starts inside the INICIAR tap handler (on user gesture), only when not active. It stays active during PARAR (so instantaneous speed on the dial continues updating while distance and delta stay frozen), and stops only on REINICIAR. Tapping INICIAR retries starting the reader if its state was denied, unavailable, or timeout.
+- GPS reader lifecycle: the reader starts inside the INICIAR tap handler (on user gesture), only when not active. It stops on PARAR (clearing the watch) and restarts on INICIAR (resume). On each start or resume, the "has received a valid reading" memory resets, so the GPS status line shows "BUSCANDO GPS…" until the first valid reading arrives. Once a valid reading is received, stationary gaps do not trigger "BUSCANDO GPS…" and instantaneous speed reads 0,0 km/h after the stale timeout. REINICIAR resets everything, stops the reader, and restores idle status. Tapping INICIAR retries starting the reader if its state was denied, unavailable, or timeout.
 - Screen Wake Lock lifecycle & foreground recovery:
   - Wake lock is acquired inside the INICIAR handler (user gesture), released on PARAR and REINICIAR. Never hold duplicate locks.
   - If unsupported or refused (low battery, system policy), it degrades silently with no UI effect.
@@ -73,6 +74,8 @@ Vite + React + TypeScript (strict) + vite-plugin-pwa (service worker precaching)
 - Phase 3B: Pure logic for GPS readings, distance, speeds, and delta with unit tests. Done.
 - Phase 3C-1: GPS logic wired to Carrera screen, GPS permission on first INICIAR, single start instant, GPS status line under dial, race state bridge above screens, dev-only simulator wiring. Done. Note: DESIGN.md was updated and must be re-uploaded to the Claude Project.
 - Phase 3C-2: Wake lock and background/foreground handling, GPS status line styles. Done. Note: DESIGN.md was updated and must be re-uploaded to the Claude Project.
+- Phase 3D-1: GPS stationary behavior and PARAR reader lifecycle adjustments. Done. Note: DESIGN.md was updated and must be re-uploaded to the Claude Project.
+- Phase 3D-2: Delta drift with wall clock during stale stationary gaps. Done. Note: DESIGN.md was updated and must be re-uploaded to the Claude Project.
 - Phase 4: guided calibration. Pending.
 - Phase 5: Calculadora. Pending.
 - Phase 6: Ayuda, polish, full iOS device test. Pending.

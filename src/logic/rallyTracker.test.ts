@@ -617,4 +617,122 @@ describe('RallyTracker', () => {
       expect(freshTracker.getAverageSpeedKmH()).toBeNull();
     });
   });
+
+  describe('Phase 3D-2: Stale reading delta drift with wall clock', () => {
+    it('fresh readings keep the per-reading delta', () => {
+      const tracker = new RallyTracker({
+        clocks: mockClocks,
+        assignedSpeedKmH: 60,
+      });
+      tracker.start(100000);
+
+      tracker.processReading(createReading(0, 0, 20, 100000));
+
+      // 1000m in 50s at 60 km/h: ideal 60s, actual 50s -> delta +10.0s
+      const dest = destinationCoordinate(0, 0, 1000, 0);
+      tracker.processReading(createReading(dest.latitude, dest.longitude, 20, 150000));
+
+      // Fresh reading: 2 seconds later (152000), clock elapsed is 52s (52000ms)
+      // Delta must remain +10.0s from the fix timestamp, NOT 60 - 52 = +8.0s
+      expect(tracker.getDeltaSeconds(52000, 152000)).toBeCloseTo(10.0, 1);
+    });
+
+    it('after stale threshold (>5s), delta drifts with the clock toward behind (more negative)', () => {
+      const tracker = new RallyTracker({
+        clocks: mockClocks,
+        assignedSpeedKmH: 60,
+      });
+      tracker.start(100000);
+
+      tracker.processReading(createReading(0, 0, 20, 100000));
+
+      // 1000m in 50s: ideal 60s -> delta +10.0s
+      const dest = destinationCoordinate(0, 0, 1000, 0);
+      tracker.processReading(createReading(dest.latitude, dest.longitude, 20, 150000));
+      expect(tracker.getDeltaSeconds()).toBeCloseTo(10.0, 1);
+
+      // Car stops at a light: 30 seconds elapse since last fix (wall clock = 180000, elapsed = 80000ms)
+      // Ideal time for 1.0 km at 60 km/h: 60s
+      // Current actual elapsed: 80s
+      // Expected delta: 60 - 80 = -20.0s (drifted by exactly -30s from +10.0s)
+      const staleDelta = tracker.getDeltaSeconds(80000, 180000);
+      expect(staleDelta).toBeCloseTo(-20.0, 1);
+    });
+
+    it('manual adjustment while stale recomputes delta using current elapsed time', () => {
+      const tracker = new RallyTracker({
+        clocks: mockClocks,
+        assignedSpeedKmH: 60,
+      });
+      tracker.start(100000);
+
+      tracker.processReading(createReading(0, 0, 20, 100000));
+      const dest = destinationCoordinate(0, 0, 1000, 0);
+      tracker.processReading(createReading(dest.latitude, dest.longitude, 20, 150000));
+
+      // Stale at 80s elapsed: distance = 1.0 km, delta = -20.0s
+      expect(tracker.getDeltaSeconds(80000, 180000)).toBeCloseTo(-20.0, 1);
+
+      // Adjust distance +1 (+10m = 0.010 km -> 1.010 km)
+      // Ideal time for 1.010 km at 60 km/h = 60.6s
+      // Actual elapsed = 80.0s
+      // Delta = 60.6 - 80.0 = -19.4s
+      tracker.adjustDistance(1);
+      expect(tracker.getDeltaSeconds(80000, 180000)).toBeCloseTo(-19.4, 1);
+    });
+
+    it('new valid reading after a gap returns to normal per-reading calculation', () => {
+      const tracker = new RallyTracker({
+        clocks: mockClocks,
+        assignedSpeedKmH: 60,
+      });
+      tracker.start(100000);
+
+      tracker.processReading(createReading(0, 0, 20, 100000));
+      const dest1 = destinationCoordinate(0, 0, 1000, 0);
+      tracker.processReading(createReading(dest1.latitude, dest1.longitude, 20, 150000));
+
+      // 30s gap: stale delta is -20.0s at 180000
+      expect(tracker.getDeltaSeconds(80000, 180000)).toBeCloseTo(-20.0, 1);
+
+      // Car moves again and new reading arrives at 185000 (85s elapsed), having covered another 500m (total 1.500 km)
+      // Ideal time for 1.500 km at 60 km/h = 90s
+      // Reading actual elapsed = 85s
+      // New delta = 90 - 85 = +5.0s
+      const dest2 = destinationCoordinate(dest1.latitude, dest1.longitude, 500, 0);
+      tracker.processReading(createReading(dest2.latitude, dest2.longitude, 20, 185000));
+
+      // Fresh reading: evaluated at 186000 (1s later, not stale yet)
+      expect(tracker.getDeltaSeconds(86000, 186000)).toBeCloseTo(5.0, 1);
+    });
+
+    it('stays in no-data state (null) before first valid reading', () => {
+      const tracker = new RallyTracker({
+        clocks: mockClocks,
+        assignedSpeedKmH: 60,
+      });
+      tracker.start(100000);
+
+      // Clock advances by 20s, but no reading has arrived
+      expect(tracker.getDeltaSeconds(20000, 120000)).toBeNull();
+    });
+
+    it('PARAR freezes the delta and prevents further drift', () => {
+      const tracker = new RallyTracker({
+        clocks: mockClocks,
+        assignedSpeedKmH: 60,
+      });
+      tracker.start(100000);
+
+      tracker.processReading(createReading(0, 0, 20, 100000));
+      const dest = destinationCoordinate(0, 0, 1000, 0);
+      tracker.processReading(createReading(dest.latitude, dest.longitude, 20, 150000));
+
+      // Stop (PARAR) at 155000
+      tracker.stop(155000);
+
+      // Delta frozen at last reading's delta (+10.0s)
+      expect(tracker.getDeltaSeconds(90000, 190000)).toBeCloseTo(10.0, 1);
+    });
+  });
 });

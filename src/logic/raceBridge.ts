@@ -135,6 +135,11 @@ export class RaceSessionBridge {
     this.stopwatch.start(now, nowMono);
     this.tracker.start(now);
 
+    // Each start (or resume) resets the memory of having received a valid reading,
+    // so the GPS status line shows "BUSCANDO GPS…" until the first valid reading arrives.
+    this.hasReceivedReading = false;
+    this.lastReadingTimestamp = null;
+
     const status = this.reader.getStatus();
     if (
       status === 'idle' ||
@@ -153,15 +158,16 @@ export class RaceSessionBridge {
 
   /**
    * Pauses the race (PARAR).
-   * Freezes stopwatch and tracker; GPS reader STAYS ACTIVE to keep updating
-   * instantaneous speed on the dial while stopped.
+   * Freezes stopwatch and tracker; stops the GPS reader (clears watch)
+   * and clears the GPS status line (empty).
    * Releases the screen wake lock.
    */
   stop(stopWallClock?: number): void {
     const now = stopWallClock ?? this.clocks.nowWallClock();
     this.stopwatch.stop();
     this.tracker.stop(now);
-    // Reader stays active per specification
+    this.reader.stop();
+    this.lastReadingTimestamp = null;
     void this.wakeLock.release();
     this.notifyListeners();
   }
@@ -214,7 +220,7 @@ export class RaceSessionBridge {
       // 1. Correct stopwatch for monotonic stall during page hide / screen lock
       this.stopwatch.onVisibilityChange(true);
 
-      // 2. Restart a stalled GPS reader (timeout/unavailable), but not if denied or idle
+      // 2. Restart a stalled GPS reader (timeout/unavailable), but only if running and not denied or idle
       const status = this.reader.getStatus();
       const now = this.clocks.nowWallClock();
       const isStale =
@@ -222,9 +228,10 @@ export class RaceSessionBridge {
         now - this.lastReadingTimestamp > STALE_SPEED_TIMEOUT_MS;
 
       if (
-        status === 'timeout' ||
-        status === 'unavailable' ||
-        (status === 'active' && isStale)
+        this.stopwatch.isRunning() &&
+        (status === 'timeout' ||
+          status === 'unavailable' ||
+          (status === 'active' && isStale))
       ) {
         this.reader.start();
       }
@@ -243,20 +250,34 @@ export class RaceSessionBridge {
    */
   getSnapshot(): RaceSnapshot {
     const now = this.clocks.nowWallClock();
-    const speed = this.tracker.getInstantaneousSpeedKmH(now);
+    const isRunning = this.stopwatch.isRunning();
+
+    // Speed calculation:
+    // - While stopped (idle or after PARAR), instantaneous speed is null ("--,-") because there are no live readings.
+    // - While running, if at least one valid reading has arrived, a gap > STALE_SPEED_TIMEOUT_MS displays 0,0 km/h.
+    // - While running before the first reading, speed is null ("--,-").
+    let speed: number | null = null;
+    if (isRunning) {
+      if (this.hasReceivedReading) {
+        const rawSpeed = this.tracker.getInstantaneousSpeedKmH(now);
+        speed = rawSpeed ?? 0;
+      } else {
+        speed = null;
+      }
+    } else {
+      speed = null;
+    }
+
     const averageSpeed = this.tracker.getAverageSpeedKmH();
     const distance = this.tracker.getDisplayedDistanceKm();
-    const deltaSeconds = this.tracker.getDeltaSeconds();
+    const elapsedMs = this.stopwatch.getElapsedMs();
+    const deltaSeconds = this.tracker.getDeltaSeconds(elapsedMs, now);
     const deltaState = classifyDelta(deltaSeconds);
     const gpsStatus = this.reader.getStatus();
-    const isStale =
-      this.lastReadingTimestamp !== null &&
-      now - this.lastReadingTimestamp > STALE_SPEED_TIMEOUT_MS;
 
     const statusLine = getGpsStatusLine({
       status: gpsStatus,
       hasReceivedReading: this.hasReceivedReading,
-      isStale,
     });
 
     return {
@@ -265,7 +286,7 @@ export class RaceSessionBridge {
       distance,
       deltaSeconds,
       deltaState,
-      isRunning: this.stopwatch.isRunning(),
+      isRunning,
       gpsStatus,
       gpsStatusText: statusLine.text,
       gpsStatusKind: statusLine.kind,

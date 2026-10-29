@@ -118,7 +118,7 @@ describe('RaceSessionBridge (Phase 3C-1 Lifecycle & Single Start Instant)', () =
     expect(snap.deltaSeconds).toBeCloseTo(10.0, 1);
   });
 
-  it('PARAR keeps the GPS reader active', () => {
+  it('PARAR stops the GPS reader and clears the GPS status line', () => {
     const reader = new MockGpsReader();
     const bridge = new RaceSessionBridge({ reader, clocks: mockClocks });
 
@@ -128,10 +128,12 @@ describe('RaceSessionBridge (Phase 3C-1 Lifecycle & Single Start Instant)', () =
 
     bridge.stop();
 
-    // Stopwatch is paused, but reader is NOT stopped
+    // Stopwatch is paused, and reader is stopped
     expect(bridge.stopwatch.isRunning()).toBe(false);
-    expect(reader.stopCount).toBe(0);
-    expect(reader.getStatus()).toBe('active');
+    expect(reader.stopCount).toBe(1);
+    expect(reader.getStatus()).toBe('idle');
+    expect(bridge.getSnapshot().gpsStatusText).toBe('');
+    expect(bridge.getSnapshot().speed).toBeNull();
   });
 
   it('REINICIAR resets everything, stops the reader, and restores idle status', () => {
@@ -650,5 +652,233 @@ describe('RaceSessionBridge — Phase 3C-2: stopwatch/tracker agreement after mo
     const elapsed2 = bridge.stopwatch.getElapsedMs();
     expect(elapsed2).toBeGreaterThanOrEqual(44900);
     expect(elapsed2).toBeLessThanOrEqual(45100);
+  });
+});
+
+describe('RaceSessionBridge — Phase 3D-1: GPS stationary behavior & PARAR lifecycle', () => {
+  let mockWallClock = 500000;
+  let mockMonotonic = 50000;
+  const mockClocks: Clocks = {
+    nowMonotonic: () => mockMonotonic,
+    nowWallClock: () => mockWallClock,
+  };
+
+  it('PARAR stops the reader and empties status line; INICIAR restarts the reader', () => {
+    const reader = new MockGpsReader();
+    const bridge = new RaceSessionBridge({ reader, clocks: mockClocks, wakeLockApi: null });
+
+    // Initial INICIAR
+    bridge.start();
+    expect(reader.getStatus()).toBe('active');
+    expect(reader.startCount).toBe(1);
+    expect(bridge.getSnapshot().gpsStatusText).toBe('BUSCANDO GPS…');
+
+    // First valid reading arrives
+    reader.emitReading({
+      latitude: 0,
+      longitude: 0,
+      accuracy: 5,
+      speed: 15,
+      timestamp: mockWallClock,
+    });
+    expect(bridge.getSnapshot().gpsStatusText).toBe('');
+
+    // PARAR
+    bridge.stop();
+    expect(reader.stopCount).toBe(1);
+    expect(reader.getStatus()).toBe('idle');
+    expect(bridge.getSnapshot().gpsStatusText).toBe('');
+    expect(bridge.getSnapshot().speed).toBeNull(); // "--,-"
+
+    // Resume (INICIAR)
+    bridge.start();
+    expect(reader.startCount).toBe(2);
+    expect(reader.getStatus()).toBe('active');
+    // Memory reset: shows "BUSCANDO GPS…" until first reading arrives after resume
+    expect(bridge.getSnapshot().gpsStatusText).toBe('BUSCANDO GPS…');
+    expect(bridge.getSnapshot().speed).toBeNull();
+
+    // First valid reading arrives after resume
+    reader.emitReading({
+      latitude: 0.001,
+      longitude: 0,
+      accuracy: 5,
+      speed: 15,
+      timestamp: mockWallClock + 1000,
+    });
+    expect(bridge.getSnapshot().gpsStatusText).toBe('');
+    expect(bridge.getSnapshot().speed).toBeGreaterThan(0);
+  });
+
+  it('long gap after at least one valid reading while running does not show "BUSCANDO GPS…" and speed reads 0,0', () => {
+    let wall = 600000;
+    const clocks: Clocks = {
+      nowMonotonic: () => wall,
+      nowWallClock: () => wall,
+    };
+    const reader = new MockGpsReader();
+    const bridge = new RaceSessionBridge({ reader, clocks, wakeLockApi: null });
+
+    bridge.start();
+    expect(bridge.getSnapshot().gpsStatusText).toBe('BUSCANDO GPS…');
+    expect(bridge.getSnapshot().speed).toBeNull();
+
+    // Emit valid reading
+    reader.emitReading({
+      latitude: 0,
+      longitude: 0,
+      accuracy: 5,
+      speed: 10,
+      timestamp: wall,
+    });
+    expect(bridge.getSnapshot().gpsStatusText).toBe('');
+    expect(bridge.getSnapshot().speed).toBeCloseTo(36.0, 1);
+
+    // Advance time by 6 seconds (> 5000ms stale timeout) with no new readings
+    wall += 6000;
+    bridge.tick();
+
+    const snap = bridge.getSnapshot();
+    // Line stays empty (not "BUSCANDO GPS…")
+    expect(snap.gpsStatusText).toBe('');
+    expect(snap.gpsStatusKind).toBe('empty');
+    // Speed goes to 0,0 km/h (0) instead of null ("--,-")
+    expect(snap.speed).toBe(0);
+  });
+
+  it('stationary jitter reading counts as valid and preserves empty status line', () => {
+    let wall = 700000;
+    const clocks: Clocks = {
+      nowMonotonic: () => wall,
+      nowWallClock: () => wall,
+    };
+    const reader = new MockGpsReader();
+    const bridge = new RaceSessionBridge({ reader, clocks, wakeLockApi: null });
+
+    bridge.start();
+
+    // First fix
+    reader.emitReading({
+      latitude: 0,
+      longitude: 0,
+      accuracy: 5,
+      speed: 0,
+      timestamp: wall,
+    });
+    expect(bridge.getSnapshot().gpsStatusText).toBe('');
+
+    // Jitter fix (< 2.0m movement at 0 speed)
+    wall += 2000;
+    reader.emitReading({
+      latitude: 0.000005, // ~0.55m
+      longitude: 0,
+      accuracy: 5,
+      speed: 0,
+      timestamp: wall,
+    });
+
+    const snap = bridge.getSnapshot();
+    expect(snap.gpsStatusText).toBe('');
+    expect(snap.gpsStatusKind).toBe('empty');
+  });
+
+  it('timeout, denied, and unavailable states behave correctly', () => {
+    const reader = new MockGpsReader();
+    const bridge = new RaceSessionBridge({ reader, clocks: mockClocks, wakeLockApi: null });
+
+    bridge.start();
+
+    // Timeout shows BUSCANDO GPS…
+    reader.emitStatus('timeout');
+    expect(bridge.getSnapshot().gpsStatusText).toBe('BUSCANDO GPS…');
+    expect(bridge.getSnapshot().gpsStatusKind).toBe('searching');
+
+    // Denied shows permission guidance
+    reader.emitStatus('denied');
+    expect(bridge.getSnapshot().gpsStatusText).toBe('GPS SIN PERMISO: activalo en Ajustes de iOS');
+    expect(bridge.getSnapshot().gpsStatusKind).toBe('action-needed');
+
+    // Unavailable shows unavailable
+    reader.emitStatus('unavailable');
+    expect(bridge.getSnapshot().gpsStatusText).toBe('GPS NO DISPONIBLE');
+    expect(bridge.getSnapshot().gpsStatusKind).toBe('action-needed');
+  });
+
+  it('Phase 3D-2: delta drifts with clock in snapshot during stationary stale gap and tick()', () => {
+    let wall = 800000;
+    let mono = 80000;
+    const clocks: Clocks = {
+      nowMonotonic: () => mono,
+      nowWallClock: () => wall,
+    };
+    const reader = new MockGpsReader();
+    const bridge = new RaceSessionBridge({
+      reader,
+      clocks,
+      assignedSpeedKmH: 60,
+      wakeLockApi: null,
+    });
+
+    bridge.start();
+
+    // First reading at 0s elapsed
+    reader.emitReading({
+      latitude: 0,
+      longitude: 0,
+      accuracy: 5,
+      speed: 20,
+      timestamp: wall,
+    });
+
+    // 50s later, covers 1.0 km -> ideal 60s, actual 50s -> delta +10.0s
+    wall += 50000;
+    mono += 50000;
+    const dest = destinationCoordinate(0, 0, 1000, 0);
+    reader.emitReading({
+      latitude: dest.latitude,
+      longitude: dest.longitude,
+      accuracy: 5,
+      speed: 20,
+      timestamp: wall,
+    });
+
+    expect(bridge.getSnapshot().deltaSeconds).toBeCloseTo(10.0, 1);
+
+    // Car stops. 10s elapse with no GPS readings (wall advances to +60s from start)
+    wall += 10000;
+    mono += 10000;
+    bridge.tick();
+
+    // Now elapsed is 60s. Last reading is 10s old (> 5s stale threshold).
+    // Ideal time: 60s. Actual elapsed: 60s.
+    // Delta should drift from +10.0s to 0.0s (EN TIEMPO)
+    const snap1 = bridge.getSnapshot();
+    expect(snap1.deltaSeconds).toBeCloseTo(0.0, 1);
+    expect(snap1.deltaState).toBe('neutral');
+
+    // Another 10s elapse (wall advances to +70s from start)
+    wall += 10000;
+    mono += 10000;
+    bridge.tick();
+
+    // Elapsed: 70s. Ideal: 60s -> delta: -10.0s (ATRASADO)
+    const snap2 = bridge.getSnapshot();
+    expect(snap2.deltaSeconds).toBeCloseTo(-10.0, 1);
+    expect(snap2.deltaState).toBe('behind');
+
+    // PARAR freezes the delta
+    bridge.stop();
+    const frozenDelta = bridge.getSnapshot().deltaSeconds;
+
+    // More time passes while stopped
+    wall += 20000;
+    mono += 20000;
+    bridge.tick();
+    expect(bridge.getSnapshot().deltaSeconds).toBe(frozenDelta);
+
+    // REINICIAR resets delta to null
+    bridge.reset();
+    expect(bridge.getSnapshot().deltaSeconds).toBeNull();
+    expect(bridge.getSnapshot().deltaState).toBe('no-data');
   });
 });
