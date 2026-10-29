@@ -130,9 +130,16 @@ function RaceProviderInner({
       bridge.tick();
     }, 1000);
 
+    // Foreground recovery and wake lock re-acquisition on visibility change
+    const handleVisibilityChange = () => {
+      bridge.onVisibilityChange(document.visibilityState === 'visible');
+    };
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
     return () => {
       unsub();
       window.clearInterval(interval);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
   }, [bridge]);
 

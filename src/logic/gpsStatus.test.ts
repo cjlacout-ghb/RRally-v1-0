@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
-import { getGpsStatusText } from './gpsStatus';
+import { getGpsStatusText, getGpsStatusLine } from './gpsStatus';
 
-describe('getGpsStatusText', () => {
+describe('getGpsStatusText (backward-compatible wrapper)', () => {
   it('returns empty string when reader is idle', () => {
     expect(getGpsStatusText({ status: 'idle', hasReceivedReading: false, isStale: false })).toBe('');
     expect(getGpsStatusText({ status: 'idle', hasReceivedReading: true, isStale: true })).toBe('');
@@ -45,5 +45,47 @@ describe('getGpsStatusText', () => {
 
   it('returns empty string when receiving fresh valid readings', () => {
     expect(getGpsStatusText({ status: 'active', hasReceivedReading: true, isStale: false })).toBe('');
+  });
+});
+
+describe('getGpsStatusLine — kind field', () => {
+  it('kind is "empty" when idle', () => {
+    const r = getGpsStatusLine({ status: 'idle', hasReceivedReading: false, isStale: false });
+    expect(r.kind).toBe('empty');
+    expect(r.text).toBe('');
+  });
+
+  it('kind is "empty" when receiving fresh readings', () => {
+    const r = getGpsStatusLine({ status: 'active', hasReceivedReading: true, isStale: false });
+    expect(r.kind).toBe('empty');
+    expect(r.text).toBe('');
+  });
+
+  it('kind is "searching" for BUSCANDO GPS… (active, no reading)', () => {
+    const r = getGpsStatusLine({ status: 'active', hasReceivedReading: false, isStale: false });
+    expect(r.kind).toBe('searching');
+    expect(r.text).toBe('BUSCANDO GPS…');
+  });
+
+  it('kind is "searching" for BUSCANDO GPS… (stale)', () => {
+    const r = getGpsStatusLine({ status: 'active', hasReceivedReading: true, isStale: true });
+    expect(r.kind).toBe('searching');
+  });
+
+  it('kind is "searching" for timeout state', () => {
+    const r = getGpsStatusLine({ status: 'timeout', hasReceivedReading: true, isStale: false });
+    expect(r.kind).toBe('searching');
+  });
+
+  it('kind is "action-needed" for denied', () => {
+    const r = getGpsStatusLine({ status: 'denied', hasReceivedReading: false, isStale: false });
+    expect(r.kind).toBe('action-needed');
+    expect(r.text).toBe('GPS SIN PERMISO: activalo en Ajustes de iOS');
+  });
+
+  it('kind is "action-needed" for unavailable', () => {
+    const r = getGpsStatusLine({ status: 'unavailable', hasReceivedReading: false, isStale: false });
+    expect(r.kind).toBe('action-needed');
+    expect(r.text).toBe('GPS NO DISPONIBLE');
   });
 });

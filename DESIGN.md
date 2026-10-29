@@ -167,8 +167,11 @@ Flat. Three tonal levels only: `background`, `surface-container` (cards and bloc
 - The -1 and +1 distance-adjustment buttons flank the dial on the left and right respectively, vertically centered on it.
 
 ### GPS status line
-- Position: directly below the odometer dial, above the PROMEDIO and DISTANCIA readouts. Centered, Chivo, `body-md` (14px, line-height 20px), color `on-surface-variant`. No icon, no background, no animation.
+- Position: directly below the odometer dial, above the PROMEDIO and DISTANCIA readouts. Centered, Chivo, `body-md` (14px, line-height 20px). No icon, no background, no animation.
 - Reserved height: always reserves one line of height (20px) so elements below never shift when text appears or disappears. At 320px width the permission-denied message may wrap to two lines; the block may grow only in this state.
+- Styles by message kind:
+  - "BUSCANDO GPS…": color `on-surface-variant`, normal weight (searching).
+  - "GPS SIN PERMISO: activalo en Ajustes de iOS" and "GPS NO DISPONIBLE": color `on-surface` and Chivo bold (action needed). No accent colors.
 - Visibility rules:
   - Idle (before first INICIAR, or after REINICIAR): empty.
   - Reader started and no valid reading yet, or no valid reading for `STALE_SPEED_TIMEOUT_MS` (5s), or reader state is timeout: "BUSCANDO GPS…". A reading suppressed as stationary jitter counts as valid for this purpose.

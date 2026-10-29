@@ -4,6 +4,7 @@ import { OdometerDial } from '../components/OdometerDial';
 import { DeltaPanel } from '../components/DeltaPanel';
 import { formatStopwatch, formatTimeOfDay } from '../logic/format';
 import type { DeltaState } from '../logic/delta';
+import type { GpsStatusKind } from '../logic/gpsStatus';
 import { getDemoData } from '../demo';
 import { useRaceSession } from '../context/RaceContext';
 import './CarreraTab.css';
@@ -101,6 +102,7 @@ export function CarreraTab({
   let deltaSeconds: number | null = snapshot.deltaSeconds;
   let deltaState: DeltaState = snapshot.deltaState;
   let gpsStatusText: string = snapshot.gpsStatusText;
+  let gpsStatusKind: GpsStatusKind = snapshot.gpsStatusKind;
 
   // ── Demo overrides for development mode ─────────────────────────
   if (import.meta.env.DEV && demoData !== null) {
@@ -168,6 +170,7 @@ export function CarreraTab({
         averageSpeed={averageSpeed}
         distance={roundedDisplayDistance}
         gpsStatusText={gpsStatusText}
+        gpsStatusKind={gpsStatusKind}
         onAdjust={onAdjustDistance}
       />
 

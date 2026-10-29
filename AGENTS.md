@@ -35,6 +35,12 @@ Out of v1: digital roadbook and tulip cards, sub-stages, race history, accounts,
 - Single owner of race state (`RaceSessionBridge` / `RaceProvider`): owns exactly one `RallyTracker` and one `GpsReader` instance, hosted above the screens in `App.tsx`. Navigating between Carrera, Preparar Etapa, Calculadora, and Ayuda never interrupts, stops, or resets a running race.
 - Single start instant: when INICIAR is tapped, read the wall clock once (`Date.now()`) and use that single timestamp to start both the main stopwatch and the RallyTracker.
 - GPS reader lifecycle: the reader starts inside the INICIAR tap handler (on user gesture), only when not active. It stays active during PARAR (so instantaneous speed on the dial continues updating while distance and delta stay frozen), and stops only on REINICIAR. Tapping INICIAR retries starting the reader if its state was denied, unavailable, or timeout.
+- Screen Wake Lock lifecycle & foreground recovery:
+  - Wake lock is acquired inside the INICIAR handler (user gesture), released on PARAR and REINICIAR. Never hold duplicate locks.
+  - If unsupported or refused (low battery, system policy), it degrades silently with no UI effect.
+  - When the lock is released by the system (page hidden, battery saver), the stored reference is dropped. When returning to foreground (`visibilitychange` to visible) while running, the lock is automatically re-requested.
+  - Return to foreground recovery: immediately refreshes the bridge snapshot. If reader status is timeout or unavailable, or fixes are stale (>5s), restarts the GPS watch (never restarts if denied or idle). Re-reconciles the stopwatch against wall clock to eliminate any monotonic clock lag from screen-lock sleep.
+  - Known iOS limitation: the Screen Wake Lock API in home-screen installed PWAs only works from iOS 18.4; in a regular Safari tab it works from iOS 16.4.
 - Dev-only simulator: query parameters `?sim=1` (or `?sim=true`), `&speed=<km/h>` (default 50), `&seed=<number>` (default 12345). Loaded via dev-guarded dynamic import, completely absent from production builds.
 - Persist only: assigned average speed and correction factor (local storage on the device). Stopwatch state is not persisted in v1.
 
@@ -66,7 +72,7 @@ Vite + React + TypeScript (strict) + vite-plugin-pwa (service worker precaching)
 - Phase 2f: ASIGNADO line moved into a dark inset strip (surface-container-lowest background, outline-variant border) with brass value on dark, so the label is legible on all four panel background colors. Done. Note: DESIGN.md was updated and must be re-uploaded to the Claude Project.
 - Phase 3B: Pure logic for GPS readings, distance, speeds, and delta with unit tests. Done.
 - Phase 3C-1: GPS logic wired to Carrera screen, GPS permission on first INICIAR, single start instant, GPS status line under dial, race state bridge above screens, dev-only simulator wiring. Done. Note: DESIGN.md was updated and must be re-uploaded to the Claude Project.
-- Phase 3C-2: Wake lock and background/foreground handling. Pending.
+- Phase 3C-2: Wake lock and background/foreground handling, GPS status line styles. Done. Note: DESIGN.md was updated and must be re-uploaded to the Claude Project.
 - Phase 4: guided calibration. Pending.
 - Phase 5: Calculadora. Pending.
 - Phase 6: Ayuda, polish, full iOS device test. Pending.

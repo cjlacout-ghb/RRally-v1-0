@@ -3,6 +3,7 @@
  *
  * Coordinates the single start instant between the main Stopwatch and RallyTracker,
  * manages the GpsReader lifecycle (starts on INICIAR, stays active on PARAR, stops on REINICIAR),
+ * manages the Screen Wake Lock (acquire on INICIAR, release on PARAR and REINICIAR),
  * and emits read-only snapshots for the UI.
  *
  * Sits above all UI screens so navigating between Carrera, Preparar Etapa,
@@ -13,7 +14,8 @@ import { RallyTracker } from './rallyTracker';
 import type { GpsReader, GpsStatus } from './gpsReader';
 import { Stopwatch, type Clocks, defaultClocks } from './stopwatch';
 import { classifyDelta, type DeltaState } from './delta';
-import { getGpsStatusText } from './gpsStatus';
+import { getGpsStatusLine, type GpsStatusKind } from './gpsStatus';
+import { WakeLockManager, type WakeLockApi } from './wakeLock';
 import { DEFAULT_CORRECTION_FACTOR, STALE_SPEED_TIMEOUT_MS } from './gpsConstants';
 
 export interface RaceSnapshot {
@@ -25,6 +27,7 @@ export interface RaceSnapshot {
   isRunning: boolean;
   gpsStatus: GpsStatus;
   gpsStatusText: string;
+  gpsStatusKind: GpsStatusKind;
 }
 
 export interface RaceSessionBridgeOptions {
@@ -33,6 +36,8 @@ export interface RaceSessionBridgeOptions {
   stopwatch?: Stopwatch;
   assignedSpeedKmH?: number | null;
   clocks?: Clocks;
+  /** Injectable wake lock API for testing. Pass null to disable entirely. */
+  wakeLockApi?: WakeLockApi | null;
 }
 
 export class RaceSessionBridge {
@@ -40,6 +45,7 @@ export class RaceSessionBridge {
   readonly reader: GpsReader;
   readonly stopwatch: Stopwatch;
   private readonly clocks: Clocks;
+  private readonly wakeLock: WakeLockManager;
 
   private lastReadingTimestamp: number | null = null;
   private hasReceivedReading: boolean = false;
@@ -58,6 +64,11 @@ export class RaceSessionBridge {
         assignedSpeedKmH: options.assignedSpeedKmH ?? null,
         correctionFactor: DEFAULT_CORRECTION_FACTOR,
       });
+
+    // wakeLockApi=undefined → use real browser API; wakeLockApi=null → disabled (tests)
+    this.wakeLock = new WakeLockManager(
+      options.wakeLockApi !== undefined ? options.wakeLockApi : undefined
+    );
 
     this.setupReaderSubscriptions();
   }
@@ -115,6 +126,7 @@ export class RaceSessionBridge {
    * Starts or resumes the race (INICIAR).
    * Reads wall-clock time once and shares this exact single instant between
    * the main stopwatch and RallyTracker. Starts or retries the GPS reader.
+   * Acquires the screen wake lock.
    */
   start(startWallClock?: number): void {
     const now = startWallClock ?? this.clocks.nowWallClock();
@@ -133,6 +145,9 @@ export class RaceSessionBridge {
       this.reader.start();
     }
 
+    // Acquire wake lock (fire-and-forget; errors are swallowed inside WakeLockManager)
+    void this.wakeLock.acquire();
+
     this.notifyListeners();
   }
 
@@ -140,24 +155,27 @@ export class RaceSessionBridge {
    * Pauses the race (PARAR).
    * Freezes stopwatch and tracker; GPS reader STAYS ACTIVE to keep updating
    * instantaneous speed on the dial while stopped.
+   * Releases the screen wake lock.
    */
   stop(stopWallClock?: number): void {
     const now = stopWallClock ?? this.clocks.nowWallClock();
     this.stopwatch.stop();
     this.tracker.stop(now);
     // Reader stays active per specification
+    void this.wakeLock.release();
     this.notifyListeners();
   }
 
   /**
    * Resets the race (REINICIAR).
    * Resets stopwatch, tracker (distance, adjustments, delta, speed window),
-   * stops the GPS reader, and restores idle status.
+   * stops the GPS reader, restores idle status, and releases the wake lock.
    */
   reset(): void {
     this.stopwatch.reset();
     this.tracker.reset();
     this.reader.stop();
+    void this.wakeLock.release();
 
     this.lastReadingTimestamp = null;
     this.hasReceivedReading = false;
@@ -180,6 +198,47 @@ export class RaceSessionBridge {
   }
 
   /**
+   * Called on visibilitychange events.
+   *
+   * When becoming visible:
+   *   - Applies wall-clock correction to the stopwatch (handles iOS monotonic clock stall).
+   *   - If the GPS reader is in timeout/unavailable and a session is active (reader was started),
+   *     restarts the watch. Never restarts when denied.
+   *   - Re-acquires the wake lock if the race is running.
+   *   - Refreshes the snapshot so the UI is not stale.
+   *
+   * When hiding: no-op (nothing is stopped or reset).
+   */
+  onVisibilityChange(visible: boolean): void {
+    if (visible) {
+      // 1. Correct stopwatch for monotonic stall during page hide / screen lock
+      this.stopwatch.onVisibilityChange(true);
+
+      // 2. Restart a stalled GPS reader (timeout/unavailable), but not if denied or idle
+      const status = this.reader.getStatus();
+      const now = this.clocks.nowWallClock();
+      const isStale =
+        this.lastReadingTimestamp !== null &&
+        now - this.lastReadingTimestamp > STALE_SPEED_TIMEOUT_MS;
+
+      if (
+        status === 'timeout' ||
+        status === 'unavailable' ||
+        (status === 'active' && isStale)
+      ) {
+        this.reader.start();
+      }
+
+      // 3. Re-acquire wake lock if running
+      void this.wakeLock.onPageVisible(true, this.stopwatch.isRunning());
+
+      // 4. Refresh snapshot
+      this.notifyListeners();
+    }
+    // On hide: do nothing
+  }
+
+  /**
    * Computes a read-only UI snapshot.
    */
   getSnapshot(): RaceSnapshot {
@@ -194,7 +253,7 @@ export class RaceSessionBridge {
       this.lastReadingTimestamp !== null &&
       now - this.lastReadingTimestamp > STALE_SPEED_TIMEOUT_MS;
 
-    const gpsStatusText = getGpsStatusText({
+    const statusLine = getGpsStatusLine({
       status: gpsStatus,
       hasReceivedReading: this.hasReceivedReading,
       isStale,
@@ -208,7 +267,8 @@ export class RaceSessionBridge {
       deltaState,
       isRunning: this.stopwatch.isRunning(),
       gpsStatus,
-      gpsStatusText,
+      gpsStatusText: statusLine.text,
+      gpsStatusKind: statusLine.kind,
     };
   }
 

@@ -5,6 +5,7 @@ import type { Clocks } from './stopwatch';
 import { destinationCoordinate } from './geo';
 import { GpsSimulator } from './gpsSimulator';
 import { isSimulatorRequested, parseSimulatorConfig } from './simulatorDetector';
+import type { WakeLockApi, WakeLockSentinel } from './wakeLock';
 
 class MockGpsReader implements GpsReader {
   status: GpsStatus = 'idle';
@@ -348,5 +349,306 @@ describe('RaceSessionBridge (Phase 3C-1 Lifecycle & Single Start Instant)', () =
     } finally {
       vi.unstubAllGlobals();
     }
+  });
+});
+
+// ── Phase 3C-2 tests ───────────────────────────────────────────────────────
+
+/** Minimal fake wake lock sentinel */
+function makeFakeSentinel(): WakeLockSentinel & { simulateSystemRelease: () => void } {
+  let released = false;
+  const handlers = new Set<() => void>();
+  return {
+    get released() { return released; },
+    async release() { released = true; for (const h of handlers) h(); },
+    addEventListener(_t: 'release', h: () => void) { handlers.add(h); },
+    removeEventListener(_t: 'release', h: () => void) { handlers.delete(h); },
+    simulateSystemRelease() { released = true; for (const h of handlers) h(); },
+  };
+}
+
+function makeFakeWakeLockApi() {
+  let currentSentinel: ReturnType<typeof makeFakeSentinel> = makeFakeSentinel();
+  const api = {
+    get sentinel(): ReturnType<typeof makeFakeSentinel> { return currentSentinel; },
+    requestCount: 0,
+    rejectNext: false,
+    async request(_t: 'screen'): Promise<WakeLockSentinel> {
+      api.requestCount++;
+      if (api.rejectNext) { api.rejectNext = false; throw new DOMException('denied', 'NotAllowedError'); }
+      currentSentinel = makeFakeSentinel();
+      return currentSentinel;
+    },
+  };
+  return api;
+}
+
+describe('RaceSessionBridge — Phase 3C-2: wake lock integration', () => {
+  let mockWallClock = 200000;
+  let mockMonotonic = 10000;
+  const mockClocks: Clocks = {
+    nowMonotonic: () => mockMonotonic,
+    nowWallClock: () => mockWallClock,
+  };
+
+  /** Flush several microtask queues to let fire-and-forget async chains complete. */
+  async function flushAsync(ticks = 5): Promise<void> {
+    for (let i = 0; i < ticks; i++) await Promise.resolve();
+  }
+
+  it('acquires wake lock on INICIAR', async () => {
+    const reader = new MockGpsReader();
+    const api = makeFakeWakeLockApi();
+    const bridge = new RaceSessionBridge({ reader, clocks: mockClocks, wakeLockApi: api });
+
+    bridge.start();
+    await flushAsync();
+
+    expect(api.requestCount).toBe(1);
+  });
+
+  it('releases wake lock on PARAR', async () => {
+    const reader = new MockGpsReader();
+    const api = makeFakeWakeLockApi();
+    const bridge = new RaceSessionBridge({ reader, clocks: mockClocks, wakeLockApi: api });
+
+    bridge.start();
+    await flushAsync();
+
+    const heldSentinel = api.sentinel;
+    bridge.stop();
+    await flushAsync();
+
+    expect(heldSentinel.released).toBe(true);
+  });
+
+  it('releases wake lock on REINICIAR', async () => {
+    const reader = new MockGpsReader();
+    const api = makeFakeWakeLockApi();
+    const bridge = new RaceSessionBridge({ reader, clocks: mockClocks, wakeLockApi: api });
+
+    bridge.start();
+    await flushAsync();
+
+    const heldSentinel = api.sentinel;
+    bridge.reset();
+    await flushAsync();
+
+    expect(heldSentinel.released).toBe(true);
+  });
+
+  it('re-acquires wake lock on page visible when running (after system release)', async () => {
+    const reader = new MockGpsReader();
+    const api = makeFakeWakeLockApi();
+    const bridge = new RaceSessionBridge({ reader, clocks: mockClocks, wakeLockApi: api });
+
+    bridge.start();
+    await flushAsync();
+    expect(api.requestCount).toBe(1);
+
+    // Capture sentinel then simulate system releasing it (low battery, etc.)
+    const firstSentinel = api.sentinel;
+    firstSentinel.simulateSystemRelease();
+
+    // Page becomes visible again, race still running
+    bridge.onVisibilityChange(true);
+    await flushAsync();
+
+    expect(api.requestCount).toBe(2);
+  });
+
+  it('does NOT re-acquire wake lock on page visible when race is stopped', async () => {
+    const reader = new MockGpsReader();
+    const api = makeFakeWakeLockApi();
+    const bridge = new RaceSessionBridge({ reader, clocks: mockClocks, wakeLockApi: api });
+
+    bridge.start();
+    await flushAsync();
+    bridge.stop();
+    await flushAsync();
+
+    bridge.onVisibilityChange(true);
+    await flushAsync();
+
+    // The lock was released on stop; page becoming visible should not re-acquire
+    expect(api.requestCount).toBe(1); // only the initial INICIAR
+  });
+
+  it('does NOT acquire when the API rejects (degrades silently)', async () => {
+    const reader = new MockGpsReader();
+    const api = makeFakeWakeLockApi();
+    api.rejectNext = true;
+    const bridge = new RaceSessionBridge({ reader, clocks: mockClocks, wakeLockApi: api });
+
+    // Must not throw
+    bridge.start();
+    await flushAsync();
+
+    expect(bridge.getSnapshot().isRunning).toBe(true);
+  });
+
+  it('passes null wakeLockApi to disable entirely (used in most tests)', async () => {
+    const reader = new MockGpsReader();
+    const bridge = new RaceSessionBridge({ reader, clocks: mockClocks, wakeLockApi: null });
+
+    bridge.start();
+    await flushAsync();
+
+    expect(bridge.getSnapshot().isRunning).toBe(true);
+  });
+});
+
+describe('RaceSessionBridge — Phase 3C-2: foreground recovery', () => {
+  it('refreshes snapshot on page visible (notifyListeners called)', () => {
+    let wallClock = 300000;
+    let mono = 15000;
+    const clocks: Clocks = {
+      nowMonotonic: () => mono,
+      nowWallClock: () => wallClock,
+    };
+    const reader = new MockGpsReader();
+    const bridge = new RaceSessionBridge({ reader, clocks, wakeLockApi: null });
+
+    let snapshots = 0;
+    bridge.subscribe(() => { snapshots++; });
+
+    bridge.onVisibilityChange(true);
+    expect(snapshots).toBeGreaterThan(0);
+  });
+
+  it('restarts a stalled GPS reader (timeout) on page visible without re-requesting permission when denied', () => {
+    let wallClock = 300000;
+    const clocks: Clocks = {
+      nowMonotonic: () => wallClock,
+      nowWallClock: () => wallClock,
+    };
+    const reader = new MockGpsReader();
+    const bridge = new RaceSessionBridge({ reader, clocks, wakeLockApi: null });
+
+    bridge.start();
+    expect(reader.startCount).toBe(1);
+
+    // Reader goes into timeout
+    reader.emitStatus('timeout');
+
+    // Page becomes visible
+    bridge.onVisibilityChange(true);
+    expect(reader.startCount).toBe(2);
+  });
+
+  it('restarts a stalled GPS reader (unavailable) on page visible', () => {
+    let wallClock = 300000;
+    const clocks: Clocks = {
+      nowMonotonic: () => wallClock,
+      nowWallClock: () => wallClock,
+    };
+    const reader = new MockGpsReader();
+    const bridge = new RaceSessionBridge({ reader, clocks, wakeLockApi: null });
+
+    bridge.start();
+    reader.emitStatus('unavailable');
+
+    bridge.onVisibilityChange(true);
+    expect(reader.startCount).toBe(2);
+  });
+
+  it('does NOT restart the GPS reader when status is denied on page visible', () => {
+    let wallClock = 300000;
+    const clocks: Clocks = {
+      nowMonotonic: () => wallClock,
+      nowWallClock: () => wallClock,
+    };
+    const reader = new MockGpsReader();
+    const bridge = new RaceSessionBridge({ reader, clocks, wakeLockApi: null });
+
+    bridge.start();
+    reader.emitStatus('denied');
+
+    bridge.onVisibilityChange(true);
+    // No restart — startCount stays at 1
+    expect(reader.startCount).toBe(1);
+  });
+
+  it('does NOT restart an idle reader on page visible (no session started)', () => {
+    let wallClock = 300000;
+    const clocks: Clocks = {
+      nowMonotonic: () => wallClock,
+      nowWallClock: () => wallClock,
+    };
+    const reader = new MockGpsReader();
+    const bridge = new RaceSessionBridge({ reader, clocks, wakeLockApi: null });
+
+    // No bridge.start() called
+    bridge.onVisibilityChange(true);
+    expect(reader.startCount).toBe(0);
+  });
+
+  it('does nothing on page hidden (onVisibilityChange(false))', () => {
+    let wallClock = 300000;
+    const clocks: Clocks = {
+      nowMonotonic: () => wallClock,
+      nowWallClock: () => wallClock,
+    };
+    const reader = new MockGpsReader();
+    const bridge = new RaceSessionBridge({ reader, clocks, wakeLockApi: null });
+
+    bridge.start();
+
+    let snapshots = 0;
+    bridge.subscribe(() => { snapshots++; });
+
+    bridge.onVisibilityChange(false);
+    expect(snapshots).toBe(0);
+    expect(reader.startCount).toBe(1); // unchanged
+  });
+});
+
+describe('RaceSessionBridge — Phase 3C-2: stopwatch/tracker agreement after monotonic stall', () => {
+  it('corrects stopwatch elapsed after monotonic clock stalls during page hide, tracker elapsed matches', () => {
+    let wallClock = 1700000000000;
+    let mono = 0;
+
+    const clocks: Clocks = {
+      nowMonotonic: () => mono,
+      nowWallClock: () => wallClock,
+    };
+
+    const reader = new MockGpsReader();
+    const bridge = new RaceSessionBridge({
+      reader,
+      clocks,
+      assignedSpeedKmH: 50,
+      wakeLockApi: null,
+    });
+
+    // Start the race at t=0
+    bridge.start();
+    expect(bridge.stopwatch.getElapsedMs()).toBe(0);
+
+    // Advance 10 seconds normally
+    mono += 10000;
+    wallClock += 10000;
+    expect(bridge.stopwatch.getElapsedMs()).toBe(10000);
+
+    // Page hides; screen locks for 30 seconds.
+    // On iOS, monotonic clock may STOP advancing. Wall clock advances normally.
+    // Monotonic stays at 10000; wall clock reaches 40000ms elapsed from start.
+    wallClock += 30000;
+    // mono stays at 10000 (stalled)
+
+    // Page becomes visible — this triggers wall-clock correction
+    bridge.onVisibilityChange(true);
+
+    // Stopwatch must now reflect wall-clock elapsed (40s), not monotonic (10s)
+    const elapsed = bridge.stopwatch.getElapsedMs();
+    expect(elapsed).toBeGreaterThanOrEqual(39900);
+    expect(elapsed).toBeLessThanOrEqual(40100);
+
+    // Monotonic continues from its current value after correction
+    mono += 5000;
+    wallClock += 5000;
+    const elapsed2 = bridge.stopwatch.getElapsedMs();
+    expect(elapsed2).toBeGreaterThanOrEqual(44900);
+    expect(elapsed2).toBeLessThanOrEqual(45100);
   });
 });
