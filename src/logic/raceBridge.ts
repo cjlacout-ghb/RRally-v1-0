@@ -16,7 +16,9 @@ import { Stopwatch, type Clocks, defaultClocks } from './stopwatch';
 import { classifyDelta, type DeltaState } from './delta';
 import { getGpsStatusLine, type GpsStatusKind } from './gpsStatus';
 import { WakeLockManager, type WakeLockApi } from './wakeLock';
-import { DEFAULT_CORRECTION_FACTOR, STALE_SPEED_TIMEOUT_MS } from './gpsConstants';
+import { STALE_SPEED_TIMEOUT_MS } from './gpsConstants';
+import { readCorrectionFactor } from '../storage';
+import { isCalibrationAllowed } from './calibration';
 
 export interface RaceSnapshot {
   speed: number | null;
@@ -28,6 +30,7 @@ export interface RaceSnapshot {
   gpsStatus: GpsStatus;
   gpsStatusText: string;
   gpsStatusKind: GpsStatusKind;
+  isCalibrationAllowed: boolean;
 }
 
 export interface RaceSessionBridgeOptions {
@@ -35,6 +38,7 @@ export interface RaceSessionBridgeOptions {
   reader: GpsReader;
   stopwatch?: Stopwatch;
   assignedSpeedKmH?: number | null;
+  correctionFactor?: number;
   clocks?: Clocks;
   /** Injectable wake lock API for testing. Pass null to disable entirely. */
   wakeLockApi?: WakeLockApi | null;
@@ -46,6 +50,7 @@ export class RaceSessionBridge {
   readonly stopwatch: Stopwatch;
   private readonly clocks: Clocks;
   private readonly wakeLock: WakeLockManager;
+  private correctionFactor?: number;
 
   private lastReadingTimestamp: number | null = null;
   private hasReceivedReading: boolean = false;
@@ -57,12 +62,13 @@ export class RaceSessionBridge {
     this.clocks = options.clocks ?? defaultClocks;
     this.reader = options.reader;
     this.stopwatch = options.stopwatch ?? new Stopwatch(this.clocks);
+    this.correctionFactor = options.correctionFactor;
     this.tracker =
       options.tracker ??
       new RallyTracker({
         clocks: this.clocks,
         assignedSpeedKmH: options.assignedSpeedKmH ?? null,
-        correctionFactor: DEFAULT_CORRECTION_FACTOR,
+        correctionFactor: options.correctionFactor ?? readCorrectionFactor(),
       });
 
     // wakeLockApi=undefined → use real browser API; wakeLockApi=null → disabled (tests)
@@ -123,12 +129,34 @@ export class RaceSessionBridge {
   }
 
   /**
+   * Updates odometer correction factor without resetting the race.
+   */
+  setCorrectionFactor(factor: number): void {
+    this.correctionFactor = factor;
+    this.tracker.setCorrectionFactor(factor);
+    this.notifyListeners();
+  }
+
+  /**
+   * Queries whether calibration can be performed (blocked when stopwatch is running).
+   */
+  isCalibrationAllowed(): boolean {
+    return isCalibrationAllowed(this.stopwatch.isRunning());
+  }
+
+  /**
    * Starts or resumes the race (INICIAR).
    * Reads wall-clock time once and shares this exact single instant between
    * the main stopwatch and RallyTracker. Starts or retries the GPS reader.
    * Acquires the screen wake lock.
    */
   start(startWallClock?: number): void {
+    // If not running, ensure tracker has the latest stored factor if not explicitly overridden
+    if (!this.stopwatch.isRunning()) {
+      const activeFactor = this.correctionFactor ?? readCorrectionFactor();
+      this.tracker.setCorrectionFactor(activeFactor);
+    }
+
     const now = startWallClock ?? this.clocks.nowWallClock();
     const nowMono = this.clocks.nowMonotonic();
 
@@ -290,6 +318,7 @@ export class RaceSessionBridge {
       gpsStatus,
       gpsStatusText: statusLine.text,
       gpsStatusKind: statusLine.kind,
+      isCalibrationAllowed: this.isCalibrationAllowed(),
     };
   }
 

@@ -3,6 +3,7 @@ import './App.css';
 import { CarreraTab } from './screens/CarreraTab';
 import { PrepararEtapaScreen } from './screens/PrepararEtapaScreen';
 import { useStageSpeed } from './hooks/useStageSpeed';
+import { useCorrectionFactor } from './hooks/useCorrectionFactor';
 import { RaceProvider } from './context/RaceContext';
 
 type Tab = 'CARRERA' | 'CALCULADORA';
@@ -13,9 +14,10 @@ export function App() {
   const [screen, setScreen] = useState<Screen>('main');
 
   const { assignedSpeed, saveSpeed } = useStageSpeed();
+  const { correctionFactor } = useCorrectionFactor();
 
   return (
-    <RaceProvider assignedSpeed={assignedSpeed}>
+    <RaceProvider assignedSpeed={assignedSpeed} correctionFactor={correctionFactor}>
       <div className="app-container">
         <div className="status-bar-cover" aria-hidden="true" />
         {screen === 'preparar-etapa' ? (

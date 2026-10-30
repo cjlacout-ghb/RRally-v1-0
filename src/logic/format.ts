@@ -27,6 +27,17 @@ export function formatDistance(distance: number | null | undefined, decimals: nu
 }
 
 /**
+ * Formats an odometer correction factor with 4 decimal places using decimal comma (e.g. "1,0063").
+ * Returns "--,----" if factor is null, undefined, or NaN.
+ */
+export function formatFactor(factor: number | null | undefined): string {
+  if (factor === null || factor === undefined || Number.isNaN(factor)) {
+    return '--,----';
+  }
+  return factor.toFixed(4).replace('.', ',');
+}
+
+/**
  * Formats a signed delta in seconds with 1 decimal place (e.g. "+1,8", "-2,3").
  * Returns "0,0" without a sign when the rounded value is 0.0.
  * Returns "--,-" if delta is null, undefined, or NaN.

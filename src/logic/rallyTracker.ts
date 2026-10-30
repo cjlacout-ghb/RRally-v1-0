@@ -25,8 +25,9 @@ import {
   SPEED_SMOOTHING_WINDOW_MS,
   STALE_SPEED_TIMEOUT_MS,
 } from './gpsConstants';
-import { filterGpsReading, type FilterResult } from './gpsFilter';
+import { type FilterResult } from './gpsFilter';
 import type { GpsReading } from './gpsReader';
+import { DistanceAccumulator } from './distanceAccumulator';
 import { defaultClocks, type Clocks } from './stopwatch';
 import { computeDeltaSeconds } from './delta';
 
@@ -64,13 +65,11 @@ export class RallyTracker {
   private sessionStartEpochMs: number | null = null;
   private accumulatedElapsedMs: number = 0;
 
-  // Distance tracking
-  private rawGpsDistanceKm: number = 0;
+  // Distance tracking engine (shared with CalibrationMeter)
+  private readonly accumulator: DistanceAccumulator;
   private manualAdjustmentKm: number = 0;
 
   // Speed and telemetry state
-  private lastAcceptedReading: GpsReading | null = null;
-  private activeReferenceReading: GpsReading | null = null;
   private speedSmoothingWindow: SpeedSample[] = [];
   private latestSmoothedSpeedKmH: number | null = null;
   private frozenAverageSpeed: number | null = null;
@@ -83,6 +82,7 @@ export class RallyTracker {
     this.clocks = options.clocks ?? defaultClocks;
     this.correctionFactor = options.correctionFactor ?? DEFAULT_CORRECTION_FACTOR;
     this.assignedSpeedKmH = options.assignedSpeedKmH ?? null;
+    this.accumulator = new DistanceAccumulator();
   }
 
   /**
@@ -111,7 +111,7 @@ export class RallyTracker {
     this.running = true;
     this.sessionStartEpochMs = startEpochMs ?? this.clocks.nowWallClock();
     // Clear active reference so the next accepted reading establishes a new starting point
-    this.activeReferenceReading = null;
+    this.accumulator.clearReference();
     this.frozenAverageSpeed = null;
   }
 
@@ -140,7 +140,7 @@ export class RallyTracker {
 
     this.running = false;
     this.sessionStartEpochMs = null;
-    this.activeReferenceReading = null;
+    this.accumulator.clearReference();
   }
 
   /**
@@ -150,15 +150,13 @@ export class RallyTracker {
     this.running = false;
     this.sessionStartEpochMs = null;
     this.accumulatedElapsedMs = 0;
-    this.rawGpsDistanceKm = 0;
+    this.accumulator.reset();
     this.manualAdjustmentKm = 0;
     this.frozenAverageSpeed = null;
     this.latestReadingElapsedSeconds = null;
     this.deltaSeconds = null;
-    this.activeReferenceReading = null;
     this.speedSmoothingWindow = [];
     this.latestSmoothedSpeedKmH = null;
-    this.lastAcceptedReading = null;
   }
 
   /**
@@ -168,7 +166,7 @@ export class RallyTracker {
    */
   adjustDistance(stepDirection: number): void {
     const prospectiveAdjustmentKm = this.manualAdjustmentKm + stepDirection * MANUAL_ADJUSTMENT_STEP_KM;
-    const prospectiveDisplayedKm = this.rawGpsDistanceKm * this.correctionFactor + prospectiveAdjustmentKm;
+    const prospectiveDisplayedKm = this.accumulator.getRawDistanceKm() * this.correctionFactor + prospectiveAdjustmentKm;
 
     // A -1 press that would make the displayed distance negative must be ignored (no change to manual adjustment)
     if (prospectiveDisplayedKm < 0) {
@@ -195,7 +193,7 @@ export class RallyTracker {
           isJitter: false,
         },
         isNewReference: false,
-        rawDistanceKm: this.rawGpsDistanceKm,
+        rawDistanceKm: this.accumulator.getRawDistanceKm(),
         displayedDistanceKm: this.getDisplayedDistanceKm(),
         instantaneousSpeedKmH: this.getInstantaneousSpeedKmH(),
         averageSpeedKmH: this.getAverageSpeedKmH(),
@@ -203,16 +201,14 @@ export class RallyTracker {
       };
     }
 
-    // Displacement is measured relative to activeReferenceReading (or lastAcceptedReading)
-    const positionRef = this.running && this.activeReferenceReading ? this.activeReferenceReading : this.lastAcceptedReading;
-    const filterResult = filterGpsReading(reading, this.lastAcceptedReading, positionRef);
+    const step = this.accumulator.processReading(reading, this.running);
 
-    if (!filterResult.accepted) {
+    if (!step.accepted) {
       return {
         accepted: false,
-        filterResult,
+        filterResult: step.filterResult,
         isNewReference: false,
-        rawDistanceKm: this.rawGpsDistanceKm,
+        rawDistanceKm: this.accumulator.getRawDistanceKm(),
         displayedDistanceKm: this.getDisplayedDistanceKm(),
         instantaneousSpeedKmH: this.getInstantaneousSpeedKmH(),
         averageSpeedKmH: this.getAverageSpeedKmH(),
@@ -221,42 +217,20 @@ export class RallyTracker {
     }
 
     // Update instantaneous speed (independent of stopwatch)
-    this.updateInstantaneousSpeed(reading, filterResult.distanceMeters);
+    this.updateInstantaneousSpeed(reading, step.filterResult.distanceMeters, step.priorAcceptedReading);
 
-    let isNewReference = false;
-
-    // Accumulate distance only while running (INICIAR)
+    // Accumulate elapsed time and delta only while running (INICIAR)
     if (this.running && this.sessionStartEpochMs !== null) {
-      if (this.activeReferenceReading === null) {
-        // First accepted fix after INICIAR (or resume) becomes starting reference with zero distance added
-        this.activeReferenceReading = reading;
-        isNewReference = true;
-        this.latestReadingElapsedSeconds =
-          (this.accumulatedElapsedMs + (reading.timestamp - this.sessionStartEpochMs)) / 1000;
-        this.recomputeDelta();
-      } else {
-        if (!filterResult.isJitter) {
-          // Real movement counted: accumulate distance and advance active reference point
-          const stepKm = filterResult.distanceMeters / 1000;
-          this.rawGpsDistanceKm += stepKm;
-          this.activeReferenceReading = reading;
-        }
-        // When filterResult.isJitter is true, activeReferenceReading does NOT move,
-        // allowing very slow movement to accumulate against the last counted point.
-
-        this.latestReadingElapsedSeconds =
-          (this.accumulatedElapsedMs + (reading.timestamp - this.sessionStartEpochMs)) / 1000;
-        this.recomputeDelta();
-      }
+      this.latestReadingElapsedSeconds =
+        (this.accumulatedElapsedMs + (reading.timestamp - this.sessionStartEpochMs)) / 1000;
+      this.recomputeDelta();
     }
-
-    this.lastAcceptedReading = reading;
 
     return {
       accepted: true,
-      filterResult,
-      isNewReference,
-      rawDistanceKm: this.rawGpsDistanceKm,
+      filterResult: step.filterResult,
+      isNewReference: step.isNewReference,
+      rawDistanceKm: this.accumulator.getRawDistanceKm(),
       displayedDistanceKm: this.getDisplayedDistanceKm(),
       instantaneousSpeedKmH: this.getInstantaneousSpeedKmH(),
       averageSpeedKmH: this.getAverageSpeedKmH(),
@@ -268,12 +242,12 @@ export class RallyTracker {
    * Returns displayed distance in km: (rawGpsDistance * correctionFactor + manualAdjustment), clamped >= 0.
    */
   getDisplayedDistanceKm(): number {
-    const calculated = this.rawGpsDistanceKm * this.correctionFactor + this.manualAdjustmentKm;
+    const calculated = this.accumulator.getRawDistanceKm() * this.correctionFactor + this.manualAdjustmentKm;
     return Math.max(0, calculated);
   }
 
   getRawDistanceKm(): number {
-    return this.rawGpsDistanceKm;
+    return this.accumulator.getRawDistanceKm();
   }
 
   getManualAdjustmentKm(): number {
@@ -294,9 +268,10 @@ export class RallyTracker {
    * Returns false if no reading has been accepted yet.
    */
   isStale(currentTimeMs?: number): boolean {
-    if (!this.lastAcceptedReading) return false;
+    const lastReading = this.accumulator.getLastAcceptedReading();
+    if (!lastReading) return false;
     const now = currentTimeMs ?? this.clocks.nowWallClock();
-    return now - this.lastAcceptedReading.timestamp > STALE_SPEED_TIMEOUT_MS;
+    return now - lastReading.timestamp > STALE_SPEED_TIMEOUT_MS;
   }
 
   /**
@@ -325,7 +300,7 @@ export class RallyTracker {
   }
 
   getLatestReading(): GpsReading | null {
-    return this.lastAcceptedReading;
+    return this.accumulator.getLastAcceptedReading();
   }
 
   /**
@@ -333,7 +308,7 @@ export class RallyTracker {
    * Returns null if no accepted reading has arrived for > STALE_SPEED_TIMEOUT_MS (stale).
    */
   getInstantaneousSpeedKmH(currentTimeMs?: number): number | null {
-    if (!this.lastAcceptedReading || this.latestSmoothedSpeedKmH === null) {
+    if (!this.accumulator.getLastAcceptedReading() || this.latestSmoothedSpeedKmH === null) {
       return null;
     }
     if (this.isStale(currentTimeMs)) {
@@ -371,13 +346,17 @@ export class RallyTracker {
     return this.getDisplayedDistanceKm() / hours;
   }
 
-  private updateInstantaneousSpeed(reading: GpsReading, displacementMeters: number): void {
+  private updateInstantaneousSpeed(
+    reading: GpsReading,
+    displacementMeters: number,
+    priorReading: GpsReading | null
+  ): void {
     let sampleMps: number;
 
     if (reading.speed !== null && !Number.isNaN(reading.speed) && reading.speed >= 0) {
       sampleMps = reading.speed;
-    } else if (this.lastAcceptedReading) {
-      const dt = (reading.timestamp - this.lastAcceptedReading.timestamp) / 1000;
+    } else if (priorReading) {
+      const dt = (reading.timestamp - priorReading.timestamp) / 1000;
       sampleMps = dt > 0 ? displacementMeters / dt : 0;
     } else {
       sampleMps = 0;

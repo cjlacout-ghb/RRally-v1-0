@@ -29,7 +29,11 @@ Out of v1: digital roadbook and tulip cards, sub-stages, race history, accounts,
 - Average speed = D / main stopwatch time.
 - Ahead/behind delta in seconds = (D / V x 3600) - elapsed seconds. Positive means ahead, negative means behind. Show one decimal with sign. Neutral band is +/-0,10 s (a single named constant) and shows EN TIEMPO; otherwise ADELANTADO or ATRASADO. Refresh the delta about 10 times per second. While readings are fresh, delta uses the physical fix timestamp; during stale gaps (> STALE_SPEED_TIMEOUT_MS, 5s), it drifts with the wall clock using current elapsed race time and last known distance.
 - Shared stale threshold: `STALE_SPEED_TIMEOUT_MS` (5000 ms) is defined once in `gpsConstants.ts` and shared by the 0,0 km/h stationary speed rule, the status line visibility rule, and the stale delta drift rule.
-- Correction factor = official zone distance / distance measured by the app, rounded to 4 decimals, default 1,0000. It is persisted and applied to all subsequent GPS distance.
+- Correction factor formula = official zone distance / distance measured by the app, rounded to 4 decimals for display, default 1,0000. Calculations retain full precision internally. Applied to raw GPS distance in race tracking; manual adjustments (+1/-1) are not multiplied by the factor.
+- Calibration validation constants: `CALIBRATION_MIN_MEASURED_DISTANCE_KM` (0.100 km, minimum 100m measured zone), `CALIBRATION_MIN_FACTOR` (0.8000), `CALIBRATION_MAX_FACTOR` (1.2000), `DEFAULT_CORRECTION_FACTOR` (1.0000). Values outside this sane range are flagged as "out of range".
+- Storage keys: `STAGE_SPEED_KEY` (`'rr_stage_speed'`) and `CORRECTION_FACTOR_KEY` (`'rr_correction_factor'`). Corrupted, missing, or out-of-range factor values fall back to 1,0000 safely without throwing.
+- Independent calibration meter (`CalibrationMeter`): owns an independent `DistanceAccumulator` and reader lifecycle (starts on START, stops on STOP), separate from `RallyTracker`. States: `idle`, `measuring`, `stopped`. START resets to a clean zero; STOP freezes the value. Measuring a calibration zone never alters race distance, average speed, or delta. Reuses existing accuracy, out-of-order, implausible-speed, and stationary jitter filters with zero logic duplication.
+- Calibration blocking rule: calibration cannot run while the race is running (`isCalibrationAllowed = !raceIsRunning`). UI queries this single source of truth; calibration meter blocks `start()` while the race stopwatch is active.
 - Calibration step 2 measures GPS distance between INICIAR and PARAR over the control zone.
 - GPS: use high accuracy watching. Ignore fixes with poor accuracy (named threshold constant) and avoid accumulating jitter when the car is nearly stopped. Instantaneous speed comes from the device speed value when available, otherwise derived from positions, with light smoothing. If GPS is unavailable or permission is denied, show a short Spanish message and "--,-" instead of fake numbers.
 - Time: use a monotonic clock (performance.now) for stopwatches, never accumulate by counting timer ticks. Time of day comes from the system clock.
@@ -76,6 +80,7 @@ Vite + React + TypeScript (strict) + vite-plugin-pwa (service worker precaching)
 - Phase 3C-2: Wake lock and background/foreground handling, GPS status line styles. Done. Note: DESIGN.md was updated and must be re-uploaded to the Claude Project.
 - Phase 3D-1: GPS stationary behavior and PARAR reader lifecycle adjustments. Done. Note: DESIGN.md was updated and must be re-uploaded to the Claude Project.
 - Phase 3D-2: Delta drift with wall clock during stale stationary gaps. Done. Note: DESIGN.md was updated and must be re-uploaded to the Claude Project.
-- Phase 4: guided calibration. Pending.
+- Phase 4A: Odometer calibration logic (factor formula, independent meter, blocking rule, storage persistence, validation constants). Done.
+- Phase 4B: guided calibration UI. Pending.
 - Phase 5: Calculadora. Pending.
 - Phase 6: Ayuda, polish, full iOS device test. Pending.

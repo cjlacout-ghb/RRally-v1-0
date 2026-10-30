@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
   formatSpeed,
   formatDistance,
+  formatFactor,
   formatDelta,
   formatStopwatch,
   formatTimeOfDay,
@@ -54,6 +55,22 @@ describe('formatDistance', () => {
     expect(formatDistance(NaN)).toBe('--,--');
     expect(formatDistance(null, 3)).toBe('--,---');
     expect(formatDistance(undefined, 3)).toBe('--,---');
+  });
+});
+
+describe('formatFactor', () => {
+  it('formats factor with 4 decimal places and decimal comma', () => {
+    expect(formatFactor(1.0)).toBe('1,0000');
+    expect(formatFactor(1.0063)).toBe('1,0063');
+    expect(formatFactor(1.006289)).toBe('1,0063');
+    expect(formatFactor(0.9950)).toBe('0,9950');
+    expect(formatFactor(0.9950248)).toBe('0,9950');
+  });
+
+  it('returns "--,----" for null, undefined, or NaN', () => {
+    expect(formatFactor(null)).toBe('--,----');
+    expect(formatFactor(undefined)).toBe('--,----');
+    expect(formatFactor(NaN)).toBe('--,----');
   });
 });
 

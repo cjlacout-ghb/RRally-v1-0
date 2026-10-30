@@ -33,5 +33,14 @@ export const MANUAL_ADJUSTMENT_STEP_METERS = 10;
 /** Default odometer correction factor before Phase 4 calibration (1.0000). */
 export const DEFAULT_CORRECTION_FACTOR = 1.0000;
 
+/** Minimum measured distance in km required for a valid calibration (100 meters). */
+export const CALIBRATION_MIN_MEASURED_DISTANCE_KM = 0.100;
+
+/** Minimum sane odometer correction factor (0.8000). Values below this are flagged as out of range. */
+export const CALIBRATION_MIN_FACTOR = 0.8000;
+
+/** Maximum sane odometer correction factor (1.2000). Values above this are flagged as out of range. */
+export const CALIBRATION_MAX_FACTOR = 1.2000;
+
 /** Earth mean radius in meters used for great-circle distance calculations. */
 export const EARTH_RADIUS_METERS = 6371000;

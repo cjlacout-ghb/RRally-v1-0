@@ -35,6 +35,7 @@ export interface RaceContextValue {
   onAdjustDistance: (delta: -1 | 1) => void;
   tracker: RallyTracker;
   reader: GpsReader;
+  isCalibrationAllowed: boolean;
 }
 
 const RaceContext = createContext<RaceContextValue | null>(null);
@@ -42,6 +43,7 @@ const RaceContext = createContext<RaceContextValue | null>(null);
 export interface RaceProviderProps {
   children: ReactNode;
   assignedSpeed?: number | null;
+  correctionFactor?: number;
   /** Testing escape-hatches to inject mock instances without real geolocation */
   initialTracker?: RallyTracker;
   initialReader?: GpsReader;
@@ -50,6 +52,7 @@ export interface RaceProviderProps {
 export function RaceProvider({
   children,
   assignedSpeed = null,
+  correctionFactor,
   initialTracker,
   initialReader,
 }: RaceProviderProps) {
@@ -62,6 +65,7 @@ export function RaceProvider({
       reader: initialReader ?? new BrowserGpsReader(),
       tracker: initialTracker,
       assignedSpeedKmH: assignedSpeed,
+      correctionFactor,
     });
   });
 
@@ -85,6 +89,7 @@ export function RaceProvider({
           reader: sim,
           tracker: initialTracker,
           assignedSpeedKmH: assignedSpeed,
+          correctionFactor,
         })
       );
     });
@@ -92,7 +97,7 @@ export function RaceProvider({
     return () => {
       active = false;
     };
-  }, [simRequested, bridge, initialTracker, assignedSpeed]);
+  }, [simRequested, bridge, initialTracker, assignedSpeed, correctionFactor]);
 
   // Sync assignedSpeed when changed in storage/PrepararEtapa
   useEffect(() => {
@@ -100,6 +105,13 @@ export function RaceProvider({
       bridge.setAssignedSpeed(assignedSpeed);
     }
   }, [bridge, assignedSpeed]);
+
+  // Sync correctionFactor when changed in storage/calibration
+  useEffect(() => {
+    if (bridge && correctionFactor !== undefined) {
+      bridge.setCorrectionFactor(correctionFactor);
+    }
+  }, [bridge, correctionFactor]);
 
   if (!bridge) {
     return null;
@@ -199,6 +211,7 @@ function RaceProviderInner({
         onAdjustDistance,
         tracker: bridge.tracker,
         reader: bridge.reader,
+        isCalibrationAllowed: snapshot.isCalibrationAllowed,
       }}
     >
       {children}
