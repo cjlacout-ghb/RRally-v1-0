@@ -1,0 +1,21 @@
+/* ── Shared GPS status line ────────────────────────────────────────── */
+
+.gps-status-line {
+  min-height: var(--typography-body-md-line-height);
+  line-height: var(--typography-body-md-line-height);
+  text-align: center;
+  font-family: var(--font-sans);
+  font-size: var(--typography-body-md-font-size);
+  font-weight: var(--typography-body-md-font-weight);
+  color: var(--color-on-surface-variant);
+  white-space: normal;
+  word-break: normal;
+}
+
+/* "BUSCANDO GPS…": searching — on-surface-variant, normal weight */
+
+/* "GPS SIN PERMISO…" / "GPS NO DISPONIBLE": action needed — on-surface, bold */
+.gps-status-line--action-needed {
+  color: var(--color-on-surface);
+  font-weight: 700;
+}

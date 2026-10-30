@@ -1,6 +1,7 @@
 import { getDialTicks, getDialMarker, DIAL_VIEWBOX_SIZE, DIAL_CENTER, DIAL_OUTER_RADIUS } from '../logic/dial';
 import { formatSpeed, formatDistance } from '../logic/format';
 import type { GpsStatusKind } from '../logic/gpsStatus';
+import { GpsStatusLine } from './GpsStatusLine';
 import './OdometerDial.css';
 
 interface OdometerDialProps {
@@ -172,13 +173,7 @@ export function OdometerDial({ speed, averageSpeed, distance, gpsStatusText = ''
       </div>
 
       {/* ── GPS status line: directly under dial, above readouts ── */}
-      <div
-        className={`gps-status-line gps-status-line--${gpsStatusKind}`}
-        role="status"
-        aria-live="polite"
-      >
-        {gpsStatusText || '\u00A0'}
-      </div>
+      <GpsStatusLine statusText={gpsStatusText} statusKind={gpsStatusKind} />
 
       {/* Average + Distance readouts sit directly below the dial row */}
       <div className="readouts-grid">

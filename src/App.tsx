@@ -2,30 +2,51 @@ import { useState } from 'react';
 import './App.css';
 import { CarreraTab } from './screens/CarreraTab';
 import { PrepararEtapaScreen } from './screens/PrepararEtapaScreen';
+import { CalibrarOdometroScreen } from './screens/CalibrarOdometroScreen';
 import { useStageSpeed } from './hooks/useStageSpeed';
 import { useCorrectionFactor } from './hooks/useCorrectionFactor';
 import { RaceProvider } from './context/RaceContext';
 
 type Tab = 'CARRERA' | 'CALCULADORA';
-type Screen = 'main' | 'preparar-etapa';
+type Screen = 'main' | 'preparar-etapa' | 'calibrar-odometro';
 
 export function App() {
   const [activeTab, setActiveTab] = useState<Tab>('CARRERA');
-  const [screen, setScreen] = useState<Screen>('main');
+  const [screen, setScreen] = useState<Screen>(() => {
+    if (import.meta.env.DEV) {
+      const params = new URLSearchParams(window.location.search);
+      const demo = params.get('demo');
+      if (demo === 'cal1' || demo === 'cal2' || demo === 'cal3') {
+        return 'calibrar-odometro';
+      }
+    }
+    return 'main';
+  });
 
   const { assignedSpeed, saveSpeed } = useStageSpeed();
-  const { correctionFactor } = useCorrectionFactor();
+  const { correctionFactor, saveFactor } = useCorrectionFactor();
 
   return (
     <RaceProvider assignedSpeed={assignedSpeed} correctionFactor={correctionFactor}>
       <div className="app-container">
         <div className="status-bar-cover" aria-hidden="true" />
-        {screen === 'preparar-etapa' ? (
+        {screen === 'calibrar-odometro' ? (
+          /* ── Calibrar Odómetro secondary screen ──────────────── */
+          <CalibrarOdometroScreen
+            onBackToPreparar={() => setScreen('preparar-etapa')}
+            onCalibrationComplete={() => {
+              setActiveTab('CARRERA');
+              setScreen('main');
+            }}
+            onSaveFactor={saveFactor}
+          />
+        ) : screen === 'preparar-etapa' ? (
           /* ── Preparar Etapa secondary screen ─────────────────── */
           <PrepararEtapaScreen
             savedSpeed={assignedSpeed}
             onSave={saveSpeed}
             onBack={() => setScreen('main')}
+            onCalibrate={() => setScreen('calibrar-odometro')}
           />
         ) : (
           /* ── Main tab layout ─────────────────────────────────── */

@@ -167,7 +167,7 @@ Flat. Three tonal levels only: `background`, `surface-container` (cards and bloc
 - The -1 and +1 distance-adjustment buttons flank the dial on the left and right respectively, vertically centered on it.
 
 ### GPS status line
-- Position: directly below the odometer dial, above the PROMEDIO and DISTANCIA readouts. Centered, Chivo, `body-md` (14px, line-height 20px). No icon, no background, no animation.
+- Position: directly below the odometer dial, above the PROMEDIO and DISTANCIA readouts on the Carrera screen, and directly below the measured distance readout on calibration step 2/3. Centered, Chivo, `body-md` (14px, line-height 20px). No icon, no background, no animation.
 - Reserved height: always reserves one line of height (20px) so elements below never shift when text appears or disappears. At 320px width the permission-denied message may wrap to two lines; the block may grow only in this state.
 - Styles by message kind:
   - "BUSCANDO GPS…": color `on-surface-variant`, normal weight (searching).
@@ -200,11 +200,13 @@ Flat. Three tonal levels only: `background`, `surface-container` (cards and bloc
 - Large numeric fields, `headline-lg` digits in Space Mono, a Chivo label above, 1px `outline` border. Use the numeric keypad on focus. One purpose per screen.
 
 ### Stage setup
-- Title PREPARAR ETAPA. One field only: the assigned average speed of the stage in KM/H, with one short help line below it. APLICAR (primary) saves it and returns to the Carrera tab. A secondary button CALIBRAR ODÓMETRO opens the calibration flow.
+- Title PREPARAR ETAPA. One field only: the assigned average speed of the stage in KM/H, with one short help line below it. APLICAR (primary) saves it and returns to the Carrera tab. A secondary button CALIBRAR ODÓMETRO opens the calibration flow. When the race stopwatch is running, CALIBRAR ODÓMETRO is shown in a visibly disabled style (transparent, 1px `outline-variant` border, `on-surface-variant` text, distinguishable without color alone) and the message "DETENÉ LA CARRERA PARA CALIBRAR" is shown directly below it in Chivo bold, `on-surface`, `body-md` (with reserved height so elements never shift).
 
 ### Odometer calibration (guided)
-- 3 steps shown one at a time: enter the official distance of the control zone, read the distance measured by the app, review the resulting correction factor and tap APLICAR. A progress indicator ("1/3") is enough; no animation.
-- Step 1/3: numeric field with the official distance in KM, then SIGUIENTE. Step 2/3: the measured distance in `headline-xl` brass digits, with INICIAR and PARAR buttons to measure the zone, then SIGUIENTE. Step 3/3: official distance, measured distance and the correction factor (4 decimals, `display` size, brass), then APLICAR.
+- 3 steps shown one at a time: enter the official distance of the control zone, read the distance measured by the app, review the resulting correction factor and tap APLICAR. A progress indicator ("1/3", "2/3", "3/3") on the right of the header; no animation.
+- Step 1/3: numeric field with the official distance in KM (accepts decimal comma or dot), then SIGUIENTE (disabled until a valid distance greater than zero is entered). The typed value stays in memory when going back from step 2.
+- Step 2/3: the measured distance in `headline-xl` brass digits with 3 decimals and unit KM (placeholder "--,---" before first measurement), with INICIAR and PARAR buttons to measure the zone. The GPS status line appears directly below the measured distance readout and follows the exact same visibility rules and styles as on the Carrera screen. SIGUIENTE is disabled until the meter has been stopped with a measured distance of at least 0.100 km (100 m); if stopped below this minimum, "La distancia medida es insuficiente (mínimo 100 m)." is shown in Chivo bold, `on-surface`, `body-md`.
+- Step 3/3: official distance, measured distance (both with 3 decimals in KM), and the correction factor (4 decimals, `display` size, brass), then APLICAR. If the factor is outside the sane range (0.8000 to 1.2000) or invalid, the Spanish error message is displayed in Chivo bold, `on-surface`, `body-md` and APLICAR is disabled so an invalid factor can never be applied.
 
 ### Calculator
 - Standard large-button keypad (minimum 64px keys) with a single display line in `headline-xl`. Same button styles; no special skin.

@@ -1,0 +1,163 @@
+/* ── Calibrar Odómetro secondary screen ─────────────────────── */
+
+.calibrar-screen {
+  background: var(--color-background);
+}
+
+.calibration-step-counter {
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-size: var(--typography-label-md-font-size);
+  line-height: var(--typography-label-md-line-height);
+  letter-spacing: var(--typography-label-md-letter-spacing);
+  color: var(--color-on-surface-variant);
+  margin-left: auto;
+}
+
+.calibrar-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-space-sm);
+  background: var(--color-surface-container);
+  border: var(--border-width) solid var(--color-outline-variant);
+  border-radius: var(--rounded-default);
+  padding: var(--spacing-space-md);
+}
+
+.calibrar-field-label {
+  font-family: var(--font-sans);
+  font-weight: 700;
+  font-size: var(--typography-label-lg-font-size);
+  line-height: var(--typography-label-lg-line-height);
+  letter-spacing: var(--typography-label-lg-letter-spacing);
+  color: var(--color-on-surface-variant);
+  text-transform: uppercase;
+}
+
+/* ── Step 1 input row ────────────────────────────────────────── */
+.calibrar-input-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--spacing-space-md);
+  background: var(--color-surface-container-lowest);
+  border: var(--border-width) solid var(--color-outline);
+  border-radius: var(--rounded-default);
+  padding: var(--spacing-space-md);
+  margin: var(--spacing-space-xs) 0;
+}
+
+.calibrar-input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  font-family: var(--font-mono);
+  font-weight: var(--typography-headline-lg-font-weight);
+  font-size: var(--typography-headline-lg-font-size);
+  line-height: var(--typography-headline-lg-line-height);
+  letter-spacing: var(--typography-headline-lg-letter-spacing);
+  color: var(--color-on-surface);
+  width: 100%;
+}
+
+.calibrar-unit {
+  flex: none;
+}
+
+.calibrar-help {
+  font-family: var(--font-sans);
+  font-weight: var(--typography-body-md-font-weight);
+  font-size: var(--typography-body-md-font-size);
+  line-height: var(--typography-body-md-line-height);
+  color: var(--color-on-surface-variant);
+  margin: 0;
+}
+
+/* ── Step 2 measurement row & buttons ────────────────────────── */
+.calibrar-measured-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  background: var(--color-surface-container-lowest);
+  border: var(--border-width) solid var(--color-outline);
+  border-radius: var(--rounded-default);
+  padding: var(--spacing-space-md);
+  margin: var(--spacing-space-xs) 0;
+}
+
+.calibrar-measured-value {
+  font-family: var(--font-mono);
+  font-weight: var(--typography-headline-xl-font-weight);
+  font-size: var(--typography-headline-xl-font-size);
+  line-height: var(--typography-headline-xl-line-height);
+  letter-spacing: var(--typography-headline-xl-letter-spacing);
+  color: var(--color-secondary);
+}
+
+.calibrar-gps-status {
+  margin: var(--spacing-space-xs) 0;
+}
+
+.calibrar-buttons-row {
+  display: flex;
+  gap: var(--spacing-gutter);
+  margin-top: var(--spacing-space-md);
+}
+
+.calibrar-action-btn {
+  flex: 1;
+  min-height: 64px;
+}
+
+/* ── Step 3 review & apply ───────────────────────────────────── */
+.calibrar-kv-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding: 6px 0;
+}
+
+.calibrar-kv-value {
+  font-family: var(--font-mono);
+  font-weight: 700;
+  color: var(--color-on-surface);
+}
+
+.calibrar-factor-divider {
+  border-top: var(--border-width) solid var(--color-outline-variant);
+  margin-top: var(--spacing-space-sm);
+  padding-top: var(--spacing-space-md);
+  display: flex;
+  flex-direction: column;
+}
+
+.calibrar-factor-display {
+  font-family: var(--font-mono);
+  font-weight: var(--typography-display-font-weight);
+  font-size: clamp(40px, 12vw, var(--typography-display-font-size));
+  line-height: 1;
+  letter-spacing: var(--typography-display-letter-spacing);
+  color: var(--color-secondary);
+  margin-top: var(--spacing-space-xs);
+}
+
+/* ── Feedback and error messages ─────────────────────────────── */
+.calibrar-error-message {
+  font-family: var(--font-sans);
+  font-weight: 700;
+  font-size: var(--typography-body-md-font-size);
+  line-height: var(--typography-body-md-line-height);
+  color: var(--color-on-surface);
+  text-align: center;
+  margin: var(--spacing-space-sm) 0 0;
+}
+
+/* ── Bottom actions ─────────────────────────────────────────── */
+.calibrar-actions {
+  margin-top: auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-gutter);
+  padding-top: var(--spacing-gutter);
+}

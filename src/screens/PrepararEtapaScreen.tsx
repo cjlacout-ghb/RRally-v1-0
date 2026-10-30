@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { parseStageSpeed, STAGE_SPEED_ERROR_MESSAGES } from '../logic/stageSpeed';
 import { formatSpeed } from '../logic/format';
 import type { SaveResult } from '../storage';
+import { useRaceSession } from '../context/RaceContext';
 import './PrepararEtapaScreen.css';
 
 interface PrepararEtapaScreenProps {
@@ -11,9 +12,28 @@ interface PrepararEtapaScreenProps {
   onSave: (speed: number) => SaveResult;
   /** Called when the back button is pressed (does NOT save). */
   onBack: () => void;
+  /** Called when CALIBRAR ODÓMETRO is pressed. */
+  onCalibrate?: () => void;
+  /** Single source of truth for whether calibration is allowed. If omitted, read from RaceSession. */
+  isCalibrationAllowed?: boolean;
 }
 
-export function PrepararEtapaScreen({ savedSpeed, onSave, onBack }: PrepararEtapaScreenProps) {
+export function PrepararEtapaScreen({
+  savedSpeed,
+  onSave,
+  onBack,
+  onCalibrate,
+  isCalibrationAllowed: isCalibrationAllowedProp,
+}: PrepararEtapaScreenProps) {
+  let isCalibrationAllowed = isCalibrationAllowedProp ?? true;
+  try {
+    const raceSession = useRaceSession();
+    if (isCalibrationAllowedProp === undefined) {
+      isCalibrationAllowed = raceSession.isCalibrationAllowed;
+    }
+  } catch {
+    // If rendered outside RaceProvider in isolated unit tests
+  }
   // Pre-fill with saved value using Argentine comma format, or empty.
   const [inputValue, setInputValue] = useState<string>(
     savedSpeed !== null ? formatSpeed(savedSpeed) : ''
@@ -110,16 +130,24 @@ export function PrepararEtapaScreen({ savedSpeed, onSave, onBack }: PrepararEtap
             APLICAR
           </button>
 
-          {/* Phase 4: calibration flow not yet implemented — button is disabled. */}
-          <button
-            type="button"
-            className="btn-secondary btn-full"
-            disabled
-            aria-disabled="true"
-            aria-label="Calibrar odómetro (no disponible aún)"
-          >
-            CALIBRAR ODÓMETRO
-          </button>
+          <div className="calibration-blocked-container">
+            <button
+              type="button"
+              className={`btn-secondary btn-full ${!isCalibrationAllowed ? 'btn-secondary--disabled' : ''}`}
+              disabled={!isCalibrationAllowed}
+              aria-disabled={!isCalibrationAllowed}
+              onClick={onCalibrate}
+            >
+              CALIBRAR ODÓMETRO
+            </button>
+            <div
+              className="calibration-blocked-msg"
+              role="status"
+              aria-live="polite"
+            >
+              {!isCalibrationAllowed ? 'DETENÉ LA CARRERA PARA CALIBRAR' : '\u00A0'}
+            </div>
+          </div>
         </div>
       </div>
     </div>
