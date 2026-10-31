@@ -1,8 +1,15 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import './App.css';
 import { CarreraTab } from './screens/CarreraTab';
 import { PrepararEtapaScreen } from './screens/PrepararEtapaScreen';
 import { CalibrarOdometroScreen } from './screens/CalibrarOdometroScreen';
+import { CalculadoraTab } from './screens/CalculadoraTab';
+import {
+  INITIAL_CALCULATOR_STATE,
+  stepCalculator,
+  type CalculatorKey,
+  type CalculatorState,
+} from './logic/calculator';
 import { useStageSpeed } from './hooks/useStageSpeed';
 import { useCorrectionFactor } from './hooks/useCorrectionFactor';
 import { RaceProvider } from './context/RaceContext';
@@ -25,6 +32,13 @@ export function App() {
 
   const { assignedSpeed, saveSpeed } = useStageSpeed();
   const { correctionFactor, saveFactor } = useCorrectionFactor();
+
+  // Calculator state is lifted here so it survives switching tabs and opening secondary screens
+  const [calcState, setCalcState] = useState<CalculatorState>(INITIAL_CALCULATOR_STATE);
+
+  const handleCalcKeyPress = useCallback((key: CalculatorKey) => {
+    setCalcState((prev) => stepCalculator(prev, key));
+  }, []);
 
   return (
     <RaceProvider assignedSpeed={assignedSpeed} correctionFactor={correctionFactor}>
@@ -76,7 +90,7 @@ export function App() {
               {activeTab === 'CARRERA' ? (
                 <CarreraTab isVisible={activeTab === 'CARRERA'} assignedSpeed={assignedSpeed} />
               ) : (
-                <div data-testid="calculadora-content" />
+                <CalculadoraTab state={calcState} onKeyPress={handleCalcKeyPress} />
               )}
             </main>
 

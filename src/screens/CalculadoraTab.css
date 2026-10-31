@@ -1,0 +1,124 @@
+.calculadora-screen {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-gutter);
+  width: 100%;
+}
+
+/* On very narrow screens (<=324px), adjust negative margins so 4x64px keys + 3x12px gaps fit without horizontal scroll */
+@media (max-width: 324px) {
+  .calculadora-screen {
+    margin-left: -2px;
+    margin-right: -2px;
+    width: calc(100% + 4px);
+  }
+}
+
+/* ── Display card ────────────────────────────────────────────── */
+.calc-display-card {
+  background: var(--color-surface-container);
+  border: var(--border-width) solid var(--color-outline-variant);
+  border-radius: var(--rounded-default);
+  padding: var(--spacing-space-md) var(--spacing-margin);
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  min-height: 72px;
+  box-sizing: border-box;
+}
+
+.calc-display-text {
+  font-family: var(--font-mono);
+  font-size: var(--typography-headline-xl-font-size);
+  font-weight: var(--typography-headline-xl-font-weight);
+  line-height: var(--typography-headline-xl-line-height);
+  letter-spacing: var(--typography-headline-xl-letter-spacing);
+  color: var(--color-on-surface);
+  text-align: right;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: clip;
+  width: 100%;
+}
+
+/* ── Message line directly below display ──────────────────────── */
+.calc-message-line {
+  min-height: var(--typography-body-md-line-height);
+  height: var(--typography-body-md-line-height);
+  font-family: var(--font-sans);
+  font-weight: 700;
+  font-size: var(--typography-body-md-font-size);
+  line-height: var(--typography-body-md-line-height);
+  color: var(--color-on-surface);
+  text-align: left;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  box-sizing: border-box;
+  margin-top: calc(-1 * var(--spacing-space-xs));
+}
+
+/* ── Keypad grid ──────────────────────────────────────────────── */
+.calc-keypad {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--spacing-gutter);
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* ── Keypad buttons ───────────────────────────────────────────── */
+.calc-key {
+  min-width: 64px;
+  min-height: 64px;
+  height: 64px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-size: 24px;
+  border-radius: var(--rounded-default);
+  border: 2px solid transparent;
+  background: var(--color-surface-container-high);
+  color: var(--color-on-surface);
+  cursor: pointer;
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-user-select: none;
+  box-sizing: border-box;
+  transition: transform 0.05s ease, background-color 0.05s ease;
+}
+
+.calc-key:active {
+  background: #2d3654;
+  transform: translateY(var(--pressed-shift));
+}
+
+/* Operator keys (+, -, ×, ÷): roughly 30% larger glyphs (32px vs 24px) visually centered */
+.calc-key--operator {
+  font-size: 32px;
+  line-height: 1;
+}
+
+/* Equals key style */
+.calc-key--equals {
+  background: var(--color-primary-container);
+  color: var(--color-on-primary-container);
+}
+
+.calc-key--equals:active {
+  background: #0a38b8;
+  transform: translateY(var(--pressed-shift));
+}
+
+/* Zero key spanning 2 columns */
+.calc-key--span-2 {
+  grid-column: span 2;
+}
+
+/* Pending operator key cue: 2px primary border */
+.calc-key--pending {
+  border: 2px solid var(--color-primary);
+}

@@ -48,7 +48,8 @@ Out of v1: digital roadbook and tulip cards, sub-stages, race history, accounts,
   - Return to foreground recovery: immediately refreshes the bridge snapshot. If reader status is timeout or unavailable, or fixes are stale (>5s), restarts the GPS watch (never restarts if denied or idle). Re-reconciles the stopwatch against wall clock to eliminate any monotonic clock lag from screen-lock sleep.
   - Known iOS limitation: the Screen Wake Lock API in home-screen installed PWAs only works from iOS 18.4; in a regular Safari tab it works from iOS 16.4.
 - Dev-only simulator: query parameters `?sim=1` (or `?sim=true`), `&speed=<km/h>` (default 50), `&seed=<number>` (default 12345). Loaded via dev-guarded dynamic import, completely absent from production builds.
-- Persist only: assigned average speed and correction factor (local storage on the device). Stopwatch state is not persisted in v1.
+- Persist only: assigned average speed and correction factor (local storage on the device). Stopwatch state and calculator state are not persisted across app restarts in v1.
+- Calculator (`calculator.ts`): pure state machine (`stepCalculator`, `formatCalculatorResult`). Immediate left-to-right execution without operator precedence; max 9 digits per input entry (sign and comma excluded); binary floating-point artifact cleaning; formatted result fits in at most 10 characters (Argentine decimal comma, no thousands separators, no trailing zeros, never `-0`). Large integer overflow triggers "Resultado demasiado grande", division by zero triggers "No se puede dividir por cero". Error state shows "ERROR" and recovers with digits or 'C'. In-memory state is preserved across tab switching above screens in `App.tsx` and is not saved to `localStorage`.
 
 ## Proposed tech stack
 Vite + React + TypeScript (strict) + vite-plugin-pwa (service worker precaching). Plain CSS with custom properties generated from the DESIGN.md tokens in a single `tokens.css` (single source of truth, no duplicated values). Fonts self-hosted through npm packages (Space Mono 700, Chivo 400 and 700). No UI libraries. Vitest for the pure logic (distance, delta, correction factor, number and time formatting). Static hosting over HTTPS (required for GPS and service workers).
@@ -83,5 +84,5 @@ Vite + React + TypeScript (strict) + vite-plugin-pwa (service worker precaching)
 - Phase 3D-2: Delta drift with wall clock during stale stationary gaps. Done. Note: DESIGN.md was updated and must be re-uploaded to the Claude Project.
 - Phase 4A: Odometer calibration logic (factor formula, independent meter, blocking rule, storage persistence, validation constants). Done.
 - Phase 4B: guided calibration UI. Done. Note: DESIGN.md was updated and must be re-uploaded to the Claude Project.
-- Phase 5: Calculadora. Pending.
+- Phase 5: Calculadora. Done. Note: DESIGN.md was updated and must be re-uploaded to the Claude Project.
 - Phase 6: Ayuda, polish, full iOS device test. Pending.

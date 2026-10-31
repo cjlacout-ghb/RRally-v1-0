@@ -209,7 +209,12 @@ Flat. Three tonal levels only: `background`, `surface-container` (cards and bloc
 - Step 3/3: official distance, measured distance (both with 3 decimals in KM), and the correction factor (4 decimals, `display` size, brass), then APLICAR. If the factor is outside the sane range (0.8000 to 1.2000) or invalid, the Spanish error message is displayed in Chivo bold, `on-surface`, `body-md` and APLICAR is disabled so an invalid factor can never be applied.
 
 ### Calculator
-- Standard large-button keypad (minimum 64px keys) with a single display line in `headline-xl`. Same button styles; no special skin.
+- **Display**: single display line in `headline-xl` (Space Mono, 40px), right-aligned inside a card (`surface-container`, 1px `outline-variant` border, `rounded.DEFAULT`). Never wraps or overflows at 320px width, reserving at least 16px clearance on each side inside the card.
+- **Message line**: directly below the display card, in Chivo bold, `on-surface`, `body-md` (14px, line-height 20px). Always reserves one line of height (20px) so nothing shifts when it appears or disappears. Error messages: "No se puede dividir por cero" and "Resultado demasiado grande".
+- **Keypad layout**: 4 columns, 5 rows, every key at least 64px tall and wide, gaps of at least 12px (`gutter`). Row 1: C, backspace (⌫), +/-, divide (÷). Row 2: 7, 8, 9, multiply (×). Row 3: 4, 5, 6, subtract (-). Row 4: 1, 2, 3, add (+). Row 5: 0 (spanning two columns), decimal comma (,), equals (=).
+- **Key styles**: equals key is filled with `primary-container` with `on-primary-container` text; all other keys use `surface-container-high` fill with `on-surface` text, `rounded.DEFAULT` (4px), Space Mono bold for digits and symbols (24px for digits and other keys; operator glyphs +, -, ×, ÷ are roughly 30% larger at 32px, visually centered). Pressed state: darker fill and 2px downward shift, no haptics.
+- **Pending operator cue**: pending operator key shows a 2px `primary` border while pending (shape cue, not color alone).
+- **Accessibility**: every key has a Spanish aria-label ("Borrar todo", "Borrar último dígito", "Cambiar signo", "Dividir", "Multiplicar", "Restar", "Sumar", "Igual", "Coma decimal", and digit names).
 
 ### Help
 - A short card with 4 numbered steps (numbers in brass Space Mono), followed by a warnings block in `body-md` with four short lines. Plain text, no illustrations. Copy is the one in the reference mockup.
