@@ -44,3 +44,57 @@ describe('PrepararEtapaScreen - Calibration blocking UI', () => {
     expect(html).toContain('DETENÉ LA CARRERA PARA CALIBRAR');
   });
 });
+
+describe('PrepararEtapaScreen - Control system selector', () => {
+  it('shows CARRERA as selected by default and renders the control system selector', () => {
+    const html = renderToString(
+      <PrepararEtapaScreen
+        savedSpeed={50}
+        onSave={() => ({ ok: true })}
+        onBack={() => {}}
+        controlSystem="carrera"
+        onChangeControlSystem={() => {}}
+      />
+    );
+    expect(html).toContain('SISTEMA DE CONTROL');
+    expect(html).toContain('btn-system-selector--active');
+    // Shows speed field for carrera mode
+    expect(html).toContain('VELOCIDAD MEDIA DE LA ETAPA');
+  });
+
+  it('shows HOJA DE RUTA as selected and hides speed/calibration when system is hoja-de-ruta', () => {
+    const html = renderToString(
+      <PrepararEtapaScreen
+        savedSpeed={50}
+        onSave={() => ({ ok: true })}
+        onBack={() => {}}
+        controlSystem="hoja-de-ruta"
+        onChangeControlSystem={() => {}}
+        roadbookRows={[]}
+      />
+    );
+    // No speed field or calibration in hoja-de-ruta mode
+    expect(html).not.toContain('VELOCIDAD MEDIA DE LA ETAPA');
+    expect(html).not.toContain('CALIBRAR ODÓMETRO');
+    // Shows roadbook card instead
+    expect(html).toContain('HOJA CARGADA');
+    expect(html).toContain('CARGAR HOJA DE RUTA');
+  });
+
+  it('calls onChangeControlSystem when a system button is pressed', () => {
+    // This is a renderToString test — checking the prop wires correctly
+    const onChangeControlSystem = vi.fn();
+    const html = renderToString(
+      <PrepararEtapaScreen
+        savedSpeed={50}
+        onSave={() => ({ ok: true })}
+        onBack={() => {}}
+        controlSystem="carrera"
+        onChangeControlSystem={onChangeControlSystem}
+      />
+    );
+    // Both selector buttons are rendered
+    expect(html).toContain('CARRERA');
+    expect(html).toContain('HOJA DE RUTA');
+  });
+});

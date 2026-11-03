@@ -7,6 +7,7 @@ import type { DeltaState } from '../logic/delta';
 import type { GpsStatusKind } from '../logic/gpsStatus';
 import { getDemoData } from '../demo';
 import { useRaceSession } from '../context/RaceContext';
+import { useConfirmReset } from '../hooks/useConfirmReset';
 import './CarreraTab.css';
 
 // Demo mode is stripped in production by the build tool (import.meta.env.DEV guard inside getDemoData).
@@ -30,6 +31,12 @@ export function CarreraTab({
     onResetMain,
     onAdjustDistance,
   } = useRaceSession();
+
+  const confirmReset = useConfirmReset({
+    onReset: onResetMain,
+    hasSomethingToLose: () => main.getElapsedMs() > 0,
+    isVisible,
+  });
 
   // ── Display state for centisecond timers ────────────────────────
   const [mainDisplay, setMainDisplay] = useState('00:00,00');
@@ -147,19 +154,33 @@ export function CarreraTab({
           </div>
         </div>
         <div className="btn-row">
+          {/* aria-live polite region for armed state announcements — visually hidden, zero height */}
+          <span
+            role="status"
+            aria-live="polite"
+            aria-atomic="true"
+            style={{ position: 'absolute', width: 1, height: 1, overflow: 'hidden', clip: 'rect(0,0,0,0)', whiteSpace: 'nowrap' }}
+          >
+            {confirmReset.isArmed ? 'Confirmar reinicio' : ''}
+          </span>
           <button
             type="button"
-            className="btn-primary stopwatch-btn"
-            onClick={main.isRunning ? onStopMain : onStartMain}
+            className="btn-stopwatch stopwatch-btn"
+            onClick={() => {
+              confirmReset.disarm();
+              main.isRunning ? onStopMain() : onStartMain();
+            }}
           >
             {main.isRunning ? 'PARAR' : 'INICIAR'}
           </button>
           <button
             type="button"
-            className="btn-primary stopwatch-btn"
-            onClick={onResetMain}
+            ref={confirmReset.buttonRef}
+            className={`btn-stopwatch stopwatch-btn${confirmReset.isArmed ? ' btn-stopwatch--armed' : ''}`}
+            onClick={confirmReset.handleResetClick}
+            aria-label={confirmReset.isArmed ? 'Confirmar reinicio' : 'Reiniciar carrera'}
           >
-            REINICIAR
+            {confirmReset.buttonLabel}
           </button>
         </div>
       </div>

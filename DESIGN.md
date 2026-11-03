@@ -98,19 +98,19 @@ Rules that apply everywhere:
 - Depth is expressed only with tonal surface layers and 1px borders.
 - Every screen has one clear primary element; nothing decorative competes with the numbers.
 - Never use color as the only signal. Always pair it with a text label.
-- All user-facing text is in Spanish (Argentina). Use short, plain words. Fixed labels: CARRERA and CALCULADORA (tabs), INICIAR, PARAR, REINICIAR, APLICAR, SIGUIENTE, ADELANTADO, ATRASADO, EN TIEMPO, SIN DATOS, ASIGNADO, HORA OFICIAL, PROMEDIO, DISTANCIA, CRONÓMETRO 2, KM/H, KM, SEG. GPS status line messages: BUSCANDO GPS…, GPS SIN PERMISO: activalo en Ajustes de iOS, GPS NO DISPONIBLE. Screen titles: PREPARAR ETAPA, CALIBRAR ODÓMETRO, AYUDA.
+- All user-facing text is in Spanish (Argentina). Use short, plain words. Fixed labels: CARRERA and CALCULADORA (tabs), HOJA DE RUTA (tab), INICIAR, PARAR, REINICIAR, CONFIRMAR, APLICAR, SIGUIENTE, ADELANTADO, ATRASADO, EN TIEMPO, SIN DATOS, ASIGNADO, HORA OFICIAL, PROMEDIO, DISTANCIA, CRONÓMETRO 2, KM/H, KM, SEG, MARCAR, SALTAR, DESHACER, LISTO, ESTIPULADO, ANTERIOR, ACTUAL, MARCA, TIEMPO, SISTEMA DE CONTROL, CARGAR HOJA DE RUTA, SIN HOJA DE RUTA CARGADA, TEXTOS RÁPIDOS, MÁS RÁPIDO, MÁS LENTO, IGUAL. GPS status line messages: BUSCANDO GPS…, GPS SIN PERMISO: activalo en Ajustes de iOS, GPS NO DISPONIBLE. Screen titles: PREPARAR ETAPA, CALIBRAR ODÓMETRO, AYUDA, CARGAR HOJA.
 
 ## Colors
 
 Dark-first. The structural backdrop is deep midnight navy (`background`). The color tokens in the frontmatter are the single source of truth.
 
-- **Primary**: `primary` (`#b8c4ff`) is for text, icons, and strokes on dark surfaces. `primary-container` (`#0e4bef`, French racing blue) is for filled elements such as buttons and the active tab. Blue text on navy has poor contrast, so never use `primary-container` as a text color on dark surfaces.
-- **Secondary**: `secondary` (`#eec14b`, brass) is for secondary numeric readouts, dial tick marks, and calibration values.
+- **Primary**: `primary` (`#b8c4ff`) is for text, icons, and strokes on dark surfaces. `primary-container` (`#0e4bef`, French racing blue) is for filled elements such as primary buttons (MARCAR, APLICAR, LISTO), the calculator equals key, and the selected control system button (no longer the active tab nor stopwatch buttons). Blue text on navy has poor contrast, so never use `primary-container` as a text color on dark surfaces.
+- **Secondary**: `secondary` (`#eec14b`, brass) is for secondary numeric readouts, dial tick marks, and calibration values. It is also used as the fill of the next-stretch speed block on the Hoja de ruta screen, with `on-secondary` text.
 - **Text**: `on-surface` for primary text, `on-surface-variant` for supporting text and labels.
 - **Status colors (only for the ahead/behind indicator)**:
   In a regularity rally, both ahead and behind schedule are errors that penalize; only being on time is good.
   - `status-ahead` (orange, `#F97316`): ahead of schedule (alert). Text on it uses `on-status-ahead` (`#0a122a`).
-  - `status-behind` (red, `#EF4444`): behind schedule. Text on it uses `on-status-behind` (`#FFFFFF`).
+  - `status-behind` (red, `#EF4444`): behind schedule. Text on it uses `on-status-behind` (`#FFFFFF`). **Exception**: `status-behind` is also used as the 2px border of the armed REINICIAR (CONFIRMAR) button on both Carrera and Hoja de ruta tabs, as a destructive-action cue. The CONFIRMAR text label remains the primary signal so color is never the only cue.
   - `status-ontime` (emerald, `#10B981`): on time (within the tolerance band). Text on it uses `on-status-ontime` (`#0a122a`).
   - No-data state uses `surface-container-high` with `on-surface` text. Color is never the only signal: text labels are mandatory.
 - Ivory (`#FBF7EE`) is reserved for numerals and tick marks on the odometer dial. Do not use large ivory surfaces, to avoid glare.
@@ -127,7 +127,14 @@ Dark-first. The structural backdrop is deep midnight navy (`background`). The co
 
 Portrait only, designed for a 390x844 phone viewport; a tablet in portrait uses the same single-column layout, centered. Respect iOS safe areas at the top and bottom. Margins are 16px, the base rhythm is 4px, and gaps between touch targets are at least 12px. The app shell uses dynamic viewport height (dvh) so collapsing browser toolbars do not obscure elements, and scrollable content always reserves bottom space equal to the tab bar height plus the bottom safe area so the lowest content scrolls fully into view above the fixed tab bar. Scrolled content must never appear under the iOS status bar (top safe area is covered with the background color).
 
-Header on the two main tabs: the text "RR" (Space Mono, `primary`) on the left; two buttons on the right: a secondary text button with visible label "PREPARAR ETAPA" (transparent, 1px `outline` border, `on-surface` text, Chivo bold uppercase, minimum height 48px) and a 48px secondary icon button for help ("?"). No avatar and no logo image. Secondary screens (stage setup, calibration, help) have no tab bar: a 48px back button (‹), the screen title in `headline-md` uppercase, and an optional step counter on the right.
+Header on the two main tabs: the text "RR" (Space Mono, `primary`) on the left; two buttons on the right: a secondary text button with visible label "PREPARAR ETAPA" (transparent, 1px `outline` border, `on-surface` text, Chivo bold uppercase, minimum height 48px; while setup is pending, the button uses a 2px border in `secondary` brass with compensated horizontal padding so box size and header layout do not shift, returning to the normal 1px outline border once setup is complete: in Carrera mode when an assigned speed is saved, in Hoja de ruta mode when at least one row has an assigned time; fits next to "RR" and the help button at 320px width) and a 48px secondary icon button for help ("?"). No avatar and no logo image. Secondary screens (stage setup, calibration, sheet loading, help) have no tab bar: a 48px back button (‹), the screen title in `headline-md` uppercase, and an optional step counter on the right.
+
+### Control system selector
+The co-driver chooses ONE control system in PREPARAR ETAPA before the race: CARRERA or HOJA DE RUTA. The choice persists on the device.
+- The first tab of the tab bar is labeled CARRERA or HOJA DE RUTA according to the choice; the second tab stays CALCULADORA. No third tab.
+- The selector is two large buttons side by side (min height 64px). The selected one is filled with `primary-container` and shows a check mark before its label; the other is a secondary (outlined) button. State is never color-only.
+- The selector is disabled while the race stopwatch is running (same disabled styling and reserved-height message pattern as CALIBRAR ODÓMETRO, with the message "DETENÉ LA CARRERA PARA CAMBIAR EL SISTEMA").
+- In HOJA DE RUTA mode: GPS is not used at all, the odometer dial and calibration are not shown, and PREPARAR ETAPA shows a card with the count of loaded rows ("38 DE 50 FILAS") and a secondary button CARGAR HOJA DE RUTA, plus APLICAR. In CARRERA mode PREPARAR ETAPA behaves exactly as today.
 
 Main screen ("Carrera" tab), top to bottom:
 1. **Time block**: time of day (label: HORA OFICIAL), and the main stopwatch with INICIAR/PARAR and REINICIAR buttons.
@@ -136,7 +143,23 @@ Main screen ("Carrera" tab), top to bottom:
 4. **Second stopwatch**: free use (splits or countdown), visually smaller than the main one.
 5. **Bottom tab bar**: two tabs, "Carrera" and "Calculadora".
 
-Secondary screens, all using the same system: stage setup, odometer calibration, calculator, short help.
+Main screen ("Hoja de ruta" tab), top to bottom:
+1. **Header**: identical to the Carrera tab (RR, PREPARAR ETAPA with pending brass border when zero rows have an assigned time, help).
+2. **Time block**: identical to Carrera (HORA OFICIAL, main stopwatch with hours format, INICIAR/PARAR and REINICIAR) with ONE exception for this screen only: PARAR/REINICIAR and INICIAR buttons have a minimum height of 48px instead of 64px (explicit exception to the 64px rule, limited to the roadbook screen), so that MARCAR is fully visible without scrolling on a 390x844 viewport. The main stopwatch starts at the car's start and is never stopped during the whole event; the roadbook compares against it. The second stopwatch sits below, reachable by scrolling, as in Carrera.
+3. **Empty state shortcut** (only when zero rows have an assigned time): the deviation panel, next-stretch block, marks list, MARCAR, and SALTAR/DESHACER buttons are replaced by an empty-state card (`surface-container`, 1px `outline-variant` border, 4px radius) with text "SIN HOJA DE RUTA CARGADA" (Chivo bold, `on-surface`) and a primary button "CARGAR HOJA DE RUTA" (min height 64px) that directly opens the CARGAR HOJA screen. Tapping back from CARGAR HOJA when opened via this shortcut returns directly to the Hoja de ruta tab (not to PREPARAR ETAPA). As soon as at least one row has an assigned time, the normal Hoja de ruta layout returns.
+4. **Accumulated deviation panel** (when at least one row has an assigned time): reuse the Ahead/Behind panel spec (same colors, labels ADELANTADO / ATRASADO / EN TIEMPO / SIN DATOS, same sizing and tolerance band, same dark inset strip). The value is the accumulated deviation of the last marked row: deviation = assigned time minus real time, computed from the real time as displayed (rounded to tenths of a second), shown in seconds with one decimal; positive means ahead (ADELANTADO), negative means behind (ATRASADO), same convention as Carrera. The strip shows ASIGNADO with the organization's speed for the stretch just run.
+5. **Next-stretch speed block**: a full-width block filled with `secondary`, all text inside the block in `on-secondary` (including the label "PRÓXIMO TRAMO · HASTA MARCA N", the large "IR A xx,x KM/H" speed, the arrow label "▲ MÁS RÁPIDO" / "▼ MÁS LENTO" / "IGUAL", the small "ORG. xx,x" text, the "IR A --,- KM/H" no-data state, and the "EXIGENTE: +10% SOBRE LA ORGANIZACIÓN" warning line). Left: label "PRÓXIMO TRAMO · HASTA MARCA N" and the speed to drive in large Space Mono, with the form "IR A 65,9 KM/H" (the absolute speed, never a difference). Right: a text label with an arrow ("▲ MÁS RÁPIDO", "▼ MÁS LENTO" or "IGUAL") and the organization's speed in small text "ORG. 61,0". The arrow plus label ensures color is never the only signal. When there is no data, show "IR A --,- KM/H". Demanding speed warning: when the speed to drive exceeds the organization's speed by more than 10%, show one extra text line inside the block: "EXIGENTE: +10% SOBRE LA ORGANIZACIÓN" (Chivo bold, reserved height so nothing shifts).
+6. **Marks list**: only three cards, ANTERIOR (dimmed `surface-container-low`, shows real time and its deviation on the right), ACTUAL (`surface-container-high` with a 2px `primary` border; shows the assigned time ESTIPULADO in brass Space Mono, 22px) and SIGUIENTE (dimmed, shows assigned time). Each card shows the mark number and text.
+7. **MARCAR + SALTAR/DESHACER**: MARCAR is a full-width primary button, min height 72px, label font size 26px. One tap captures the main stopwatch time for the ACTUAL row and advances to the next row. Below MARCAR, two secondary buttons side by side, min height 48px: SALTAR (leaves the ACTUAL row without a real time and advances) and DESHACER (removes the last mark or skip and goes back one row).
+8. **Tab bar**: HOJA DE RUTA active.
+
+Secondary screens, all using the same system: stage setup, odometer calibration, sheet loading ("Cargar hoja"), calculator, short help.
+
+### Persistence
+- In Carrera mode: assigned average speed and correction factor are saved in localStorage.
+- In Hoja de ruta mode:
+  - The sheet is saved on the device and is NOT cleared by REINICIAR.
+  - The race state is saved in localStorage: stopwatch start instant, real marks and skips, current row, and whether the stopwatch is running. It is written only when something happens (start, stop, mark, skip, undo, reset), never every tick. On reopening the app, the stopwatch is rebuilt from the start instant. REINICIAR clears the race state but keeps the loaded sheet.
 
 ## Elevation & Depth
 
@@ -153,9 +176,13 @@ Flat. Three tonal levels only: `background`, `surface-container` (cards and bloc
 ## Components
 
 ### Buttons
-- **Primary action buttons** (INICIAR/PARAR, REINICIAR, APLICAR): filled with `primary-container`, text and icon in `on-primary-container`. Minimum touch target 64x64px.
+- **Primary action buttons** (MARCAR, APLICAR, LISTO): filled with `primary-container`, text and icon in `on-primary-container`. Minimum touch target 64x64px (MARCAR has min height 72px; calculator equals key keeps its own spec).
+- **Stopwatch buttons** (INICIAR/PARAR and REINICIAR of the main stopwatch and CRONÓMETRO 2 on both Carrera and Hoja de ruta tabs): fill `surface-container-high`, text `on-surface`, 1px `outline` border. Same radius (`rounded.DEFAULT`, 4px), font (Chivo bold uppercase), and minimum heights (64px, with the 48px exception on the Hoja de ruta main stopwatch). Pressed state: darker fill and 2px downward shift.
 - **-1/+1 distance adjustment buttons** (exception): placed on both sides of the odometer dial (left: -1, right: +1), vertically centered on the dial. Fill: `surface-container-high`; text: `on-surface`; shape: `rounded.lg`; font: monospaced bold (minimum 20px); size 56x56px (explicit exception to the 64px touch target rule for primary buttons). No border.
-- **Secondary buttons**: transparent with a 1px `outline` border and `on-surface` text. Minimum height 48px.
+- **Roadbook screen time block buttons** (exception): on the Hoja de ruta screen only, PARAR/REINICIAR and INICIAR buttons have a minimum height of 48px instead of 64px (explicit exception to the 64px rule, limited to the roadbook screen), so that MARCAR is fully visible without scrolling on a 390x844 viewport.
+- **MARCAR button**: full-width primary button, min height 72px, label font size 26px. One tap captures the main stopwatch time for the ACTUAL row and advances to the next row.
+- **Secondary buttons**: transparent with a 1px `outline` border and `on-surface` text. Minimum height 48px (exceptions: quick-text buttons have minimum height 44px; "+ 10 FILAS" and the control system selector buttons have minimum height 64px).
+- **SALTAR and DESHACER buttons**: two secondary buttons side by side below MARCAR, minimum height 48px.
 - **Pressed state**: darker fill and a 2px downward shift. No haptic or vibration feedback (it is not available on iOS).
 
 ### Odometer dial
@@ -191,16 +218,33 @@ Flat. Three tonal levels only: `background`, `surface-container` (cards and bloc
 
 ### Stopwatches
 - Main stopwatch: `headline-xl` digits (40px) for MM:SS,cc. When hours are displayed (HH:MM:SS,cc), the digits scale fluidly (34px at 320px up to 40px at 390px) to maintain at least 16px free space on each side within the card. Time of day (HORA OFICIAL) is formatted as HH:MM:SS (seconds truncated, no decimals) in `headline-lg` (26px), updating strictly once per second. Second stopwatch: `headline-lg`.
-- Each has its own INICIAR/PARAR and REINICIAR buttons, using the same button spec.
+- Each has its own INICIAR/PARAR and REINICIAR buttons, using the stopwatch button spec.
+- **Two-step REINICIAR (main stopwatch only — Carrera and Hoja de ruta tabs)**: "Has something to lose" means the main stopwatch elapsed time is greater than zero, or (Hoja de ruta only) at least one real mark or skip exists in the race state. If there is nothing to lose, the first tap resets immediately as today. If there is something to lose, the first tap *arms* the button: the label changes from REINICIAR to CONFIRMAR and the button gains a 2px `status-behind` (red) border as a destructive-action cue — the CONFIRMAR text label is the primary signal, so color is never the only cue. The button keeps exactly the same size and position; no layout shift. While armed, a second tap executes the reset. The armed state expires automatically after 4 seconds and returns the button to REINICIAR without resetting. It also disarms immediately if the user taps any other control (INICIAR/PARAR, MARCAR, SALTAR, DESHACER) or if the tab becomes hidden; the timer is cleaned up on unmount. Accessibility: the button's accessible name changes with its label, and the state change is announced via an `aria-live="polite"` region that adds no visible text or height. The armed state is local UI state only: never persisted in localStorage and never written to the race state.
+- **CRONÓMETRO 2 (both tabs)**: resets immediately on the first tap — no two-step confirmation.
 
 ### Tab bar
-- Fixed at the bottom, above the iOS safe area, height at least 56px. Two tabs. The active tab is filled with `primary-container`; the inactive tab uses `on-surface-variant` text.
+- Fixed at the bottom, above the iOS safe area, height at least 56px. Two tabs. The first tab is labeled CARRERA or HOJA DE RUTA according to the chosen control system; the second tab stays CALCULADORA. Both tabs use a dark neutral look; no tab is filled with `primary-container` anymore. The active tab has fill `surface-container-high`, text `on-surface` in bold, plus a 2px `primary` line along its top edge (shape cue so state is never color-only). The inactive tab has no fill (same as the tab bar background), text `on-surface-variant`, and regular weight.
 
 ### Inputs
 - Large numeric fields, `headline-lg` digits in Space Mono, a Chivo label above, 1px `outline` border. Use the numeric keypad on focus. One purpose per screen.
 
 ### Stage setup
-- Title PREPARAR ETAPA. One field only: the assigned average speed of the stage in KM/H, with one short help line below it. APLICAR (primary) saves it and returns to the Carrera tab. A secondary button CALIBRAR ODÓMETRO opens the calibration flow. When the race stopwatch is running, CALIBRAR ODÓMETRO is shown in a visibly disabled style (transparent, 1px `outline-variant` border, `on-surface-variant` text, distinguishable without color alone) and the message "DETENÉ LA CARRERA PARA CALIBRAR" is shown directly below it in Chivo bold, `on-surface`, `body-md` (with reserved height so elements never shift).
+- Title PREPARAR ETAPA.
+- Control system selector (SISTEMA DE CONTROL): two large buttons side by side (min height 64px) to choose between CARRERA and HOJA DE RUTA. The selected button is filled with `primary-container` and shows a check mark before its label; the other is a secondary (outlined) button. State is never color-only. While the race stopwatch is running, the selector is disabled (same disabled styling and reserved-height message pattern as CALIBRAR ODÓMETRO, with the message "DETENÉ LA CARRERA PARA CAMBIAR EL SISTEMA" in Chivo bold, `on-surface`, `body-md` directly below it).
+- In CARRERA mode: one field only: the assigned average speed of the stage in KM/H, with one short help line below it. APLICAR (primary) saves it and returns to the Carrera tab. A secondary button CALIBRAR ODÓMETRO opens the calibration flow. When the race stopwatch is running, CALIBRAR ODÓMETRO is shown in a visibly disabled style (transparent, 1px `outline-variant` border, `on-surface-variant` text, distinguishable without color alone) and the message "DETENÉ LA CARRERA PARA CALIBRAR" is shown directly below it in Chivo bold, `on-surface`, `body-md` (with reserved height so elements never shift).
+- In HOJA DE RUTA mode: GPS is not used at all, the odometer dial and calibration are not shown, and PREPARAR ETAPA shows a card with the count of loaded rows ("38 DE 50 FILAS") and a secondary button CARGAR HOJA DE RUTA, plus APLICAR.
+
+### Sheet loading ("Cargar hoja")
+- Secondary screen with back button, title CARGAR HOJA and a counter of loaded rows on the right in brass Space Mono, defined as "N DE M FILAS" where N is the count of rows with an assigned time and M is the total rows in the sheet (e.g. "0 DE 50 FILAS", "38 DE 50 FILAS").
+- One sheet only, starting with 50 empty rows. A button "+ 10 FILAS" (secondary, min height 64px) sits as the last item of the list and scrolls with the rows to add more rows up to the maximum.
+- Column header: N°, MARCA, TIEMPO, KM/H. Each row is a card (`surface-container`, 1px `outline-variant` border, 4px radius, height 52px) with: row number, mark text, assigned cumulative time (H:MM:SS, numeric keypad, digits fill from the right like a timer), and speed in KM/H.
+- Mark text: free short text (updates live as the user types, with no extra confirm step), or one of the quick-text buttons (AUTOLARGADA, AUTOCONTROL, NEUTRALIZACIÓN, CONTROL HORARIO, FIN) shown as secondary buttons (min height 44px).
+- While the MARCA field of a row is being edited, the TEXTOS RÁPIDOS panel (the five quick-text buttons plus the free-text field) is pinned to the bottom of the screen, directly above the LISTO button. It is hidden when no MARCA is being edited (e.g. while editing time or speed, or when nothing is selected).
+- The list scrolls independently above the pinned area. Tapping a row never scrolls the list to the end; it performs only the minimum scroll needed to keep the edited row visible above the pinned panel. Applying a quick text does not change the scroll position, keeps the row selected, and keeps the panel visible so the user can tap another row next.
+- Speed: optional. A blank speed inherits the previous row's speed. An inherited value is shown dimmed (`on-surface-variant`); an explicitly typed one is shown in brass. A speed applies from that mark until the next mark.
+- The row being edited has a 2px `primary` border. Empty times show "-:--:--" and empty speeds "--".
+- Bottom actions: LISTO (primary, min height 64px) stays pinned at the very bottom. The pinned area respects the iOS bottom safe area and keeps at least 12px between touch targets.
+- The sheet is saved on the device and is NOT cleared by REINICIAR.
 
 ### Odometer calibration (guided)
 - 3 steps shown one at a time: enter the official distance of the control zone, read the distance measured by the app, review the resulting correction factor and tap APLICAR. A progress indicator ("1/3", "2/3", "3/3") on the right of the header; no animation.
@@ -221,4 +265,4 @@ Flat. Three tonal levels only: `background`, `surface-container` (cards and bloc
 
 ## Excluded from v1
 
-Digital roadbook and tulip cards, sub-stages, race history, user accounts, sounds or complex alerts, landscape layouts, haptic feedback, and any decorative texture or ornament.
+The roadbook sheet is no longer excluded from v1 (supported via the "Hoja de ruta" control system and "Cargar hoja" screen). Still excluded from v1: tulip cards, sub-stages, any map/route rendering, race history, user accounts, sounds or complex alerts, landscape layouts, haptic feedback, and any decorative texture or ornament.

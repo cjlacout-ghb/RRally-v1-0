@@ -85,4 +85,6 @@ Vite + React + TypeScript (strict) + vite-plugin-pwa (service worker precaching)
 - Phase 4A: Odometer calibration logic (factor formula, independent meter, blocking rule, storage persistence, validation constants). Done.
 - Phase 4B: guided calibration UI. Done. Note: DESIGN.md was updated and must be re-uploaded to the Claude Project.
 - Phase 5: Calculadora. Done. Note: DESIGN.md was updated and must be re-uploaded to the Claude Project.
-- Phase 6: Ayuda, polish, full iOS device test. Pending.
+- Phase H1: Hoja de ruta pure logic (control system selector, sheet model, time input parsing/formatting, race marks state & deviation, adjusted next-stretch speed, storage functions). Done.
+- Phase H2: Hoja de ruta UI (control system selector in Preparar etapa, Cargar hoja screen, Hoja de ruta tab with 48px buttons exception, dynamic tab bar). Done. Note: DESIGN.md was updated and must be re-uploaded to the Claude Project.
+- Phase 6: Ayuda screen, roadbook race state persistence, hook polish, unit tests. Done.

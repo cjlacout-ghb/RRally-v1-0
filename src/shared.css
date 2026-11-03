@@ -80,6 +80,36 @@
   transform: translateY(var(--pressed-shift));
 }
 
+/* ── Shared stopwatch button ─────────────────────────────────── */
+
+.btn-stopwatch {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 64px;
+  min-height: 64px;
+  padding: 0 var(--spacing-space-md);
+  background: var(--color-surface-container-high);
+  color: var(--color-on-surface);
+  border: var(--border-width) solid var(--color-outline);
+  border-radius: var(--rounded-default);
+  font-family: var(--font-sans);
+  font-weight: 700;
+  font-size: var(--typography-body-lg-font-size);
+  line-height: var(--typography-body-lg-line-height);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  cursor: pointer;
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.btn-stopwatch:active {
+  background: var(--color-surface-container-lowest);
+  transform: translateY(var(--pressed-shift));
+}
+
 /* Round variant (dial ±1 buttons) */
 .btn-round {
   width: 64px;
@@ -128,6 +158,21 @@
 .btn-secondary[aria-disabled='true'] {
   opacity: 0.4;
   cursor: not-allowed;
+}
+
+/* Pending-setup emphasis: 2px secondary (brass) border.
+   Compensates horizontal padding by 1px so the outer box size (and header layout)
+   does not shift between normal (1px border) and pending (2px border) states. */
+.btn-secondary--pending {
+  border: 2px solid var(--color-secondary);
+  padding: 0 calc(var(--spacing-space-md) - 1px);
+}
+
+/* Armed state: main REINICIAR shows CONFIRMAR label with a 2px status-behind (red) border.
+   This is a destructive-action cue. The CONFIRMAR text label is the primary signal;
+   color is never the only cue. */
+.btn-stopwatch--armed {
+  border: 2px solid var(--color-status-behind);
 }
 
 /* ── Row of buttons ──────────────────────────────────────────── */

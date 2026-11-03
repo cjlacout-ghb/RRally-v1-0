@@ -42,6 +42,8 @@ export interface RaceSessionBridgeOptions {
   clocks?: Clocks;
   /** Injectable wake lock API for testing. Pass null to disable entirely. */
   wakeLockApi?: WakeLockApi | null;
+  /** Whether the GPS reader should be started. False in Hoja de ruta mode. */
+  enableGps?: boolean;
 }
 
 export class RaceSessionBridge {
@@ -51,6 +53,7 @@ export class RaceSessionBridge {
   private readonly clocks: Clocks;
   private readonly wakeLock: WakeLockManager;
   private correctionFactor?: number;
+  private enableGps: boolean;
 
   private lastReadingTimestamp: number | null = null;
   private hasReceivedReading: boolean = false;
@@ -63,6 +66,7 @@ export class RaceSessionBridge {
     this.reader = options.reader;
     this.stopwatch = options.stopwatch ?? new Stopwatch(this.clocks);
     this.correctionFactor = options.correctionFactor;
+    this.enableGps = options.enableGps ?? true;
     this.tracker =
       options.tracker ??
       new RallyTracker({
@@ -145,9 +149,23 @@ export class RaceSessionBridge {
   }
 
   /**
+   * Enables or disables GPS reader lifecycle (disabled in Hoja de ruta mode).
+   */
+  setGpsEnabled(enabled: boolean): void {
+    this.enableGps = enabled;
+    if (!enabled && this.reader.getStatus() === 'active') {
+      this.reader.stop();
+    }
+  }
+
+  isGpsEnabled(): boolean {
+    return this.enableGps;
+  }
+
+  /**
    * Starts or resumes the race (INICIAR).
    * Reads wall-clock time once and shares this exact single instant between
-   * the main stopwatch and RallyTracker. Starts or retries the GPS reader.
+   * the main stopwatch and RallyTracker. Starts or retries the GPS reader (if GPS is enabled).
    * Acquires the screen wake lock.
    */
   start(startWallClock?: number): void {
@@ -168,14 +186,16 @@ export class RaceSessionBridge {
     this.hasReceivedReading = false;
     this.lastReadingTimestamp = null;
 
-    const status = this.reader.getStatus();
-    if (
-      status === 'idle' ||
-      status === 'denied' ||
-      status === 'unavailable' ||
-      status === 'timeout'
-    ) {
-      this.reader.start();
+    if (this.enableGps) {
+      const status = this.reader.getStatus();
+      if (
+        status === 'idle' ||
+        status === 'denied' ||
+        status === 'unavailable' ||
+        status === 'timeout'
+      ) {
+        this.reader.start();
+      }
     }
 
     // Acquire wake lock (fire-and-forget; errors are swallowed inside WakeLockManager)
@@ -256,6 +276,7 @@ export class RaceSessionBridge {
         now - this.lastReadingTimestamp > STALE_SPEED_TIMEOUT_MS;
 
       if (
+        this.enableGps &&
         this.stopwatch.isRunning() &&
         (status === 'timeout' ||
           status === 'unavailable' ||

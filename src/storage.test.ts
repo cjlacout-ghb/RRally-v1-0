@@ -7,6 +7,17 @@ import {
   writeCorrectionFactor,
   resetCorrectionFactor,
   CORRECTION_FACTOR_KEY,
+  readControlSystem,
+  writeControlSystem,
+  CONTROL_SYSTEM_KEY,
+  readRoadbookSheet,
+  writeRoadbookSheet,
+  ROADBOOK_SHEET_KEY,
+  readRoadbookRaceState,
+  writeRoadbookRaceState,
+  clearRoadbookRaceState,
+  ROADBOOK_RACE_STATE_KEY,
+  StoredRoadbookRaceState,
 } from './storage';
 import { DEFAULT_CORRECTION_FACTOR } from './logic/gpsConstants';
 
@@ -199,6 +210,145 @@ describe('storage module', () => {
       expect(result).toEqual({ ok: true });
       expect(readCorrectionFactor()).toBe(DEFAULT_CORRECTION_FACTOR);
       expect(mockStorage.getItem(CORRECTION_FACTOR_KEY)).toBeNull();
+    });
+  });
+
+  describe('readControlSystem and writeControlSystem', () => {
+    it('returns carrera (default) when nothing is stored', () => {
+      expect(readControlSystem()).toBe('carrera');
+    });
+
+    it('round trips valid control system values', () => {
+      const res = writeControlSystem('hoja-de-ruta');
+      expect(res).toEqual({ ok: true });
+      expect(readControlSystem()).toBe('hoja-de-ruta');
+      expect(mockStorage.getItem(CONTROL_SYSTEM_KEY)).toBe('hoja-de-ruta');
+
+      writeControlSystem('carrera');
+      expect(readControlSystem()).toBe('carrera');
+    });
+
+    it('falls back to carrera on corrupt or unknown value', () => {
+      mockStorage.setItem(CONTROL_SYSTEM_KEY, 'invalid-system');
+      expect(readControlSystem()).toBe('carrera');
+    });
+
+    it('falls back to carrera safely when localStorage throws', () => {
+      vi.spyOn(mockStorage, 'getItem').mockImplementation(() => {
+        throw new Error('StorageError');
+      });
+      expect(readControlSystem()).toBe('carrera');
+    });
+  });
+
+  describe('readRoadbookSheet and writeRoadbookSheet', () => {
+    it('returns default 50-row sheet when nothing is stored', () => {
+      const sheet = readRoadbookSheet();
+      expect(sheet).toHaveLength(50);
+      expect(sheet[0].assignedTimeSeconds).toBeNull();
+    });
+
+    it('round trips valid roadbook sheet', () => {
+      const sampleSheet = [
+        { id: '1', mark: 'Start', assignedTimeSeconds: 0, speedKmH: 50 },
+        { id: '2', mark: 'PC1', assignedTimeSeconds: 120, speedKmH: 60 },
+      ];
+      const writeRes = writeRoadbookSheet(sampleSheet);
+      expect(writeRes).toEqual({ ok: true });
+
+      const loaded = readRoadbookSheet();
+      expect(loaded).toHaveLength(2);
+      expect(loaded[0]).toEqual({ id: '1', mark: 'Start', assignedTimeSeconds: 0, speedKmH: 50 });
+      expect(loaded[1]).toEqual({ id: '2', mark: 'PC1', assignedTimeSeconds: 120, speedKmH: 60 });
+    });
+
+    it('falls back to initial sheet on corrupted JSON', () => {
+      mockStorage.setItem(ROADBOOK_SHEET_KEY, '{ invalid json');
+      const loaded = readRoadbookSheet();
+      expect(loaded).toHaveLength(50);
+    });
+
+    it('falls back to initial sheet on unknown version or missing rows', () => {
+      mockStorage.setItem(ROADBOOK_SHEET_KEY, JSON.stringify({ version: 99, rows: [] }));
+      expect(readRoadbookSheet()).toHaveLength(50);
+
+      mockStorage.setItem(ROADBOOK_SHEET_KEY, JSON.stringify({ version: 1 }));
+      expect(readRoadbookSheet()).toHaveLength(50);
+    });
+
+    it('sanitizes rows on read (truncates long marks, strips invalid speed)', () => {
+      mockStorage.setItem(
+        ROADBOOK_SHEET_KEY,
+        JSON.stringify({
+          version: 1,
+          rows: [
+            { id: '1', mark: 'A'.repeat(60), assignedTimeSeconds: 10.5, speedKmH: -20 },
+          ],
+        })
+      );
+      const loaded = readRoadbookSheet();
+      expect(loaded).toHaveLength(1);
+      expect(loaded[0].mark).toHaveLength(40);
+      expect(loaded[0].assignedTimeSeconds).toBe(10); // floored whole seconds
+      expect(loaded[0].speedKmH).toBeNull(); // negative speed converted to null
+    });
+  });
+
+  describe('readRoadbookRaceState, writeRoadbookRaceState and clearRoadbookRaceState', () => {
+    const sampleRaceState: StoredRoadbookRaceState = {
+      version: 1,
+      startWallClock: 1700000000000,
+      running: true,
+      marks: {
+        0: { status: 'marked', realElapsedMs: 1500 },
+        1: { status: 'skipped' },
+      },
+      history: [
+        { type: 'mark', rowIndex: 0, realElapsedMs: 1500 },
+        { type: 'skip', rowIndex: 1 },
+      ],
+      currentRowIndex: 2,
+    };
+
+    it('returns null when nothing is stored', () => {
+      expect(readRoadbookRaceState()).toBeNull();
+    });
+
+    it('round trips valid race state', () => {
+      const res = writeRoadbookRaceState(sampleRaceState);
+      expect(res).toEqual({ ok: true });
+
+      const loaded = readRoadbookRaceState();
+      expect(loaded).toEqual(sampleRaceState);
+    });
+
+    it('falls back to null on corrupted JSON or unknown version', () => {
+      mockStorage.setItem(ROADBOOK_RACE_STATE_KEY, 'corrupted');
+      expect(readRoadbookRaceState()).toBeNull();
+
+      mockStorage.setItem(ROADBOOK_RACE_STATE_KEY, JSON.stringify({ version: 2 }));
+      expect(readRoadbookRaceState()).toBeNull();
+    });
+
+    it('clearRoadbookRaceState removes race state but keeps loaded sheet intact (survives REINICIAR)', () => {
+      // Setup both sheet and race state
+      const sheet = [
+        { id: '1', mark: 'Start', assignedTimeSeconds: 0, speedKmH: 50 },
+      ];
+      writeRoadbookSheet(sheet);
+      writeRoadbookRaceState(sampleRaceState);
+
+      expect(readRoadbookRaceState()).not.toBeNull();
+      expect(readRoadbookSheet()).toHaveLength(1);
+
+      // Reset race
+      const clearRes = clearRoadbookRaceState();
+      expect(clearRes).toEqual({ ok: true });
+
+      // Race state cleared, sheet kept!
+      expect(readRoadbookRaceState()).toBeNull();
+      expect(mockStorage.getItem(ROADBOOK_RACE_STATE_KEY)).toBeNull();
+      expect(readRoadbookSheet()).toHaveLength(1);
     });
   });
 });

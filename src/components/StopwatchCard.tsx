@@ -28,14 +28,14 @@ export function StopwatchCard({
       <div className="stopwatch-card__buttons btn-row">
         <button
           type="button"
-          className="btn-primary stopwatch-btn"
+          className="btn-stopwatch stopwatch-btn"
           onClick={onStartStop}
         >
           {isRunning ? 'PARAR' : 'INICIAR'}
         </button>
         <button
           type="button"
-          className="btn-primary stopwatch-btn"
+          className="btn-stopwatch stopwatch-btn"
           onClick={onReset}
         >
           REINICIAR

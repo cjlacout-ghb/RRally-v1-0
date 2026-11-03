@@ -152,3 +152,66 @@
   text-align: center;
   margin-top: var(--spacing-space-xs);
 }
+
+/* ── Control system selector ────────────────────────────────── */
+.preparar-system-selector {
+  display: flex;
+  gap: var(--spacing-gutter);
+}
+
+.btn-system-selector {
+  flex: 1;
+  min-height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: var(--spacing-space-sm) var(--spacing-space-md);
+  border-radius: var(--rounded-default);
+  font-family: var(--font-sans);
+  font-weight: 700;
+  font-size: var(--typography-body-md-font-size);
+  line-height: var(--typography-body-md-line-height);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  cursor: pointer;
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-user-select: none;
+  /* Default: secondary (outlined) */
+  background: transparent;
+  color: var(--color-on-surface);
+  border: var(--border-width) solid var(--color-outline);
+}
+
+.btn-system-selector--active {
+  background: var(--color-primary-container);
+  color: var(--color-on-primary-container);
+  border-color: transparent;
+}
+
+.btn-system-selector:active:not(:disabled) {
+  transform: translateY(var(--pressed-shift));
+}
+
+.btn-system-selector:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.system-check {
+  font-weight: 700;
+  margin-right: 6px;
+}
+
+/* ── Hoja de ruta card ───────────────────────────────────────── */
+.preparar-roadbook-card {
+  gap: var(--spacing-space-md);
+}
+
+.preparar-roadbook-count {
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-size: var(--typography-headline-lg-font-size);
+  line-height: var(--typography-headline-lg-line-height);
+}

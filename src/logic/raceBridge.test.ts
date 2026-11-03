@@ -881,4 +881,53 @@ describe('RaceSessionBridge — Phase 3D-1: GPS stationary behavior & PARAR life
     expect(bridge.getSnapshot().deltaSeconds).toBeNull();
     expect(bridge.getSnapshot().deltaState).toBe('no-data');
   });
+
+  describe('GPS enablement (Hoja de ruta mode)', () => {
+    it('does NOT start GPS reader when enableGps is false', () => {
+      const reader = new MockGpsReader();
+      const bridge = new RaceSessionBridge({
+        reader,
+        wakeLockApi: null,
+        enableGps: false,
+      });
+
+      expect(reader.startCount).toBe(0);
+      bridge.start();
+      // Reader must NOT be started
+      expect(reader.startCount).toBe(0);
+      expect(reader.getStatus()).toBe('idle');
+      // Stopwatch runs
+      expect(bridge.stopwatch.isRunning()).toBe(true);
+    });
+
+    it('stops active GPS reader when setGpsEnabled(false) is called', () => {
+      const reader = new MockGpsReader();
+      const bridge = new RaceSessionBridge({
+        reader,
+        wakeLockApi: null,
+        enableGps: true,
+      });
+
+      bridge.start();
+      expect(reader.startCount).toBe(1);
+      expect(reader.getStatus()).toBe('active');
+
+      bridge.setGpsEnabled(false);
+      expect(reader.stopCount).toBe(1);
+      expect(reader.getStatus()).toBe('idle');
+    });
+
+    it('does not restart GPS reader on visibilitychange when enableGps is false', () => {
+      const reader = new MockGpsReader();
+      const bridge = new RaceSessionBridge({
+        reader,
+        wakeLockApi: null,
+        enableGps: false,
+      });
+
+      bridge.start();
+      bridge.onVisibilityChange(true);
+      expect(reader.startCount).toBe(0);
+    });
+  });
 });

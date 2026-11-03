@@ -102,6 +102,25 @@ describe('Stopwatch', () => {
     expect(sw.getElapsedMs()).toBe(0);
   });
 
+  it('exposes getStartWallClock correctly across start, stop, and reset', () => {
+    const { clocks } = createMockClocks(1000, 50000);
+    const sw = new Stopwatch(clocks);
+
+    expect(sw.getStartWallClock()).toBeNull();
+
+    sw.start();
+    expect(sw.getStartWallClock()).toBe(50000);
+
+    sw.stop();
+    expect(sw.getStartWallClock()).toBeNull();
+
+    sw.start(60000);
+    expect(sw.getStartWallClock()).toBe(60000);
+
+    sw.reset();
+    expect(sw.getStartWallClock()).toBeNull();
+  });
+
   it('ignores redundant start and stop calls', () => {
     const { clocks, advanceBoth } = createMockClocks(1000, 50000);
     const sw = new Stopwatch(clocks);

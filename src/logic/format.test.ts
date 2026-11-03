@@ -6,6 +6,9 @@ import {
   formatDelta,
   formatStopwatch,
   formatTimeOfDay,
+  formatTimeHms,
+  formatElapsedHms,
+  formatElapsedHmsDecimal,
 } from './format';
 
 describe('formatSpeed', () => {
@@ -125,6 +128,17 @@ describe('formatStopwatch', () => {
     expect(formatStopwatch(-500)).toBe('00:00,00');
     expect(formatStopwatch(1500.8)).toBe('00:01,50');
   });
+
+  it('truncates milliseconds instead of rounding up (never displays time greater than real elapsed)', () => {
+    // 9.9ms should display 00 hundredths, not round up to 01
+    expect(formatStopwatch(9.9)).toBe('00:00,00');
+    // 19.99ms should display 01 hundredths, not round up to 02
+    expect(formatStopwatch(19.99)).toBe('00:00,01');
+    // Value ending in .x9 hundredths (e.g. 59,999ms) should display 59:59,99 and not roll over to 01:00:00,00
+    expect(formatStopwatch(59 * 60000 + 59000 + 999)).toBe('59:59,99');
+    // 1429ms (1.429s) truncates to 00:01,42 (never 00:01,43)
+    expect(formatStopwatch(1429)).toBe('00:01,42');
+  });
 });
 
 describe('formatTimeOfDay', () => {
@@ -146,3 +160,52 @@ describe('formatTimeOfDay', () => {
     expect(formatTimeOfDay(d2)).toBe('12:00:00');
   });
 });
+
+describe('formatTimeHms', () => {
+  it('formats whole seconds to H:MM:SS', () => {
+    expect(formatTimeHms(0)).toBe('0:00:00');
+    expect(formatTimeHms(2140)).toBe('0:35:40');
+    expect(formatTimeHms(3900)).toBe('1:05:00');
+    expect(formatTimeHms(3665)).toBe('1:01:05');
+  });
+
+  it('returns placeholder for null, undefined, negative, or NaN', () => {
+    expect(formatTimeHms(null)).toBe('-:--:--');
+    expect(formatTimeHms(undefined)).toBe('-:--:--');
+    expect(formatTimeHms(-1)).toBe('-:--:--');
+    expect(formatTimeHms(NaN)).toBe('-:--:--');
+  });
+});
+
+describe('formatElapsedHms and formatElapsedHmsDecimal', () => {
+  it('formats elapsed ms to whole seconds H:MM:SS', () => {
+    expect(formatElapsedHms(2140000)).toBe('0:35:40');
+    expect(formatElapsedHms(2140800)).toBe('0:35:40'); // truncated
+    expect(formatElapsedHms(null)).toBe('-:--:--');
+  });
+
+  it('formats elapsed ms with Argentine decimal comma H:MM:SS,d', () => {
+    expect(formatElapsedHmsDecimal(2145200)).toBe('0:35:45,2');
+    expect(formatElapsedHmsDecimal(2145000)).toBe('0:35:45,0');
+    expect(formatElapsedHmsDecimal(null)).toBe('-:--:--');
+  });
+
+  it('uses standard rounding for the decimal (x.x5 rounds up, x.x4 rounds down)', () => {
+    // 10,550ms → real tenths = 105.5 → rounds to 106 tenths = 10.6s
+    expect(formatElapsedHmsDecimal(10550)).toBe('0:00:10,6');
+    // 10,449ms → real tenths = 104.49 → rounds to 104 tenths = 10.4s
+    expect(formatElapsedHmsDecimal(10449)).toBe('0:00:10,4');
+    // 10,450ms → real tenths = 104.5 → rounds to 105 tenths = 10.5s (x.x5 rounds up)
+    expect(formatElapsedHmsDecimal(10450)).toBe('0:00:10,5');
+    // Boundary that crosses seconds: 59,950ms → 599.5 tenths → 600 tenths = 60.0s = 1:00,0
+    expect(formatElapsedHmsDecimal(59950)).toBe('0:01:00,0');
+  });
+
+  it('is consistent with roundToDisplayedRealSeconds from roadbookRace', () => {
+    // Same rounding used by both functions: Math.round(ms / 100)
+    // 10,550ms → 10.6s in both formatElapsedHmsDecimal and roundToDisplayedRealSeconds
+    expect(formatElapsedHmsDecimal(10550)).toContain('10,6');
+    expect(formatElapsedHmsDecimal(10449)).toContain('10,4');
+  });
+});
+

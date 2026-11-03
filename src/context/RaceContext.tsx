@@ -21,12 +21,14 @@ import { BrowserGpsReader, type GpsReader } from '../logic/gpsReader';
 import { useStopwatch, type UseStopwatchResult } from '../hooks/useStopwatch';
 import type { RallyTracker } from '../logic/rallyTracker';
 import { isSimulatorRequested, parseSimulatorConfig } from '../logic/simulatorDetector';
+import type { ControlSystem } from '../logic/controlSystem';
 
 export interface RaceContextValue {
   snapshot: RaceSnapshot;
   mainStopwatch: {
     isRunning: boolean;
     getElapsedMs: () => number;
+    getStartWallClock: () => number | null;
   };
   secondaryStopwatch: UseStopwatchResult;
   onStartMain: () => void;
@@ -44,6 +46,10 @@ export interface RaceProviderProps {
   children: ReactNode;
   assignedSpeed?: number | null;
   correctionFactor?: number;
+  /** Selected control system. In hoja-de-ruta mode, GPS is not requested or started. */
+  controlSystem?: ControlSystem;
+  /** Explicit override to enable/disable GPS reader */
+  enableGps?: boolean;
   /** Testing escape-hatches to inject mock instances without real geolocation */
   initialTracker?: RallyTracker;
   initialReader?: GpsReader;
@@ -53,9 +59,12 @@ export function RaceProvider({
   children,
   assignedSpeed = null,
   correctionFactor,
+  controlSystem,
+  enableGps: enableGpsProp,
   initialTracker,
   initialReader,
 }: RaceProviderProps) {
+  const isGpsEnabled = enableGpsProp ?? (controlSystem !== 'hoja-de-ruta');
   const simRequested = !initialReader && isSimulatorRequested();
   const [bridge, setBridge] = useState<RaceSessionBridge | null>(() => {
     if (simRequested) {
@@ -66,6 +75,7 @@ export function RaceProvider({
       tracker: initialTracker,
       assignedSpeedKmH: assignedSpeed,
       correctionFactor,
+      enableGps: isGpsEnabled,
     });
   });
 
@@ -90,6 +100,7 @@ export function RaceProvider({
           tracker: initialTracker,
           assignedSpeedKmH: assignedSpeed,
           correctionFactor,
+          enableGps: isGpsEnabled,
         })
       );
     });
@@ -97,7 +108,14 @@ export function RaceProvider({
     return () => {
       active = false;
     };
-  }, [simRequested, bridge, initialTracker, assignedSpeed, correctionFactor]);
+  }, [simRequested, bridge, initialTracker, assignedSpeed, correctionFactor, isGpsEnabled]);
+
+  // Sync GPS enabled state when controlSystem changes
+  useEffect(() => {
+    if (bridge) {
+      bridge.setGpsEnabled(isGpsEnabled);
+    }
+  }, [bridge, isGpsEnabled]);
 
   // Sync assignedSpeed when changed in storage/PrepararEtapa
   useEffect(() => {
@@ -197,6 +215,7 @@ function RaceProviderInner({
   const mainStopwatch = {
     isRunning: snapshot.isRunning,
     getElapsedMs: useCallback(() => bridge.stopwatch.getElapsedMs(), [bridge]),
+    getStartWallClock: useCallback(() => bridge.stopwatch.getStartWallClock(), [bridge]),
   };
 
   return (

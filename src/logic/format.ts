@@ -97,3 +97,60 @@ export function formatTimeOfDay(date: Date): string {
 
   return `${hh}:${mm}:${ss}`;
 }
+
+/**
+ * Formats whole seconds elapsed into "H:MM:SS" (e.g. 2140 s -> "0:35:40", 3900 s -> "1:05:00").
+ * Returns "-:--:--" if seconds is null, undefined, NaN, or negative.
+ */
+export function formatTimeHms(totalSeconds: number | null | undefined): string {
+  if (totalSeconds === null || totalSeconds === undefined || Number.isNaN(totalSeconds) || totalSeconds < 0) {
+    return '-:--:--';
+  }
+
+  const safeSeconds = Math.floor(totalSeconds);
+  const seconds = safeSeconds % 60;
+  const totalMinutes = Math.floor(safeSeconds / 60);
+  const minutes = totalMinutes % 60;
+  const hours = Math.floor(totalMinutes / 60);
+
+  const mm = minutes.toString().padStart(2, '0');
+  const ss = seconds.toString().padStart(2, '0');
+
+  return `${hours}:${mm}:${ss}`;
+}
+
+/**
+ * Formats elapsed stopwatch milliseconds into "H:MM:SS" with whole seconds truncated.
+ * Returns "-:--:--" if elapsedMs is null, undefined, NaN, or negative.
+ */
+export function formatElapsedHms(elapsedMs: number | null | undefined): string {
+  if (elapsedMs === null || elapsedMs === undefined || Number.isNaN(elapsedMs) || elapsedMs < 0) {
+    return '-:--:--';
+  }
+  const totalSeconds = Math.floor(elapsedMs / 1000);
+  return formatTimeHms(totalSeconds);
+}
+
+/**
+ * Formats elapsed stopwatch milliseconds into "H:MM:SS,d" with 1 decimal place using Argentine decimal comma.
+ * Returns "-:--:--" if elapsedMs is null, undefined, NaN, or negative.
+ */
+export function formatElapsedHmsDecimal(elapsedMs: number | null | undefined): string {
+  if (elapsedMs === null || elapsedMs === undefined || Number.isNaN(elapsedMs) || elapsedMs < 0) {
+    return '-:--:--';
+  }
+
+  const totalTenths = Math.round(elapsedMs / 100);
+  const tenths = totalTenths % 10;
+  const totalSeconds = Math.floor(totalTenths / 10);
+  const seconds = totalSeconds % 60;
+  const totalMinutes = Math.floor(totalSeconds / 60);
+  const minutes = totalMinutes % 60;
+  const hours = Math.floor(totalMinutes / 60);
+
+  const mm = minutes.toString().padStart(2, '0');
+  const ss = seconds.toString().padStart(2, '0');
+
+  return `${hours}:${mm}:${ss},${tenths}`;
+}
+

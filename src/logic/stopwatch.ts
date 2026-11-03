@@ -78,6 +78,15 @@ export class Stopwatch {
   }
 
   /**
+   * Returns the wall-clock timestamp (Date.now()) at the last start call,
+   * or null if the stopwatch has never been started or has been reset.
+   * Used to persist and reconstruct the stopwatch across app restarts.
+   */
+  getStartWallClock(): number | null {
+    return this.startWallClock;
+  }
+
+  /**
    * Returns current elapsed time in milliseconds.
    */
   getElapsedMs(): number {

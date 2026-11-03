@@ -1,0 +1,66 @@
+/* ── Ayuda screen styles ────────────────────────────────────────── */
+
+.ayuda-steps-card {
+  display: flex;
+  flex-direction: column;
+}
+
+.ayuda-step {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--spacing-gutter);
+  padding: 10px 0;
+  border-top: 1px solid var(--color-outline-variant);
+  font-family: var(--font-sans);
+  font-weight: 400;
+  font-size: 16px;
+  line-height: 24px;
+  color: var(--color-on-surface);
+}
+
+.ayuda-step:first-of-type {
+  border-top: none;
+  padding-top: 0;
+}
+
+.ayuda-step:last-of-type {
+  padding-bottom: 0;
+}
+
+.ayuda-step-num {
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-size: 26px;
+  line-height: 24px;
+  width: 20px;
+  flex: none;
+}
+
+.ayuda-warnings-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-space-xs);
+}
+
+.ayuda-warnings {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  margin-top: var(--spacing-space-xs);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-space-xs);
+}
+
+.ayuda-warnings li {
+  position: relative;
+  padding-left: 16px;
+}
+
+.ayuda-warnings li::before {
+  content: '–';
+  position: absolute;
+  left: 0;
+  color: var(--color-tertiary);
+  font-weight: 700;
+}

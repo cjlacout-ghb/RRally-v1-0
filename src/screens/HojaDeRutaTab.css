@@ -1,0 +1,296 @@
+/* HojaDeRutaTab — roadbook in-progress tab. */
+
+.hoja-de-ruta-tab {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-gutter);
+}
+
+/* ── Time block: 48px buttons (exception to 64px rule, roadbook only) ── */
+.hdr-time-block .hdr-stopwatch-btn {
+  min-height: 48px;
+}
+
+/* ── Empty state card (when zero rows have assigned times) ──── */
+.hdr-empty-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: var(--spacing-space-md);
+  padding: var(--spacing-space-lg) var(--spacing-space-md);
+}
+
+.hdr-empty-text {
+  font-family: var(--font-sans);
+  font-weight: 700;
+  font-size: var(--typography-body-lg-font-size);
+  line-height: var(--typography-body-lg-line-height);
+  color: var(--color-on-surface);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.hdr-empty-btn {
+  width: 100%;
+}
+
+/* ── Next stretch speed block ───────────────────────────────── */
+.hdr-next-stretch {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--spacing-space-md);
+  background: var(--color-secondary);
+  color: var(--color-on-secondary);
+  border-radius: var(--rounded-default);
+  padding: var(--spacing-space-md);
+  min-height: 72px;
+}
+
+.hdr-next-stretch-left {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+}
+
+.hdr-next-stretch-label {
+  font-family: var(--font-sans);
+  font-weight: 700;
+  font-size: var(--typography-label-md-font-size);
+  line-height: var(--typography-label-md-line-height);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--color-on-secondary);
+}
+
+.hdr-next-stretch-speed {
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-size: var(--typography-headline-lg-font-size);
+  line-height: var(--typography-headline-lg-line-height);
+  letter-spacing: var(--typography-headline-lg-letter-spacing);
+  color: var(--color-on-secondary);
+}
+
+/* Reserved height: always present, visible only when demanding */
+.hdr-next-stretch-demanding {
+  font-family: var(--font-sans);
+  font-weight: 700;
+  font-size: 11px;
+  line-height: 14px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--color-on-secondary);
+}
+
+.hdr-next-stretch-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+  flex-shrink: 0;
+}
+
+.hdr-next-stretch-dir {
+  font-family: var(--font-sans);
+  font-weight: 700;
+  font-size: var(--typography-body-md-font-size);
+  line-height: var(--typography-body-md-line-height);
+  color: var(--color-on-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.hdr-next-stretch-org {
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-size: var(--typography-label-md-font-size);
+  line-height: var(--typography-label-md-line-height);
+  color: var(--color-on-secondary);
+}
+
+/* ── Marks list ─────────────────────────────────────────────── */
+.hdr-marks-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.hdr-mark-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-space-sm);
+  min-height: 48px;
+  padding: 6px var(--spacing-space-md);
+}
+
+.hdr-mark-card--anterior {
+  background: var(--color-surface-container-low);
+  opacity: 0.75;
+}
+
+.hdr-mark-card--actual {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: center;
+  gap: 2px;
+  min-height: 56px;
+  background: var(--color-surface-container-high);
+  border: 2px solid var(--color-primary);
+  padding: 6px var(--spacing-space-md);
+}
+
+.hdr-mark-card-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--spacing-space-sm);
+  width: 100%;
+}
+
+.hdr-mark-card-badge-row {
+  display: flex;
+  align-items: baseline;
+  gap: var(--spacing-space-sm);
+  flex-shrink: 0;
+}
+
+.hdr-mark-card-text-row {
+  width: 100%;
+}
+
+.hdr-mark-card--actual .hdr-mark-text {
+  white-space: normal;
+  overflow: visible;
+  text-overflow: clip;
+  word-break: break-word;
+}
+
+.hdr-mark-card--siguiente {
+  background: var(--color-surface-container-low);
+  opacity: 0.75;
+}
+
+.hdr-mark-card--finished.hdr-mark-card--actual {
+  border-color: var(--color-outline-variant);
+  opacity: 0.5;
+}
+
+.hdr-mark-card-left {
+  display: flex;
+  align-items: baseline;
+  gap: var(--spacing-space-sm);
+  flex: 1;
+  min-width: 0;
+  flex-wrap: wrap;
+}
+
+.hdr-mark-card-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+  flex-shrink: 0;
+}
+
+.hdr-mark-card-badge {
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-size: var(--typography-label-md-font-size);
+  line-height: var(--typography-label-md-line-height);
+  letter-spacing: var(--typography-label-md-letter-spacing);
+  text-transform: uppercase;
+  color: var(--color-on-surface-variant);
+  flex-shrink: 0;
+}
+
+.hdr-mark-num {
+  font-size: var(--typography-label-md-font-size);
+  flex-shrink: 0;
+}
+
+.hdr-mark-text {
+  font-family: var(--font-sans);
+  font-weight: 400;
+  font-size: var(--typography-body-md-font-size);
+  line-height: var(--typography-body-md-line-height);
+  color: var(--color-on-surface);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.hdr-mark-estipulado {
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-size: clamp(16px, 5.5vw, 22px);
+  line-height: 26px;
+  color: var(--color-secondary);
+}
+
+.hdr-mark-time-real {
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-size: 13px;
+  color: var(--color-on-surface);
+}
+
+.hdr-mark-time-assigned {
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-size: 13px;
+}
+
+.hdr-mark-dev--ahead {
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-size: 11px;
+  color: var(--color-status-ahead);
+}
+
+.hdr-mark-dev--behind {
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-size: 11px;
+  color: var(--color-status-behind);
+}
+
+.hdr-mark-skipped {
+  font-family: var(--font-sans);
+  font-weight: 700;
+  font-size: var(--typography-label-md-font-size);
+  text-transform: uppercase;
+}
+
+/* ── MARCAR button ───────────────────────────────────────────── */
+.hdr-marcar-btn {
+  width: 100%;
+  min-height: 72px;
+  font-size: 26px;
+  letter-spacing: 0.08em;
+}
+
+.hdr-marcar-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+/* ── SALTAR + DESHACER ───────────────────────────────────────── */
+.hdr-secondary-btns {
+  width: 100%;
+}
+
+.hdr-secondary-btn {
+  flex: 1;
+  min-height: 48px;
+}
+
+.hdr-secondary-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}

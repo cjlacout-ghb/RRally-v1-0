@@ -126,20 +126,24 @@
   background: transparent;
   color: var(--color-on-surface-variant);
   border: none;
+  border-top: 2px solid transparent;
   border-radius: var(--rounded-default);
   font-family: var(--font-sans);
   font-size: var(--typography-body-md-font-size);
-  font-weight: 700;
+  font-weight: 400;
   line-height: 18px;
   letter-spacing: var(--tab-bar-letter-spacing);
   text-transform: uppercase;
   cursor: pointer;
   touch-action: manipulation;
+  box-sizing: border-box;
 }
 
 .tab-button.active {
-  background-color: var(--color-primary-container);
-  color: var(--color-on-primary-container);
+  background-color: var(--color-surface-container-high);
+  color: var(--color-on-surface);
+  font-weight: 700;
+  border-top: 2px solid var(--color-primary);
 }
 
 .tab-button:active:not(.active) {

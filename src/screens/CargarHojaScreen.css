@@ -1,0 +1,224 @@
+/* CargarHojaScreen — sheet loading secondary screen. */
+
+.cargar-hoja-screen {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  height: 100dvh;
+  overflow: hidden;
+}
+
+/* Row count badge in header */
+.cargar-hoja-count {
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-size: var(--typography-label-lg-font-size);
+  line-height: var(--typography-label-lg-line-height);
+  letter-spacing: var(--typography-label-lg-letter-spacing);
+  margin-left: auto;
+}
+
+/* ── Scrollable list area ────────────────────────────────────── */
+.cargar-hoja-scroll-area {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-space-md);
+  padding: var(--spacing-gutter) var(--spacing-margin);
+}
+
+/* ── Column header ───────────────────────────────────────────── */
+.cargar-hoja-col-header {
+  display: grid;
+  grid-template-columns: 32px 1fr 90px 60px;
+  gap: var(--spacing-space-xs);
+  padding: 0 var(--spacing-space-md);
+}
+
+.cargar-hoja-col-header > span {
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-size: var(--typography-label-md-font-size);
+  line-height: var(--typography-label-md-line-height);
+  letter-spacing: var(--typography-label-md-letter-spacing);
+  text-transform: uppercase;
+  color: var(--color-on-surface-variant);
+}
+
+/* ── Row list ────────────────────────────────────────────────── */
+.cargar-hoja-rows {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-space-sm);
+}
+
+.cargar-hoja-row {
+  display: grid;
+  grid-template-columns: 32px 1fr 90px 60px;
+  gap: var(--spacing-space-xs);
+  align-items: center;
+  min-height: 52px;
+  padding: 0 var(--spacing-space-md);
+}
+
+.cargar-hoja-row--editing {
+  border: 2px solid var(--color-primary);
+}
+
+.cargar-hoja-row-num {
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-size: var(--typography-label-md-font-size);
+  line-height: var(--typography-label-md-line-height);
+  letter-spacing: var(--typography-label-md-letter-spacing);
+  text-align: center;
+}
+
+.cargar-hoja-row-mark,
+.cargar-hoja-row-time,
+.cargar-hoja-row-speed {
+  background: transparent;
+  border: none;
+  border-radius: var(--rounded-default);
+  text-align: left;
+  cursor: pointer;
+  touch-action: manipulation;
+  color: var(--color-on-surface);
+  font-family: var(--font-sans);
+  font-weight: 400;
+  font-size: var(--typography-body-md-font-size);
+  line-height: var(--typography-body-md-line-height);
+  padding: var(--spacing-space-xs);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cargar-hoja-row-time {
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-size: 13px;
+  text-align: center;
+}
+
+.cargar-hoja-row-speed {
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-size: 13px;
+  text-align: right;
+}
+
+.cargar-hoja-row-speed--inherited {
+  color: var(--color-on-surface-variant);
+}
+
+.cargar-hoja-placeholder {
+  color: var(--color-on-surface-variant);
+  font-style: italic;
+  font-size: var(--typography-body-md-font-size);
+}
+
+.cargar-hoja-row-mark:active,
+.cargar-hoja-row-time:active,
+.cargar-hoja-row-speed:active {
+  background: var(--color-surface-container-high);
+}
+
+/* ── "+ 10 FILAS" button (last item in scrollable list) ──────── */
+.cargar-hoja-add-btn {
+  min-height: 64px;
+  margin-top: var(--spacing-space-xs);
+  flex: none;
+}
+
+/* ── Pinned bottom container (directly above LISTO) ──────────── */
+.cargar-hoja-pinned-bottom {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-gutter);
+  padding: var(--spacing-gutter) var(--spacing-margin);
+  padding-bottom: calc(var(--spacing-margin) + env(safe-area-inset-bottom, 0px));
+  background: var(--color-background);
+  border-top: 1px solid var(--color-outline-variant);
+  z-index: 10;
+}
+
+/* ── Section (quicktexts, numpad, speed) ─────────────────────── */
+.cargar-hoja-section {
+  background: var(--color-surface-container);
+  border: var(--border-width) solid var(--color-outline-variant);
+  border-radius: var(--rounded-default);
+  padding: var(--spacing-space-md);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-space-md);
+}
+
+/* ── Quick text buttons ──────────────────────────────────────── */
+.cargar-hoja-quicktexts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-space-sm);
+}
+
+.cargar-hoja-qt-btn {
+  min-height: 44px;
+  font-size: var(--typography-body-md-font-size);
+  white-space: nowrap;
+}
+
+/* ── Mark free text input ────────────────────────────────────── */
+.cargar-hoja-mark-edit {
+  display: flex;
+  align-items: baseline;
+  gap: var(--spacing-space-md);
+  background: var(--color-surface-container-lowest);
+  border: var(--border-width) solid var(--color-outline);
+  border-radius: var(--rounded-default);
+  padding: var(--spacing-space-md);
+}
+
+.cargar-hoja-mark-input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  font-family: var(--font-sans);
+  font-weight: 400;
+  font-size: var(--typography-body-lg-font-size);
+  line-height: var(--typography-body-lg-line-height);
+  color: var(--color-on-surface);
+  width: 100%;
+}
+
+/* ── Time display ────────────────────────────────────────────── */
+.cargar-hoja-time-display {
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-size: var(--typography-headline-xl-font-size);
+  line-height: var(--typography-headline-xl-line-height);
+  letter-spacing: var(--typography-headline-xl-letter-spacing);
+  color: var(--color-secondary);
+  text-align: center;
+}
+
+/* ── Numeric keypad (3x4 grid) ───────────────────────────────── */
+.cargar-hoja-numpad {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--spacing-gutter);
+}
+
+.cargar-hoja-numpad-key {
+  min-height: 56px;
+  font-size: 20px;
+}
+
+/* ── LISTO button (pinned at bottom) ─────────────────────────── */
+.cargar-hoja-listo-btn {
+  min-height: 64px;
+}
