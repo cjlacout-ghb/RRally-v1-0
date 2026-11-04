@@ -358,9 +358,10 @@ export function HojaDeRutaTab({ isVisible, rows, onOpenCargarHoja }: HojaDeRutaT
                     anteriorInfo.mark.realElapsedMs
                   );
                   if (dev === null) return null;
+                  const formattedDev = formatDelta(dev);
                   return (
                     <span className={`hdr-mark-dev ${dev >= 0 ? 'hdr-mark-dev--ahead' : 'hdr-mark-dev--behind'}`}>
-                      {formatDelta(dev)}s
+                      {formattedDev.formatted}
                     </span>
                   );
                 })()}

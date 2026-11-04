@@ -4,6 +4,7 @@ import {
   formatDistance,
   formatFactor,
   formatDelta,
+  formatDeltaAria,
   formatStopwatch,
   formatTimeOfDay,
   formatTimeHms,
@@ -78,29 +79,124 @@ describe('formatFactor', () => {
 });
 
 describe('formatDelta', () => {
-  it('formats positive delta with + and 1 decimal place', () => {
-    expect(formatDelta(1.8)).toBe('+1,8');
-    expect(formatDelta(0.1)).toBe('+0,1');
-    expect(formatDelta(12.34)).toBe('+12,3');
+  it('formats positive delta with + and 1 decimal place below 60,0 s', () => {
+    expect(formatDelta(1.8).value).toBe('+1,8');
+    expect(formatDelta(1.8).unit).toBe('SEG');
+    expect(formatDelta(1.8).formatted).toBe('+1,8 SEG');
+    expect(formatDelta(0.1).formatted).toBe('+0,1 SEG');
+    expect(formatDelta(12.34).formatted).toBe('+12,3 SEG');
+    expect(formatDelta(52.9).formatted).toBe('+52,9 SEG');
+    expect(formatDelta(59.9).formatted).toBe('+59,9 SEG');
   });
 
-  it('formats negative delta with - and 1 decimal place', () => {
-    expect(formatDelta(-2.3)).toBe('-2,3');
-    expect(formatDelta(-0.1)).toBe('-0,1');
-    expect(formatDelta(-15.67)).toBe('-15,7');
+  it('formats negative delta with - and 1 decimal place below 60,0 s', () => {
+    expect(formatDelta(-2.3).value).toBe('-2,3');
+    expect(formatDelta(-2.3).unit).toBe('SEG');
+    expect(formatDelta(-2.3).formatted).toBe('-2,3 SEG');
+    expect(formatDelta(-0.1).formatted).toBe('-0,1 SEG');
+    expect(formatDelta(-15.67).formatted).toBe('-15,7 SEG');
+    expect(formatDelta(-52.9).formatted).toBe('-52,9 SEG');
+    expect(formatDelta(-59.9).formatted).toBe('-59,9 SEG');
   });
 
-  it('formats delta as 0,0 without sign when it rounds to zero', () => {
-    expect(formatDelta(0)).toBe('0,0');
-    expect(formatDelta(0.04)).toBe('0,0');
-    expect(formatDelta(-0.04)).toBe('0,0');
-    expect(formatDelta(-0.001)).toBe('0,0');
+  it('formats delta as 0,0 SEG without sign when it rounds to zero', () => {
+    expect(formatDelta(0).value).toBe('0,0');
+    expect(formatDelta(0).unit).toBe('SEG');
+    expect(formatDelta(0).formatted).toBe('0,0 SEG');
+    expect(formatDelta(0.04).formatted).toBe('0,0 SEG');
+    expect(formatDelta(-0.04).formatted).toBe('0,0 SEG');
+    expect(formatDelta(-0.001).formatted).toBe('0,0 SEG');
   });
 
-  it('returns "--,-" for null, undefined, or NaN', () => {
-    expect(formatDelta(null)).toBe('--,-');
-    expect(formatDelta(undefined)).toBe('--,-');
-    expect(formatDelta(NaN)).toBe('--,-');
+  it('rounds to tenths FIRST before deciding format (59,96 s -> +1:00,0 MIN, never 60,0 SEG)', () => {
+    const positive = formatDelta(59.96);
+    expect(positive.value).toBe('+1:00,0');
+    expect(positive.unit).toBe('MIN');
+    expect(positive.formatted).toBe('+1:00,0 MIN');
+    expect(positive.formatted).not.toContain('60,0');
+    expect(positive.formatted).not.toContain('SEG');
+
+    const negative = formatDelta(-59.96);
+    expect(negative.value).toBe('-1:00,0');
+    expect(negative.unit).toBe('MIN');
+    expect(negative.formatted).toBe('-1:00,0 MIN');
+  });
+
+  it('formats 60,0 seconds or more as minutes and seconds with unit MIN', () => {
+    // Exactly 60,0 s
+    expect(formatDelta(60.0).formatted).toBe('+1:00,0 MIN');
+    expect(formatDelta(-60.0).formatted).toBe('-1:00,0 MIN');
+
+    // 65,9 s
+    expect(formatDelta(65.9).value).toBe('+1:05,9');
+    expect(formatDelta(65.9).unit).toBe('MIN');
+    expect(formatDelta(65.9).formatted).toBe('+1:05,9 MIN');
+    expect(formatDelta(-65.9).value).toBe('-1:05,9');
+    expect(formatDelta(-65.9).unit).toBe('MIN');
+    expect(formatDelta(-65.9).formatted).toBe('-1:05,9 MIN');
+
+    // 125,4 s
+    expect(formatDelta(125.4).value).toBe('+2:05,4');
+    expect(formatDelta(125.4).unit).toBe('MIN');
+    expect(formatDelta(125.4).formatted).toBe('+2:05,4 MIN');
+    expect(formatDelta(-125.4).value).toBe('-2:05,4');
+    expect(formatDelta(-125.4).unit).toBe('MIN');
+    expect(formatDelta(-125.4).formatted).toBe('-2:05,4 MIN');
+  });
+
+  it('keeps counting minutes for large minutes without introducing hours', () => {
+    // 75 minutes = 4500 seconds
+    expect(formatDelta(4500).value).toBe('+75:00,0');
+    expect(formatDelta(4500).unit).toBe('MIN');
+    expect(formatDelta(4500).formatted).toBe('+75:00,0 MIN');
+    expect(formatDelta(-4500).value).toBe('-75:00,0');
+    expect(formatDelta(-4500).unit).toBe('MIN');
+    expect(formatDelta(-4500).formatted).toBe('-75:00,0 MIN');
+
+    // 120 minutes 5,8 seconds = 7205.8 seconds
+    expect(formatDelta(7205.8).formatted).toBe('+120:05,8 MIN');
+    expect(formatDelta(-7205.8).formatted).toBe('-120:05,8 MIN');
+  });
+
+  it('returns "--,- SEG" for null, undefined, or NaN', () => {
+    expect(formatDelta(null).value).toBe('--,-');
+    expect(formatDelta(null).unit).toBe('SEG');
+    expect(formatDelta(null).formatted).toBe('--,- SEG');
+
+    expect(formatDelta(undefined).value).toBe('--,-');
+    expect(formatDelta(undefined).unit).toBe('SEG');
+    expect(formatDelta(undefined).formatted).toBe('--,- SEG');
+
+    expect(formatDelta(NaN).value).toBe('--,-');
+    expect(formatDelta(NaN).unit).toBe('SEG');
+    expect(formatDelta(NaN).formatted).toBe('--,- SEG');
+  });
+
+  it('toString() evaluates to formatted string', () => {
+    expect(String(formatDelta(59.96))).toBe('+1:00,0 MIN');
+    expect(`${formatDelta(-65.9)}`).toBe('-1:05,9 MIN');
+    expect(`${formatDelta(12.3)}`).toBe('+12,3 SEG');
+  });
+});
+
+describe('formatDeltaAria', () => {
+  it('formats minutes naturally in Spanish with state', () => {
+    expect(formatDeltaAria(-65.9, 'behind')).toBe('1 minuto 5,9 segundos atrasado');
+    expect(formatDeltaAria(60.0, 'ahead')).toBe('1 minuto 0,0 segundos adelantado');
+    expect(formatDeltaAria(-125.4, 'behind')).toBe('2 minutos 5,4 segundos atrasado');
+  });
+
+  it('formats seconds naturally in Spanish with state', () => {
+    expect(formatDeltaAria(12.3, 'ahead')).toBe('12,3 segundos adelantado');
+    expect(formatDeltaAria(-52.9, 'behind')).toBe('52,9 segundos atrasado');
+    expect(formatDeltaAria(0.0, 'neutral')).toBe('0,0 segundos en tiempo');
+  });
+
+  it('returns "Sin datos" for no-data state or missing values', () => {
+    expect(formatDeltaAria(null, 'no-data')).toBe('Sin datos');
+    expect(formatDeltaAria(undefined, 'no-data')).toBe('Sin datos');
+    expect(formatDeltaAria(NaN, 'no-data')).toBe('Sin datos');
+    expect(formatDeltaAria(null, 'ahead')).toBe('Sin datos');
   });
 });
 

@@ -1,5 +1,25 @@
+import type { DeltaState } from './delta';
+
 /**
  * Number and time formatting using Argentine locale conventions (decimal comma).
+ */
+
+export type DeltaUnit = 'SEG' | 'MIN';
+
+export interface FormattedDelta {
+  /** The formatted numeric part with sign (e.g. "+12,3", "-1:05,9", "0,0", "--,-") */
+  value: string;
+  /** The unit label: "SEG" for < 60,0 s or no-data, "MIN" for >= 60,0 s */
+  unit: DeltaUnit;
+  /** Combined value and unit string (e.g. "+12,3 SEG", "-1:05,9 MIN", "0,0 SEG", "--,- SEG") */
+  formatted: string;
+  /** Enables String(result) or `${result}` to evaluate to formatted */
+  toString(): string;
+}
+
+/**
+ * Formats a speed in km/h with 1 decimal place using a comma (e.g. "49,8").
+ * Returns "--,-" if speed is null, undefined, or NaN.
  */
 
 /**
@@ -38,23 +58,124 @@ export function formatFactor(factor: number | null | undefined): string {
 }
 
 /**
- * Formats a signed delta in seconds with 1 decimal place (e.g. "+1,8", "-2,3").
- * Returns "0,0" without a sign when the rounded value is 0.0.
- * Returns "--,-" if delta is null, undefined, or NaN.
+ * Formats a signed ahead/behind delta in seconds.
+ * 1. Rounds the deviation to tenths of a second FIRST, then decides the format from the rounded absolute value.
+ * 2. If rounded absolute value is below 60,0 seconds: formats in seconds with unit "SEG" (e.g. "+12,3 SEG", "-52,9 SEG").
+ *    Zero shows "0,0 SEG" with no sign.
+ * 3. If rounded absolute value is 60,0 seconds or more: formats in minutes, seconds with two digits, and tenths (M:SS,d)
+ *    with unit "MIN" (e.g. "+1:00,0 MIN", "-1:05,9 MIN", "-2:05,4 MIN"). Minutes have no leading zero.
+ *    If minutes reach 60 or more, minutes keep counting (e.g. "+75:00,0 MIN") without introducing hours.
+ * 4. Sign stays at front ("+" for ahead, "-" for behind).
+ * 5. Returns "--,- SEG" if delta is null, undefined, or NaN.
  */
-export function formatDelta(delta: number | null | undefined): string {
+export function formatDelta(delta: number | null | undefined): FormattedDelta {
   if (delta === null || delta === undefined || Number.isNaN(delta)) {
-    return '--,-';
+    return {
+      value: '--,-',
+      unit: 'SEG',
+      formatted: '--,- SEG',
+      toString() {
+        return this.formatted;
+      },
+    };
   }
 
-  // Round to 1 decimal place
-  const rounded = Math.round(delta * 10) / 10;
-  if (rounded === 0 || Object.is(rounded, -0)) {
-    return '0,0';
+  // 1. Round to tenths of a second FIRST
+  const roundedTenths = Math.round(delta * 10);
+  const absTenths = Math.abs(roundedTenths);
+
+  if (absTenths === 0) {
+    return {
+      value: '0,0',
+      unit: 'SEG',
+      formatted: '0,0 SEG',
+      toString() {
+        return this.formatted;
+      },
+    };
   }
 
-  const formatted = Math.abs(rounded).toFixed(1).replace('.', ',');
-  return rounded > 0 ? `+${formatted}` : `-${formatted}`;
+  const sign = roundedTenths > 0 ? '+' : '-';
+
+  // 2. Below 60,0 seconds: unit "SEG"
+  if (absTenths < 600) {
+    const totalSeconds = Math.floor(absTenths / 10);
+    const tenths = absTenths % 10;
+    const value = `${sign}${totalSeconds},${tenths}`;
+    const unit: DeltaUnit = 'SEG';
+    return {
+      value,
+      unit,
+      formatted: `${value} ${unit}`,
+      toString() {
+        return this.formatted;
+      },
+    };
+  }
+
+  // 3. 60,0 seconds or more: M:SS,d with unit "MIN"
+  const totalSeconds = Math.floor(absTenths / 10);
+  const tenths = absTenths % 10;
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+  const ss = seconds.toString().padStart(2, '0');
+  const value = `${sign}${minutes}:${ss},${tenths}`;
+  const unit: DeltaUnit = 'MIN';
+
+  return {
+    value,
+    unit,
+    formatted: `${value} ${unit}`,
+    toString() {
+      return this.formatted;
+    },
+  };
+}
+
+/**
+ * Formats a delta value and state into a natural Spanish phrase for screen readers.
+ * Examples:
+ * - -65.9 with state 'behind' -> "1 minuto 5,9 segundos atrasado"
+ * - 60.0 with state 'ahead' -> "1 minuto 0,0 segundos adelantado"
+ * - 12.3 with state 'ahead' -> "12,3 segundos adelantado"
+ * - 0.0 with state 'neutral' -> "0,0 segundos en tiempo"
+ * - null with state 'no-data' -> "Sin datos"
+ */
+export function formatDeltaAria(
+  delta: number | null | undefined,
+  state: DeltaState
+): string {
+  if (state === 'no-data' || delta === null || delta === undefined || Number.isNaN(delta)) {
+    return 'Sin datos';
+  }
+
+  const roundedTenths = Math.round(delta * 10);
+  const absTenths = Math.abs(roundedTenths);
+
+  const stateText =
+    state === 'ahead'
+      ? 'adelantado'
+      : state === 'behind'
+      ? 'atrasado'
+      : 'en tiempo';
+
+  if (absTenths === 0) {
+    return `0,0 segundos ${stateText}`;
+  }
+
+  const totalSeconds = Math.floor(absTenths / 10);
+  const tenths = absTenths % 10;
+
+  if (absTenths < 600) {
+    return `${totalSeconds},${tenths} segundos ${stateText}`;
+  }
+
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+  const minText = minutes === 1 ? '1 minuto' : `${minutes} minutos`;
+  const secText = `${seconds},${tenths} segundos`;
+
+  return `${minText} ${secText} ${stateText}`;
 }
 
 /**

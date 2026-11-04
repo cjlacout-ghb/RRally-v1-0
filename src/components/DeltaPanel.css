@@ -34,8 +34,9 @@
   white-space: nowrap;
 }
 
-/* Strings up to 5 characters (+12,3, -99,9, 0,0, --,-) use nominal display size (56px) */
-.delta-panel__seconds {
+/* Strings up to 5 characters (+12,3, -59,9, 0,0, --,-) use nominal display size (56px) */
+.delta-panel__seconds,
+.delta-panel__value {
   font-family: var(--font-mono);
   font-weight: var(--typography-display-font-weight);
   font-size: var(--typography-display-font-size); /* 56px */
@@ -51,14 +52,15 @@
   text-transform: uppercase;
 }
 
-/* Longer strings (>5 chars, e.g. "-123,4"): scale fluidly so the entire line
+/* Longer strings (>5 chars, e.g. "-1:05,9", "-12:05,9"): scale fluidly so the entire line
    maintains >=16px clearance from each side border at 320px viewport width */
-.delta-panel__value-row--long .delta-panel__seconds {
-  font-size: clamp(48px, calc(48px + 8 * (100vw - 320px) / 70px), 56px);
+.delta-panel__value-row--long .delta-panel__seconds,
+.delta-panel__value-row--long .delta-panel__value {
+  font-size: clamp(38px, calc(38px + 18 * (100vw - 320px) / 70px), 56px);
 }
 
 .delta-panel__value-row--long .delta-panel__unit {
-  font-size: clamp(17px, calc(17px + 3 * (100vw - 320px) / 70px), 20px);
+  font-size: clamp(15px, calc(15px + 5 * (100vw - 320px) / 70px), 20px);
 }
 
 .delta-panel__label {

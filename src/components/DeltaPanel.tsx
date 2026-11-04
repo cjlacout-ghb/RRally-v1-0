@@ -1,5 +1,5 @@
 import { type DeltaState, DELTA_LABELS } from '../logic/delta';
-import { formatDelta, formatSpeed } from '../logic/format';
+import { formatDelta, formatDeltaAria, formatSpeed } from '../logic/format';
 import './DeltaPanel.css';
 
 interface DeltaPanelProps {
@@ -16,19 +16,25 @@ const STATE_CLASS: Record<DeltaState, string> = {
 };
 
 export function DeltaPanel({ deltaSeconds, state, assignedSpeed }: DeltaPanelProps) {
-  const displayValue = state === 'no-data' ? '--,-' : formatDelta(deltaSeconds);
+  const { value: displayValue, unit } = formatDelta(state === 'no-data' ? null : deltaSeconds);
   const label = DELTA_LABELS[state];
   const assignedSpeedText = formatSpeed(assignedSpeed);
+  const ariaLabel = formatDeltaAria(deltaSeconds, state);
 
-  // Content-driven class: strings longer than 5 chars (e.g. "-123,4") scale fluidly;
-  // standard strings up to 5 chars (e.g. "+12,3", "-99,9", "0,0", "--,-") use nominal display size.
+  // Content-driven class: strings longer than 5 chars (e.g. "-1:05,9", "-12:05,9", "-123,4") scale fluidly;
+  // standard strings up to 5 chars (e.g. "+12,3", "-59,9", "0,0", "--,-") use nominal display size.
   const isLong = displayValue.length > 5;
 
   return (
-    <div className={`delta-panel ${STATE_CLASS[state]}`} role="status" aria-live="polite">
+    <div
+      className={`delta-panel ${STATE_CLASS[state]}`}
+      role="status"
+      aria-live="polite"
+      aria-label={ariaLabel}
+    >
       <div className={`delta-panel__value-row ${isLong ? 'delta-panel__value-row--long' : ''}`}>
-        <b className="delta-panel__seconds">{displayValue}</b>
-        <span className="delta-panel__unit">SEG</span>
+        <b className="delta-panel__seconds delta-panel__value">{displayValue}</b>
+        <span className="delta-panel__unit">{unit}</span>
       </div>
       <div className="delta-panel__label">{label}</div>
       <div className="delta-panel__assigned-strip">

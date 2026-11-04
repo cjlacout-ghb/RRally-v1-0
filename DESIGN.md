@@ -98,7 +98,7 @@ Rules that apply everywhere:
 - Depth is expressed only with tonal surface layers and 1px borders.
 - Every screen has one clear primary element; nothing decorative competes with the numbers.
 - Never use color as the only signal. Always pair it with a text label.
-- All user-facing text is in Spanish (Argentina). Use short, plain words. Fixed labels: CARRERA and CALCULADORA (tabs), HOJA DE RUTA (tab), INICIAR, PARAR, REINICIAR, CONFIRMAR, APLICAR, SIGUIENTE, ADELANTADO, ATRASADO, EN TIEMPO, SIN DATOS, ASIGNADO, HORA OFICIAL, PROMEDIO, DISTANCIA, CRONÓMETRO 2, KM/H, KM, SEG, MARCAR, SALTAR, DESHACER, LISTO, ESTIPULADO, ANTERIOR, ACTUAL, MARCA, TIEMPO, SISTEMA DE CONTROL, CARGAR HOJA DE RUTA, SIN HOJA DE RUTA CARGADA, TEXTOS RÁPIDOS, MÁS RÁPIDO, MÁS LENTO, IGUAL. GPS status line messages: BUSCANDO GPS…, GPS SIN PERMISO: activalo en Ajustes de iOS, GPS NO DISPONIBLE. Screen titles: PREPARAR ETAPA, CALIBRAR ODÓMETRO, AYUDA, CARGAR HOJA.
+- All user-facing text is in Spanish (Argentina). Use short, plain words. Fixed labels: CARRERA and CALCULADORA (tabs), HOJA DE RUTA (tab), INICIAR, PARAR, REINICIAR, CONFIRMAR, APLICAR, SIGUIENTE, ADELANTADO, ATRASADO, EN TIEMPO, SIN DATOS, ASIGNADO, HORA OFICIAL, PROMEDIO, DISTANCIA, CRONÓMETRO 2, KM/H, KM, SEG, MIN, MARCAR, SALTAR, DESHACER, LISTO, ESTIPULADO, ANTERIOR, ACTUAL, MARCA, TIEMPO, SISTEMA DE CONTROL, CARGAR HOJA DE RUTA, SIN HOJA DE RUTA CARGADA, TEXTOS RÁPIDOS, MÁS RÁPIDO, MÁS LENTO, IGUAL. GPS status line messages: BUSCANDO GPS…, GPS SIN PERMISO: activalo en Ajustes de iOS, GPS NO DISPONIBLE. Screen titles: PREPARAR ETAPA, CALIBRAR ODÓMETRO, AYUDA, CARGAR HOJA.
 
 ## Colors
 
@@ -119,7 +119,7 @@ Dark-first. The structural backdrop is deep midnight navy (`background`). The co
 
 - **Space Mono**: every number that updates (stopwatches, time of day, speeds, distance, delta). Monospaced digits prevent layout jitter.
 - **Chivo**: labels, buttons, form fields, help text.
-- Unit and section labels (`KM/H`, `KM`, `SEG`) use uppercase with expanded tracking.
+- Unit and section labels (`KM/H`, `KM`, `SEG`, `MIN`) use uppercase with expanded tracking.
 - Numbers use the Argentine format: decimal comma (49,8 km/h, 14,82 km, 07:50:46,25).
 - Both fonts must be bundled with the app and served locally. The app works offline, so no font may load from a remote service. Provide a system monospace and sans-serif fallback.
 
@@ -209,8 +209,19 @@ Flat. Three tonal levels only: `background`, `surface-container` (cards and bloc
 - Color is never the only signal; this status line is text only.
 
 ### Ahead / Behind panel
-- Full-width block with the signed difference in seconds (positive = ahead, negative = behind), plus a text label ("ADELANTADO", "ATRASADO", "EN TIEMPO" or "SIN DATOS"). The label is mandatory so the state is readable without color.
-- Sizing depends on string length: delta values up to 5 characters including sign (e.g., `+12,3`, `-99,9`, `0,0`, `--,-`) use the nominal `display` size (56px) with 20px SEG unit at all supported viewports (320px+). Longer strings (e.g., `-123,4`) scale fluidly (48px at 320px up to 56px at 390px, with SEG unit scaling from 17px to 20px) to keep the entire value on a single line with at least 16px clearance from each side border. The state label scales fluidly by ~20% on narrow widths (16px to 20px).
+- Full-width block showing the ahead/behind deviation with sign (`+` = ahead, `-` = behind), unit (`SEG` or `MIN`), and mandatory text label ("ADELANTADO", "ATRASADO", "EN TIEMPO" or "SIN DATOS") so the state is readable without color.
+- **Value format & 60,0 s threshold**:
+  - The deviation is rounded to tenths of a second FIRST, then the format is determined from the rounded absolute value.
+  - Below 60,0 s: formatted in seconds with one decimal place and unit `SEG` (e.g. `+12,3 SEG`, `-59,9 SEG`, `0,0 SEG`). Zero shows `0,0 SEG` with no sign.
+  - At 60,0 s or more: formatted in minutes, seconds with two digits, and tenths (`M:SS,d`) with unit `MIN` (e.g. `+1:00,0 MIN`, `-1:05,9 MIN`, `-2:05,4 MIN`). Minutes have no leading zero. Values reaching or exceeding 60 minutes keep counting minutes (e.g. `+75:00,0 MIN`) without introducing an hours format.
+  - Rounding before formatting ensures values like `59,96 s` round to `+1:00,0 MIN`, never `60,0 SEG`.
+  - The no-data state displays `--,-` with `SEG` and the label `SIN DATOS`.
+- **Sizing rule**:
+  - Strings up to 5 characters including sign (e.g., `+12,3`, `-59,9`, `0,0`, `--,-`) use the nominal `display` size (56px) with 20px unit at all supported viewports (320px+).
+  - Longer strings (> 5 characters, including values like `-1:05,9` with 7 characters and `-12:05,9` with 8 characters) scale fluidly (38px at 320px up to 56px at 390px, with unit scaling from 15px to 20px) to keep the entire value plus unit on a single line with at least 16px clearance from each side border at 320px viewport width and up.
+  - The state label scales fluidly by ~20% on narrow widths (16px to 20px).
+- **Accessibility**:
+  - The panel region (`role="status" aria-live="polite"`) has an accessible label that reads naturally in Spanish: minutes case as e.g. "1 minuto 5,9 segundos atrasado" or "2 minutos 5,4 segundos atrasado", seconds case as e.g. "12,3 segundos adelantado" or "52,9 segundos atrasado", zero as "0,0 segundos en tiempo", and missing data as "Sin datos".
 - Dynamic drift with stale readings: while the race is running and readings are fresh, delta is computed from the exact physical timestamp of each GPS fix. When readings become stale (> 5s gap, e.g. car stopped at a light or control), the delta keeps running with the clock using the current elapsed race time and the last known distance (including manual adjustments and correction factor), drifting toward behind (ATRASADO) on each second. On PARAR the delta freezes; on REINICIAR it resets to SIN DATOS.
 - Background: `status-ahead` (orange) when ahead, `status-behind` (red) when behind, `status-ontime` (green) when on time within the tolerance band around zero (default +/-0.10s) with the label EN TIEMPO. When there is no data, it uses the neutral background (`surface-container-high`) with "--,-" SEG and the label SIN DATOS (green is not used for no data).
 - Below the state label, the `ASIGNADO` line lives inside a full-width dark inset strip using the same styling as the PROMEDIO/DISTANCIA readout boxes: `surface-container-lowest` background, 1px `outline-variant` border, 4px radius, no shadow or glow. Brass (`secondary`) cannot be placed directly on the status-color backgrounds (orange, green) because contrast is insufficient; the fixed dark strip solves this for all four states. Inside the strip: the word "ASIGNADO" in `label-lg` (13px bold Space Mono, expanded tracking) using `on-surface-variant`; the speed value in 16px Space Mono bold using `secondary` (brass); the unit "KM/H" in `label-lg` using `on-surface-variant`. When no stage speed is saved, the placeholder ("--,-") uses the same 16px brass style. The strip content and colors are identical in all four panel states (ahead, behind, on-time, no-data). The strip must not wrap at 320px width.
