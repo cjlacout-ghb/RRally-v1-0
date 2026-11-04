@@ -46,6 +46,7 @@ export function AyudaScreen({ onBack }: AyudaScreenProps) {
             <li>Mantené la app abierta, con la pantalla encendida y el teléfono cargando.</li>
             <li>Probala antes de la carrera.</li>
             <li>Es para el copiloto: el piloto no debe usarla mientras maneja.</li>
+            <li>Si la app se cierra, el cronómetro sigue, pero la distancia se reinicia.</li>
           </ul>
         </div>
       </div>

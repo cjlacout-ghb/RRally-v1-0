@@ -17,12 +17,13 @@ describe('AyudaScreen', () => {
     expect(html).toContain('Mantené la diferencia lo más cerca de cero.');
   });
 
-  it('renders the 4 warnings with exact copy', () => {
+  it('renders the 5 warnings with exact copy', () => {
     const html = renderToString(<AyudaScreen onBack={() => {}} />);
     expect(html).toContain('ADVERTENCIAS');
     expect(html).toContain('El GPS del teléfono no es un odómetro de rueda.');
     expect(html).toContain('Mantené la app abierta, con la pantalla encendida y el teléfono cargando.');
     expect(html).toContain('Probala antes de la carrera.');
     expect(html).toContain('Es para el copiloto: el piloto no debe usarla mientras maneja.');
+    expect(html).toContain('Si la app se cierra, el cronómetro sigue, pero la distancia se reinicia.');
   });
 });

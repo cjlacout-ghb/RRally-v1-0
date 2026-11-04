@@ -156,7 +156,7 @@ Main screen ("Hoja de ruta" tab), top to bottom:
 Secondary screens, all using the same system: stage setup, odometer calibration, sheet loading ("Cargar hoja"), calculator, short help.
 
 ### Persistence
-- In Carrera mode: assigned average speed and correction factor are saved in localStorage.
+- In Carrera mode: assigned average speed and correction factor are saved in localStorage. The main stopwatch state (start instant, running flag, and accumulated elapsed time) is also saved in localStorage so it survives iOS discarding the page. On reopening the app, the main stopwatch is restored (rebuilt from the start instant if running, or frozen at accumulated elapsed time if stopped). Distance, average speed, and delta are not recovered and show their no-data states (placeholders and SIN DATOS) until the next REINICIAR.
 - In Hoja de ruta mode:
   - The sheet is saved on the device and is NOT cleared by REINICIAR.
   - The race state is saved in localStorage: stopwatch start instant, real marks and skips, current row, and whether the stopwatch is running. It is written only when something happens (start, stop, mark, skip, undo, reset), never every tick. On reopening the app, the stopwatch is rebuilt from the start instant. REINICIAR clears the race state but keeps the loaded sheet.
@@ -261,7 +261,7 @@ Flat. Three tonal levels only: `background`, `surface-container` (cards and bloc
 - **Accessibility**: every key has a Spanish aria-label ("Borrar todo", "Borrar último dígito", "Cambiar signo", "Dividir", "Multiplicar", "Restar", "Sumar", "Igual", "Coma decimal", and digit names).
 
 ### Help
-- A short card with 4 numbered steps (numbers in brass Space Mono), followed by a warnings block in `body-md` with four short lines. Plain text, no illustrations. Copy is the one in the reference mockup.
+- A short card with 4 numbered steps (numbers in brass Space Mono), followed by a warnings block in `body-md` with five short lines (including the app close warning: "Si la app se cierra, el cronómetro sigue, pero la distancia se reinicia."; this file wins over the reference mockup docs/rr-pantallas-v1.html for this line). Plain text, no illustrations. Copy is the one in the reference mockup.
 
 ## Excluded from v1
 

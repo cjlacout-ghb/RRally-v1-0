@@ -18,6 +18,11 @@ import {
   clearRoadbookRaceState,
   ROADBOOK_RACE_STATE_KEY,
   StoredRoadbookRaceState,
+  readCarreraStopwatchState,
+  writeCarreraStopwatchState,
+  clearCarreraStopwatchState,
+  CARRERA_STOPWATCH_KEY,
+  StoredCarreraStopwatchState,
 } from './storage';
 import { DEFAULT_CORRECTION_FACTOR } from './logic/gpsConstants';
 
@@ -349,6 +354,103 @@ describe('storage module', () => {
       expect(readRoadbookRaceState()).toBeNull();
       expect(mockStorage.getItem(ROADBOOK_RACE_STATE_KEY)).toBeNull();
       expect(readRoadbookSheet()).toHaveLength(1);
+    });
+  });
+
+  describe('Carrera stopwatch persistence', () => {
+    const now = 1700000010000;
+    const runningState: StoredCarreraStopwatchState = {
+      version: 1,
+      startWallClock: 1700000000000,
+      running: true,
+      accumulatedMs: 5000,
+    };
+
+    const stoppedState: StoredCarreraStopwatchState = {
+      version: 1,
+      startWallClock: null,
+      running: false,
+      accumulatedMs: 15000,
+    };
+
+    it('returns null when nothing is stored', () => {
+      expect(readCarreraStopwatchState(now)).toBeNull();
+    });
+
+    it('round trips valid running stopwatch state', () => {
+      const res = writeCarreraStopwatchState(runningState);
+      expect(res).toEqual({ ok: true });
+
+      const loaded = readCarreraStopwatchState(now);
+      expect(loaded).toEqual(runningState);
+    });
+
+    it('round trips valid stopped stopwatch state', () => {
+      const res = writeCarreraStopwatchState(stoppedState);
+      expect(res).toEqual({ ok: true });
+
+      const loaded = readCarreraStopwatchState(now);
+      expect(loaded).toEqual(stoppedState);
+    });
+
+    it('defensively rejects future startWallClock timestamps', () => {
+      const futureRunningState: StoredCarreraStopwatchState = {
+        version: 1,
+        startWallClock: now + 5000, // 5 seconds in future
+        running: true,
+        accumulatedMs: 0,
+      };
+      writeCarreraStopwatchState(futureRunningState);
+      expect(readCarreraStopwatchState(now)).toBeNull();
+    });
+
+    it('defensively rejects corrupted JSON, wrong version, or invalid types', () => {
+      mockStorage.setItem(CARRERA_STOPWATCH_KEY, 'corrupted');
+      expect(readCarreraStopwatchState(now)).toBeNull();
+
+      mockStorage.setItem(CARRERA_STOPWATCH_KEY, JSON.stringify({ version: 2, running: true }));
+      expect(readCarreraStopwatchState(now)).toBeNull();
+
+      mockStorage.setItem(
+        CARRERA_STOPWATCH_KEY,
+        JSON.stringify({ version: 1, running: 'yes', accumulatedMs: 100 })
+      );
+      expect(readCarreraStopwatchState(now)).toBeNull();
+
+      mockStorage.setItem(
+        CARRERA_STOPWATCH_KEY,
+        JSON.stringify({ version: 1, running: false, accumulatedMs: -10 })
+      );
+      expect(readCarreraStopwatchState(now)).toBeNull();
+    });
+
+    it('clearCarreraStopwatchState removes stopwatch state on REINICIAR', () => {
+      writeCarreraStopwatchState(runningState);
+      expect(readCarreraStopwatchState(now)).not.toBeNull();
+
+      const clearRes = clearCarreraStopwatchState();
+      expect(clearRes).toEqual({ ok: true });
+      expect(readCarreraStopwatchState(now)).toBeNull();
+      expect(mockStorage.getItem(CARRERA_STOPWATCH_KEY)).toBeNull();
+    });
+
+    it('handles storage errors safely without throwing', () => {
+      vi.spyOn(mockStorage, 'getItem').mockImplementation(() => {
+        throw new Error('Storage failure');
+      });
+      expect(readCarreraStopwatchState(now)).toBeNull();
+
+      vi.spyOn(mockStorage, 'setItem').mockImplementation(() => {
+        throw new Error('QuotaExceededError');
+      });
+      const writeRes = writeCarreraStopwatchState(runningState);
+      expect(writeRes.ok).toBe(false);
+
+      vi.spyOn(mockStorage, 'removeItem').mockImplementation(() => {
+        throw new Error('Remove failure');
+      });
+      const clearRes = clearCarreraStopwatchState();
+      expect(clearRes.ok).toBe(false);
     });
   });
 });

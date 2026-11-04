@@ -65,6 +65,7 @@ export function RaceProvider({
   initialReader,
 }: RaceProviderProps) {
   const isGpsEnabled = enableGpsProp ?? (controlSystem !== 'hoja-de-ruta');
+  const isCarrera = controlSystem !== 'hoja-de-ruta';
   const simRequested = !initialReader && isSimulatorRequested();
   const [bridge, setBridge] = useState<RaceSessionBridge | null>(() => {
     if (simRequested) {
@@ -76,6 +77,7 @@ export function RaceProvider({
       assignedSpeedKmH: assignedSpeed,
       correctionFactor,
       enableGps: isGpsEnabled,
+      persistCarreraStopwatch: isCarrera,
     });
   });
 
@@ -101,6 +103,7 @@ export function RaceProvider({
           assignedSpeedKmH: assignedSpeed,
           correctionFactor,
           enableGps: isGpsEnabled,
+          persistCarreraStopwatch: isCarrera,
         })
       );
     });
@@ -108,14 +111,15 @@ export function RaceProvider({
     return () => {
       active = false;
     };
-  }, [simRequested, bridge, initialTracker, assignedSpeed, correctionFactor, isGpsEnabled]);
+  }, [simRequested, bridge, initialTracker, assignedSpeed, correctionFactor, isGpsEnabled, isCarrera]);
 
   // Sync GPS enabled state when controlSystem changes
   useEffect(() => {
     if (bridge) {
       bridge.setGpsEnabled(isGpsEnabled);
+      bridge.setPersistCarreraStopwatch(isCarrera);
     }
-  }, [bridge, isGpsEnabled]);
+  }, [bridge, isGpsEnabled, isCarrera]);
 
   // Sync assignedSpeed when changed in storage/PrepararEtapa
   useEffect(() => {

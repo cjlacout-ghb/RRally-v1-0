@@ -26,7 +26,17 @@ export const ROADBOOK_SHEET_KEY = 'rr_roadbook_sheet';
 /** localStorage key for roadbook race state. */
 export const ROADBOOK_RACE_STATE_KEY = 'rr_roadbook_race_state';
 
+/** localStorage key for Carrera main stopwatch state. */
+export const CARRERA_STOPWATCH_KEY = 'rr_carrera_stopwatch';
+
 export type SaveResult = { ok: true } | { ok: false; error: string };
+
+export interface StoredCarreraStopwatchState {
+  version: 1;
+  startWallClock: number | null;
+  running: boolean;
+  accumulatedMs: number;
+}
 
 export interface StoredRoadbookSheet {
   version: 1;
@@ -355,4 +365,110 @@ export function clearRoadbookRaceState(): SaveResult {
     };
   }
 }
+
+/**
+ * Reads the stored Carrera main stopwatch state from localStorage.
+ * Defensively validates version, types, and that startWallClock is not in the future.
+ * Returns null if missing, corrupted, or invalid.
+ */
+export function readCarreraStopwatchState(nowWallClock: number = Date.now()): StoredCarreraStopwatchState | null {
+  try {
+    if (typeof localStorage === 'undefined') {
+      return null;
+    }
+    const raw = localStorage.getItem(CARRERA_STOPWATCH_KEY);
+    if (!raw) return null;
+
+    const parsed = JSON.parse(raw) as Partial<StoredCarreraStopwatchState>;
+    if (
+      parsed.version !== 1 ||
+      typeof parsed.running !== 'boolean' ||
+      typeof parsed.accumulatedMs !== 'number' ||
+      !Number.isFinite(parsed.accumulatedMs) ||
+      parsed.accumulatedMs < 0
+    ) {
+      return null;
+    }
+
+    if (parsed.running) {
+      if (
+        typeof parsed.startWallClock !== 'number' ||
+        !Number.isFinite(parsed.startWallClock) ||
+        parsed.startWallClock > nowWallClock
+      ) {
+        return null;
+      }
+      return {
+        version: 1,
+        startWallClock: parsed.startWallClock,
+        running: true,
+        accumulatedMs: parsed.accumulatedMs,
+      };
+    } else {
+      if (
+        parsed.startWallClock !== null &&
+        parsed.startWallClock !== undefined
+      ) {
+        if (
+          typeof parsed.startWallClock !== 'number' ||
+          !Number.isFinite(parsed.startWallClock) ||
+          parsed.startWallClock > nowWallClock
+        ) {
+          return null;
+        }
+      }
+      return {
+        version: 1,
+        startWallClock: parsed.startWallClock ?? null,
+        running: false,
+        accumulatedMs: parsed.accumulatedMs,
+      };
+    }
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Writes the Carrera main stopwatch state to localStorage.
+ */
+export function writeCarreraStopwatchState(state: StoredCarreraStopwatchState): SaveResult {
+  try {
+    if (typeof localStorage === 'undefined') {
+      return {
+        ok: false,
+        error: 'No se pudo guardar el estado del cronómetro. El almacenamiento del dispositivo no está disponible.',
+      };
+    }
+    localStorage.setItem(CARRERA_STOPWATCH_KEY, JSON.stringify(state));
+    return { ok: true };
+  } catch {
+    return {
+      ok: false,
+      error: 'No se pudo guardar el estado del cronómetro. El almacenamiento del dispositivo no está disponible.',
+    };
+  }
+}
+
+/**
+ * Clears the Carrera main stopwatch state from localStorage (called on REINICIAR).
+ */
+export function clearCarreraStopwatchState(): SaveResult {
+  try {
+    if (typeof localStorage === 'undefined') {
+      return {
+        ok: false,
+        error: 'No se pudo restablecer el cronómetro. El almacenamiento del dispositivo no está disponible.',
+      };
+    }
+    localStorage.removeItem(CARRERA_STOPWATCH_KEY);
+    return { ok: true };
+  } catch {
+    return {
+      ok: false,
+      error: 'No se pudo restablecer el cronómetro. El almacenamiento del dispositivo no está disponible.',
+    };
+  }
+}
+
 

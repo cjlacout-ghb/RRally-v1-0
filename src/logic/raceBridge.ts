@@ -17,7 +17,12 @@ import { classifyDelta, type DeltaState } from './delta';
 import { getGpsStatusLine, type GpsStatusKind } from './gpsStatus';
 import { WakeLockManager, type WakeLockApi } from './wakeLock';
 import { STALE_SPEED_TIMEOUT_MS } from './gpsConstants';
-import { readCorrectionFactor } from '../storage';
+import {
+  readCorrectionFactor,
+  readCarreraStopwatchState,
+  writeCarreraStopwatchState,
+  clearCarreraStopwatchState,
+} from '../storage';
 import { isCalibrationAllowed } from './calibration';
 
 export interface RaceSnapshot {
@@ -31,6 +36,7 @@ export interface RaceSnapshot {
   gpsStatusText: string;
   gpsStatusKind: GpsStatusKind;
   isCalibrationAllowed: boolean;
+  isRestored?: boolean;
 }
 
 export interface RaceSessionBridgeOptions {
@@ -44,6 +50,8 @@ export interface RaceSessionBridgeOptions {
   wakeLockApi?: WakeLockApi | null;
   /** Whether the GPS reader should be started. False in Hoja de ruta mode. */
   enableGps?: boolean;
+  /** Whether to persist and restore Carrera stopwatch state. False in Hoja de ruta mode. */
+  persistCarreraStopwatch?: boolean;
 }
 
 export class RaceSessionBridge {
@@ -57,6 +65,8 @@ export class RaceSessionBridge {
 
   private lastReadingTimestamp: number | null = null;
   private hasReceivedReading: boolean = false;
+  private isRestored: boolean = false;
+  private persistCarreraStopwatch: boolean = false;
   private listeners = new Set<(snapshot: RaceSnapshot) => void>();
   private unsubReaderReading?: () => void;
   private unsubReaderStatus?: () => void;
@@ -67,6 +77,7 @@ export class RaceSessionBridge {
     this.stopwatch = options.stopwatch ?? new Stopwatch(this.clocks);
     this.correctionFactor = options.correctionFactor;
     this.enableGps = options.enableGps ?? true;
+    this.persistCarreraStopwatch = options.persistCarreraStopwatch ?? false;
     this.tracker =
       options.tracker ??
       new RallyTracker({
@@ -81,6 +92,32 @@ export class RaceSessionBridge {
     );
 
     this.setupReaderSubscriptions();
+
+    // In Carrera mode: restore persisted stopwatch state if present
+    if (this.persistCarreraStopwatch) {
+      const saved = readCarreraStopwatchState(this.clocks.nowWallClock());
+      if (saved) {
+        this.stopwatch.restore(saved);
+        this.isRestored = true;
+
+        if (saved.running) {
+          this.hasReceivedReading = false;
+          this.lastReadingTimestamp = null;
+          if (this.enableGps) {
+            const status = this.reader.getStatus();
+            if (
+              status === 'idle' ||
+              status === 'denied' ||
+              status === 'unavailable' ||
+              status === 'timeout'
+            ) {
+              this.reader.start();
+            }
+          }
+          void this.wakeLock.acquire();
+        }
+      }
+    }
   }
 
   private setupReaderSubscriptions(): void {
@@ -163,6 +200,20 @@ export class RaceSessionBridge {
   }
 
   /**
+   * Sets whether Carrera stopwatch persistence is enabled.
+   */
+  setPersistCarreraStopwatch(persist: boolean): void {
+    this.persistCarreraStopwatch = persist;
+  }
+
+  /**
+   * Queries whether the race session was restored from saved state (distance suppressed until REINICIAR).
+   */
+  getIsRestored(): boolean {
+    return this.isRestored;
+  }
+
+  /**
    * Starts or resumes the race (INICIAR).
    * Reads wall-clock time once and shares this exact single instant between
    * the main stopwatch and RallyTracker. Starts or retries the GPS reader (if GPS is enabled).
@@ -180,6 +231,15 @@ export class RaceSessionBridge {
 
     this.stopwatch.start(now, nowMono);
     this.tracker.start(now);
+
+    if (this.persistCarreraStopwatch) {
+      writeCarreraStopwatchState({
+        version: 1,
+        startWallClock: now,
+        running: true,
+        accumulatedMs: this.stopwatch.getAccumulatedMs(),
+      });
+    }
 
     // Each start (or resume) resets the memory of having received a valid reading,
     // so the GPS status line shows "BUSCANDO GPS…" until the first valid reading arrives.
@@ -217,6 +277,16 @@ export class RaceSessionBridge {
     this.reader.stop();
     this.lastReadingTimestamp = null;
     void this.wakeLock.release();
+
+    if (this.persistCarreraStopwatch) {
+      writeCarreraStopwatchState({
+        version: 1,
+        startWallClock: null,
+        running: false,
+        accumulatedMs: this.stopwatch.getElapsedMs(),
+      });
+    }
+
     this.notifyListeners();
   }
 
@@ -230,6 +300,11 @@ export class RaceSessionBridge {
     this.tracker.reset();
     this.reader.stop();
     void this.wakeLock.release();
+
+    this.isRestored = false;
+    if (this.persistCarreraStopwatch) {
+      clearCarreraStopwatchState();
+    }
 
     this.lastReadingTimestamp = null;
     this.hasReceivedReading = false;
@@ -317,12 +392,19 @@ export class RaceSessionBridge {
       speed = null;
     }
 
-    const averageSpeed = this.tracker.getAverageSpeedKmH();
-    const distance = this.tracker.getDisplayedDistanceKm();
+    let averageSpeed: number | null = this.tracker.getAverageSpeedKmH();
+    let distance: number | null = this.tracker.getDisplayedDistanceKm();
     const elapsedMs = this.stopwatch.getElapsedMs();
-    const deltaSeconds = this.tracker.getDeltaSeconds(elapsedMs, now);
-    const deltaState = classifyDelta(deltaSeconds);
+    let deltaSeconds: number | null = this.tracker.getDeltaSeconds(elapsedMs, now);
+    let deltaState: DeltaState = classifyDelta(deltaSeconds);
     const gpsStatus = this.reader.getStatus();
+
+    if (this.isRestored) {
+      averageSpeed = null;
+      distance = null;
+      deltaSeconds = null;
+      deltaState = 'no-data';
+    }
 
     const statusLine = getGpsStatusLine({
       status: gpsStatus,
@@ -340,6 +422,7 @@ export class RaceSessionBridge {
       gpsStatusText: statusLine.text,
       gpsStatusKind: statusLine.kind,
       isCalibrationAllowed: this.isCalibrationAllowed(),
+      isRestored: this.isRestored,
     };
   }
 

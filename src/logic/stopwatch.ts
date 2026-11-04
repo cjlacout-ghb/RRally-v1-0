@@ -87,6 +87,36 @@ export class Stopwatch {
   }
 
   /**
+   * Returns accumulated milliseconds prior to the current running stretch.
+   */
+  getAccumulatedMs(): number {
+    return this.accumulatedMs;
+  }
+
+  /**
+   * Restores stopwatch state from persisted storage.
+   * If running, computes elapsed wall time since startWallClock and resumes
+   * against the current clock. If stopped, freezes accumulated elapsed time.
+   */
+  restore(saved: { startWallClock: number | null; running: boolean; accumulatedMs: number }): void {
+    const nowWall = this.clocks.nowWallClock();
+    const nowMono = this.clocks.nowMonotonic();
+
+    if (saved.running && saved.startWallClock !== null) {
+      const elapsedSinceStart = Math.max(0, nowWall - saved.startWallClock);
+      this.accumulatedMs = saved.accumulatedMs + elapsedSinceStart;
+      this.running = true;
+      this.startMonotonic = nowMono;
+      this.startWallClock = nowWall;
+    } else {
+      this.accumulatedMs = Math.max(0, saved.accumulatedMs);
+      this.running = false;
+      this.startMonotonic = null;
+      this.startWallClock = null;
+    }
+  }
+
+  /**
    * Returns current elapsed time in milliseconds.
    */
   getElapsedMs(): number {
