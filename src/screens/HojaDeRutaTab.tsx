@@ -237,7 +237,8 @@ export function HojaDeRutaTab({ isVisible, rows, onOpenCargarHoja }: HojaDeRutaT
           <span className="time-block__hora headline-lg brass">{timeOfDay}</span>
         </div>
         <div className="time-block__stopwatch">
-          <div className={`stopwatch-time--main time-centered ${mainDisplay.length > 8 ? 'has-hours' : ''}`}>
+          <span className="label-md on-surface-variant time-block__stopwatch-label">TIEMPO</span>
+          <div className={`stopwatch-time--main time-centered time-block__stopwatch-digits ${mainDisplay.length > 8 ? 'has-hours' : ''}`}>
             {mainDisplay}
           </div>
         </div>

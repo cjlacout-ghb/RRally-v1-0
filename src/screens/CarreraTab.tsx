@@ -149,7 +149,8 @@ export function CarreraTab({
           <span className="time-block__hora headline-lg brass">{displayTimeOfDay}</span>
         </div>
         <div className="time-block__stopwatch">
-          <div className={`stopwatch-time--main time-centered ${displayMain.length > 8 ? 'has-hours' : ''}`}>
+          <span className="label-md on-surface-variant time-block__stopwatch-label">TIEMPO</span>
+          <div className={`stopwatch-time--main time-centered time-block__stopwatch-digits ${displayMain.length > 8 ? 'has-hours' : ''}`}>
             {displayMain}
           </div>
         </div>

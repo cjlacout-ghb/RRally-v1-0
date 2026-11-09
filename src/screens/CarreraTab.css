@@ -35,7 +35,20 @@
 }
 
 .time-block__stopwatch {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-space-sm);
   margin: var(--spacing-space-sm) 0;
+}
+
+.time-block__stopwatch-label {
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.time-block__stopwatch-digits {
+  flex: 1;
+  min-width: 0;
 }
 
 /*

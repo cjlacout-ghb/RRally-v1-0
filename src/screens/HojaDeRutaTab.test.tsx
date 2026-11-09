@@ -28,6 +28,8 @@ describe('HojaDeRutaTab Component', () => {
     );
 
     expect(html).toContain('HORA OFICIAL');
+    expect(html).toContain('TIEMPO');
+    expect(html).toContain('time-block__stopwatch-label');
     expect(html).toContain('hdr-stopwatch-btn');
     expect(html).toContain('btn-stopwatch');
     expect(html).toContain('INICIAR');

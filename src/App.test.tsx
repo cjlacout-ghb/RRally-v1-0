@@ -76,3 +76,31 @@ describe('App Header - Pending setup emphasis', () => {
     expect(html).toContain('hdr-next-stretch');
   });
 });
+
+describe('Time block - TIEMPO label', () => {
+  beforeEach(() => {
+    mockStore.clear();
+  });
+
+  it('renders TIEMPO label in the main stopwatch row in Carrera mode', async () => {
+    const { default: App } = await import('./App');
+    const html = renderToString(<App />);
+
+    expect(html).toContain('TIEMPO');
+    expect(html).toContain('time-block__stopwatch-label');
+  });
+
+  it('renders TIEMPO label in the main stopwatch row in Hoja de ruta mode', async () => {
+    const { writeControlSystem, writeRoadbookSheet } = await import('./storage');
+    writeControlSystem('hoja-de-ruta');
+    writeRoadbookSheet([
+      { id: '1', mark: 'INICIO', assignedTimeSeconds: 0, speedKmH: 50 },
+    ]);
+
+    const { default: App } = await import('./App');
+    const html = renderToString(<App />);
+
+    expect(html).toContain('TIEMPO');
+    expect(html).toContain('time-block__stopwatch-label');
+  });
+});
