@@ -16,6 +16,7 @@ import {
   readRoadbookRaceState,
   writeRoadbookRaceState,
   clearRoadbookRaceState,
+  clearAllRoadbookData,
   ROADBOOK_RACE_STATE_KEY,
   StoredRoadbookRaceState,
   readCarreraStopwatchState,
@@ -354,6 +355,38 @@ describe('storage module', () => {
       expect(readRoadbookRaceState()).toBeNull();
       expect(mockStorage.getItem(ROADBOOK_RACE_STATE_KEY)).toBeNull();
       expect(readRoadbookSheet()).toHaveLength(1);
+    });
+
+    it('clearAllRoadbookData resets sheet to 50 empty rows and clears race state', () => {
+      // Setup populated sheet and race state
+      const populatedSheet = Array.from({ length: 70 }, (_, i) => ({
+        id: `row-${i + 1}`,
+        mark: `Marca ${i + 1}`,
+        assignedTimeSeconds: (i + 1) * 60,
+        speedKmH: 60,
+      }));
+      writeRoadbookSheet(populatedSheet);
+      writeRoadbookRaceState(sampleRaceState);
+
+      expect(readRoadbookSheet()).toHaveLength(70);
+      expect(readRoadbookRaceState()).not.toBeNull();
+
+      // Clear all
+      const { rows, saveResult } = clearAllRoadbookData();
+      expect(saveResult).toEqual({ ok: true });
+      expect(rows).toHaveLength(50);
+      expect(rows[0]).toEqual({
+        id: 'row-1',
+        mark: '',
+        assignedTimeSeconds: null,
+        speedKmH: null,
+      });
+
+      // Storage has 50 empty rows and no race state
+      const reloadedSheet = readRoadbookSheet();
+      expect(reloadedSheet).toHaveLength(50);
+      expect(reloadedSheet.every((r) => r.mark === '' && r.assignedTimeSeconds === null && r.speedKmH === null)).toBe(true);
+      expect(readRoadbookRaceState()).toBeNull();
     });
   });
 

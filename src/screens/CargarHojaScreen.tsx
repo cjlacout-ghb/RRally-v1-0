@@ -1,8 +1,11 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import {
   MAX_SHEET_ROWS,
   formatRoadbookCounter,
   getRowDisplaySpeed,
+  rowHasContent,
+  isRoadbookClearingAllowed,
+  ROADBOOK_CLEAR_BLOCKED_MESSAGE,
   type RoadbookRow,
 } from '../logic/roadbookModel';
 import {
@@ -10,6 +13,9 @@ import {
   EMPTY_TIME_PLACEHOLDER,
   formatTimeHms,
 } from '../logic/roadbookTime';
+import { clearAllRoadbookData } from '../storage';
+import { useConfirmReset } from '../hooks/useConfirmReset';
+import { useRaceSession } from '../context/RaceContext';
 import { MarcaMenu } from '../components/MarcaMenu';
 import './CargarHojaScreen.css';
 
@@ -21,6 +27,12 @@ interface CargarHojaScreenProps {
     changes: Partial<Pick<RoadbookRow, 'mark' | 'assignedTimeSeconds' | 'speedKmH'>>
   ) => void;
   onBack: () => void;
+  /** Optional handler to clear a single row */
+  onClearRow?: (rowId: string) => void;
+  /** Optional handler to clear all rows and race state */
+  onClearAll?: () => void;
+  /** Single source of truth for whether race is running. If omitted, read from RaceSession. */
+  isRaceRunning?: boolean;
   /** Testing escape-hatch for initial edit state */
   initialEditingRowId?: string | null;
   initialEditingField?: 'mark' | 'time' | 'speed' | null;
@@ -31,9 +43,23 @@ export function CargarHojaScreen({
   onAddRows,
   onUpdateRow,
   onBack,
+  onClearRow,
+  onClearAll,
+  isRaceRunning: isRaceRunningProp,
   initialEditingRowId = null,
   initialEditingField = null,
 }: CargarHojaScreenProps) {
+  let isRaceRunning = isRaceRunningProp ?? false;
+  if (isRaceRunningProp === undefined) {
+    try {
+      const raceSession = useRaceSession();
+      isRaceRunning = raceSession.snapshot.isRunning;
+    } catch {
+      // Outside RaceProvider in isolated unit tests
+    }
+  }
+
+  const isClearBlocked = !isRoadbookClearingAllowed(isRaceRunning);
   const [editingRowId, setEditingRowId] = useState<string | null>(initialEditingRowId);
   const [editingField, setEditingField] = useState<'mark' | 'time' | 'speed' | null>(initialEditingField);
   const [timeDigits, setTimeDigits] = useState<string>('');
@@ -54,7 +80,60 @@ export function CargarHojaScreen({
 
   const canAddMore = rows.length < MAX_SHEET_ROWS;
 
+  const handleConfirmClearAll = useCallback(() => {
+    if (isClearBlocked) return;
+    setEditingRowId(null);
+    setEditingField(null);
+    setMarkInput('');
+    setTimeDigits('');
+    setSpeedInput('');
+    setIsMenuCollapsed(false);
+    setFilterQuery(null);
+
+    if (onClearAll) {
+      onClearAll();
+    } else {
+      clearAllRoadbookData();
+    }
+  }, [isClearBlocked, onClearAll]);
+
+  const confirmReset = useConfirmReset({
+    onReset: handleConfirmClearAll,
+    hasSomethingToLose: true,
+    unarmedLabel: 'BORRAR TODO',
+    armedLabel: 'CONFIRMAR',
+  });
+
+  useEffect(() => {
+    if (isClearBlocked && confirmReset.isArmed) {
+      confirmReset.disarm();
+    }
+  }, [isClearBlocked, confirmReset]);
+
+  function handleClearRow(row: RoadbookRow) {
+    if (isClearBlocked) return;
+    confirmReset.disarm();
+
+    if (onClearRow) {
+      onClearRow(row.id);
+    } else {
+      onUpdateRow(row.id, { mark: '', assignedTimeSeconds: null, speedKmH: null });
+    }
+
+    if (editingRowId === row.id) {
+      setMarkInput('');
+      setIsMenuCollapsed(true);
+      setFilterQuery(null);
+      if (editingField === 'time') {
+        setTimeDigits('');
+      } else if (editingField === 'speed') {
+        setSpeedInput('');
+      }
+    }
+  }
+
   function startEditRow(row: RoadbookRow, field: 'mark' | 'time' | 'speed') {
+    confirmReset.disarm();
     setEditingRowId(row.id);
     setEditingField(field);
 
@@ -146,6 +225,7 @@ export function CargarHojaScreen({
   }
 
   function handleListo() {
+    confirmReset.disarm();
     if (editingField === 'time' && editingRowId) {
       const parsed = parseTimeDigits(timeDigits);
       onUpdateRow(editingRowId, { assignedTimeSeconds: parsed.valid ? parsed.totalSeconds : null });
@@ -182,6 +262,7 @@ export function CargarHojaScreen({
           <span className="cargar-hoja-col-mark">MARCA</span>
           <span className="cargar-hoja-col-time">TIEMPO</span>
           <span className="cargar-hoja-col-speed">KM/H</span>
+          <span className="cargar-hoja-col-clear" aria-hidden="true" />
         </div>
 
         {/* Filas */}
@@ -193,6 +274,7 @@ export function CargarHojaScreen({
                 ? formatTimeHms(row.assignedTimeSeconds)
                 : EMPTY_TIME_PLACEHOLDER;
             const speedDisplay = getRowDisplaySpeed(rows, idx);
+            const hasContent = rowHasContent(row);
 
             return (
               <div
@@ -234,21 +316,70 @@ export function CargarHojaScreen({
                 >
                   {speedDisplay.text}
                 </button>
+                <div className="cargar-hoja-row-clear-cell">
+                  {hasContent && (
+                    <button
+                      type="button"
+                      className={`cargar-hoja-row-clear${isClearBlocked ? ' cargar-hoja-row-clear--disabled' : ''}`}
+                      disabled={isClearBlocked}
+                      aria-disabled={isClearBlocked}
+                      onClick={() => handleClearRow(row)}
+                      aria-label={`Borrar fila ${idx + 1}`}
+                    >
+                      ✕
+                    </button>
+                  )}
+                </div>
               </div>
             );
           })}
         </div>
 
-        {/* Botón "+ 10 FILAS" como último ítem de la lista (se desplaza con las filas) */}
+        {/* Botón "+ 10 FILAS" como ítem de la lista (se desplaza con las filas) */}
         {canAddMore && (
           <button
             type="button"
             className="btn-secondary btn-full cargar-hoja-add-btn"
-            onClick={onAddRows}
+            onClick={() => {
+              confirmReset.disarm();
+              onAddRows();
+            }}
           >
             + 10 FILAS
           </button>
         )}
+
+        {/* Botón BORRAR TODO como último ítem de la lista (debajo de "+ 10 FILAS") */}
+        <div className="cargar-hoja-borrar-container">
+          <span
+            role="status"
+            aria-live="polite"
+            aria-atomic="true"
+            className="visually-hidden"
+          >
+            {confirmReset.isArmed ? 'Confirmar borrar todo' : ''}
+          </span>
+          <button
+            type="button"
+            ref={confirmReset.buttonRef}
+            className={`btn-secondary btn-full cargar-hoja-borrar-btn${
+              confirmReset.isArmed ? ' cargar-hoja-borrar-btn--armed' : ''
+            }${isClearBlocked ? ' btn-secondary--disabled' : ''}`}
+            disabled={isClearBlocked}
+            aria-disabled={isClearBlocked}
+            onClick={confirmReset.handleResetClick}
+            aria-label={confirmReset.isArmed ? 'Confirmar borrar todo' : 'Borrar todo'}
+          >
+            {confirmReset.buttonLabel}
+          </button>
+          <div
+            className="cargar-hoja-blocked-msg"
+            role="status"
+            aria-live="polite"
+          >
+            {isClearBlocked ? ROADBOOK_CLEAR_BLOCKED_MESSAGE : '\u00A0'}
+          </div>
+        </div>
       </div>
 
       {/* Panel anclado directamente encima de LISTO */}

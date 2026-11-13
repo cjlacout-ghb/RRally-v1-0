@@ -10,13 +10,17 @@ export interface UseConfirmResetOptions {
   hasSomethingToLose: boolean | (() => boolean);
   /** Whether the parent screen/tab is currently visible */
   isVisible?: boolean;
+  /** Unarmed button label. Defaults to 'REINICIAR'. */
+  unarmedLabel?: string;
+  /** Armed button label. Defaults to 'CONFIRMAR'. */
+  armedLabel?: string;
 }
 
 export interface UseConfirmResetResult {
   /** Whether the reset button is currently armed */
   isArmed: boolean;
-  /** Current button text: 'REINICIAR' or 'CONFIRMAR' */
-  buttonLabel: 'REINICIAR' | 'CONFIRMAR';
+  /** Current button text: 'REINICIAR', 'CONFIRMAR', or custom label */
+  buttonLabel: string;
   /** Click handler for the reset button */
   handleResetClick: () => void;
   /** Explicitly disarm the button (e.g., when another control is tapped) */
@@ -42,6 +46,8 @@ export function useConfirmReset({
   onReset,
   hasSomethingToLose,
   isVisible = true,
+  unarmedLabel = 'REINICIAR',
+  armedLabel = 'CONFIRMAR',
 }: UseConfirmResetOptions): UseConfirmResetResult {
   const [isArmed, setIsArmed] = useState(false);
   const timerRef = useRef<number | null>(null);
@@ -89,12 +95,27 @@ export function useConfirmReset({
     };
   }, [clearTimer]);
 
-  // Disarm whenever visibility changes to false
+  // Disarm whenever visibility changes to false or document becomes hidden
   useEffect(() => {
     if (!isVisible) {
       disarm();
     }
   }, [isVisible, disarm]);
+
+  useEffect(() => {
+    if (!isArmed) return;
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'hidden') {
+        disarm();
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [isArmed, disarm]);
 
   // Disarm when the user taps any other control or clicks outside the button
   useEffect(() => {
@@ -119,7 +140,7 @@ export function useConfirmReset({
 
   return {
     isArmed,
-    buttonLabel: isArmed ? 'CONFIRMAR' : 'REINICIAR',
+    buttonLabel: isArmed ? armedLabel : unarmedLabel,
     handleResetClick,
     disarm,
     buttonRef,

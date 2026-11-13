@@ -118,13 +118,21 @@ interface TestHarnessProps {
   hasSomethingToLose: boolean;
   isVisible?: boolean;
   showOtherButton?: boolean;
+  unarmedLabel?: string;
 }
 
-function TestHarness({ onReset, hasSomethingToLose, isVisible = true, showOtherButton = false }: TestHarnessProps) {
+function TestHarness({
+  onReset,
+  hasSomethingToLose,
+  isVisible = true,
+  showOtherButton = false,
+  unarmedLabel,
+}: TestHarnessProps) {
   const { isArmed, buttonLabel, handleResetClick, disarm, buttonRef } = useConfirmReset({
     onReset,
     hasSomethingToLose,
     isVisible,
+    unarmedLabel,
   });
 
   return (
@@ -327,6 +335,38 @@ describe('useConfirmReset hook', () => {
     const props = getReactProps(btn!);
     expect(onReset).not.toHaveBeenCalled();
     expect(props?.children).toBe('REINICIAR');
+  });
+
+  it('supports custom unarmedLabel (e.g. BORRAR TODO) with two-step confirm and 4s expiry', () => {
+    const onReset = vi.fn();
+    const { clickReset, getResetBtn, renderApp } = mountHarness({
+      onReset,
+      hasSomethingToLose: true,
+      unarmedLabel: 'BORRAR TODO',
+    });
+
+    // Initially shows unarmed label
+    expect(getReactProps(getResetBtn()!)?.children).toBe('BORRAR TODO');
+
+    // First tap arms: shows CONFIRMAR
+    clickReset();
+    expect(getReactProps(getResetBtn()!)?.children).toBe('CONFIRMAR');
+    expect(onReset).not.toHaveBeenCalled();
+
+    // 4s timeout expires back to BORRAR TODO
+    flushSync(() => {
+      vi.advanceTimersByTime(CONFIRM_RESET_TIMEOUT_MS + 10);
+    });
+    renderApp();
+    expect(getReactProps(getResetBtn()!)?.children).toBe('BORRAR TODO');
+    expect(onReset).not.toHaveBeenCalled();
+
+    // Tap again to arm, second tap confirms
+    clickReset();
+    expect(getReactProps(getResetBtn()!)?.children).toBe('CONFIRMAR');
+    clickReset();
+    expect(onReset).toHaveBeenCalledTimes(1);
+    expect(getReactProps(getResetBtn()!)?.children).toBe('BORRAR TODO');
   });
 });
 

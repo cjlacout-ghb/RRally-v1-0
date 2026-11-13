@@ -73,6 +73,55 @@ export function createEmptyRow(idOrIndex: string | number): RoadbookRow {
   };
 }
 
+export const ROADBOOK_CLEAR_BLOCKED_MESSAGE = 'DETENÉ LA CARRERA PARA BORRAR';
+
+/**
+ * Checks whether editing or clearing rows and BORRAR TODO is allowed.
+ * Blocked while the race stopwatch is running.
+ */
+export function isRoadbookClearingAllowed(isRaceRunning: boolean): boolean {
+  return !isRaceRunning;
+}
+
+/**
+ * Determines whether a roadbook row has content.
+ * Content means: non-empty mark text, an assigned time, or an explicitly typed speed (> 0).
+ * An inherited speed does not count.
+ */
+export function rowHasContent(row: RoadbookRow | null | undefined): boolean {
+  if (!row) return false;
+  const hasMark = typeof row.mark === 'string' && row.mark.trim().length > 0;
+  const hasTime =
+    row.assignedTimeSeconds !== null &&
+    row.assignedTimeSeconds !== undefined &&
+    !Number.isNaN(row.assignedTimeSeconds);
+  const hasSpeed =
+    row.speedKmH !== null &&
+    row.speedKmH !== undefined &&
+    Number.isFinite(row.speedKmH) &&
+    row.speedKmH > 0;
+  return hasMark || hasTime || hasSpeed;
+}
+
+/**
+ * Empties mark, time, and speed of a row, preserving its id.
+ */
+export function clearRoadbookRow(row: RoadbookRow): RoadbookRow {
+  return {
+    ...row,
+    mark: '',
+    assignedTimeSeconds: null,
+    speedKmH: null,
+  };
+}
+
+/**
+ * Empties the row matching rowId in the given sheet, preserving numbering and row count.
+ */
+export function clearRowInSheet(rows: RoadbookRow[], rowId: string): RoadbookRow[] {
+  return rows.map((r) => (r.id === rowId ? clearRoadbookRow(r) : r));
+}
+
 /**
  * Creates an initial sheet with 50 empty rows.
  */

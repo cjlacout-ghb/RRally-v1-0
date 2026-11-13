@@ -8,7 +8,13 @@ import { validateStageSpeed } from './logic/stageSpeed';
 import { validateCorrectionFactor } from './logic/calibration';
 import { DEFAULT_CORRECTION_FACTOR } from './logic/gpsConstants';
 import { ControlSystem, DEFAULT_CONTROL_SYSTEM, isValidControlSystem } from './logic/controlSystem';
-import { RoadbookRow, createInitialSheet, sanitizeMarkText, validateRowSpeed } from './logic/roadbookModel';
+import {
+  RoadbookRow,
+  createInitialSheet,
+  sanitizeMarkText,
+  validateRowSpeed,
+  INITIAL_SHEET_ROWS,
+} from './logic/roadbookModel';
 import { RowMark, RoadbookAction } from './logic/roadbookRace';
 
 /** localStorage key for stage speed — single source of truth. */
@@ -364,6 +370,27 @@ export function clearRoadbookRaceState(): SaveResult {
       error: 'No se pudo restablecer el estado. El almacenamiento del dispositivo no está disponible.',
     };
   }
+}
+
+/**
+ * Clears all roadbook data on BORRAR TODO confirm:
+ * - Empties all rows, resetting the sheet back to 50 empty rows.
+ * - Clears real marks, skips, and race state from localStorage.
+ * - Leaves stopwatch untouched.
+ * - Persists the initial sheet like any other sheet edit.
+ */
+export function clearAllRoadbookData(): {
+  rows: RoadbookRow[];
+  saveResult: SaveResult;
+} {
+  const initialRows = createInitialSheet(INITIAL_SHEET_ROWS);
+  const sheetResult = writeRoadbookSheet(initialRows);
+  const raceResult = clearRoadbookRaceState();
+  const ok = sheetResult.ok && raceResult.ok;
+  return {
+    rows: initialRows,
+    saveResult: ok ? { ok: true } : (!sheetResult.ok ? sheetResult : raceResult),
+  };
 }
 
 /**

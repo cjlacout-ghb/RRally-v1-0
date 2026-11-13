@@ -14,6 +14,11 @@ import {
   MAX_SHEET_ROWS,
   MAX_MARK_TEXT_LENGTH,
   RoadbookRow,
+  rowHasContent,
+  clearRoadbookRow,
+  clearRowInSheet,
+  isRoadbookClearingAllowed,
+  ROADBOOK_CLEAR_BLOCKED_MESSAGE,
 } from './roadbookModel';
 
 describe('roadbookModel', () => {
@@ -192,5 +197,163 @@ describe('getRowDisplaySpeed', () => {
     const rows: RoadbookRow[] = [makeRow({ id: '1', speedKmH: 60, mark: 'X', assignedTimeSeconds: 0 })];
     expect(getRowDisplaySpeed(rows, -1).text).toBe('--');
     expect(getRowDisplaySpeed(rows, 99).text).toBe('--');
+  });
+});
+
+describe('rowHasContent rule', () => {
+  it('returns false for null, undefined, or empty row', () => {
+    expect(rowHasContent(null)).toBe(false);
+    expect(rowHasContent(undefined)).toBe(false);
+    expect(
+      rowHasContent({
+        id: '1',
+        mark: '',
+        assignedTimeSeconds: null,
+        speedKmH: null,
+      })
+    ).toBe(false);
+  });
+
+  it('returns false when mark contains only whitespace and other fields are empty', () => {
+    expect(
+      rowHasContent({
+        id: '1',
+        mark: '   ',
+        assignedTimeSeconds: null,
+        speedKmH: null,
+      })
+    ).toBe(false);
+  });
+
+  it('returns true when row has non-empty mark text', () => {
+    expect(
+      rowHasContent({
+        id: '1',
+        mark: 'LARGADA',
+        assignedTimeSeconds: null,
+        speedKmH: null,
+      })
+    ).toBe(true);
+  });
+
+  it('returns true when row has assigned time', () => {
+    expect(
+      rowHasContent({
+        id: '1',
+        mark: '',
+        assignedTimeSeconds: 0,
+        speedKmH: null,
+      })
+    ).toBe(true);
+    expect(
+      rowHasContent({
+        id: '1',
+        mark: '',
+        assignedTimeSeconds: 3600,
+        speedKmH: null,
+      })
+    ).toBe(true);
+  });
+
+  it('returns true when row has explicit speed > 0', () => {
+    expect(
+      rowHasContent({
+        id: '1',
+        mark: '',
+        assignedTimeSeconds: null,
+        speedKmH: 60,
+      })
+    ).toBe(true);
+  });
+
+  it('an inherited speed does not count as content (speedKmH is null on row)', () => {
+    // In roadbook model, a row inheriting speed has speedKmH: null.
+    // rowHasContent must return false if mark and time are empty.
+    const inheritingRow: RoadbookRow = {
+      id: '2',
+      mark: '',
+      assignedTimeSeconds: null,
+      speedKmH: null,
+    };
+    expect(rowHasContent(inheritingRow)).toBe(false);
+  });
+});
+
+describe('clearing one row (clearRoadbookRow and clearRowInSheet)', () => {
+  it('clearRoadbookRow empties mark, time and speed while preserving id', () => {
+    const row: RoadbookRow = {
+      id: 'row-5',
+      mark: 'CONTROL HORARIO',
+      assignedTimeSeconds: 1234,
+      speedKmH: 55.5,
+    };
+    const cleared = clearRoadbookRow(row);
+    expect(cleared).toEqual({
+      id: 'row-5',
+      mark: '',
+      assignedTimeSeconds: null,
+      speedKmH: null,
+    });
+  });
+
+  it('clearRowInSheet clears only the targeted row, leaving other rows and numbering unchanged', () => {
+    const sheet: RoadbookRow[] = [
+      { id: 'row-1', mark: 'R1', assignedTimeSeconds: 10, speedKmH: 50 },
+      { id: 'row-2', mark: 'R2', assignedTimeSeconds: 20, speedKmH: 60 },
+      { id: 'row-3', mark: 'R3', assignedTimeSeconds: 30, speedKmH: 70 },
+    ];
+    const updated = clearRowInSheet(sheet, 'row-2');
+    expect(updated).toHaveLength(3);
+    expect(updated[0]).toEqual(sheet[0]);
+    expect(updated[1]).toEqual({
+      id: 'row-2',
+      mark: '',
+      assignedTimeSeconds: null,
+      speedKmH: null,
+    });
+    expect(updated[2]).toEqual(sheet[2]);
+  });
+});
+
+describe('speed inheritance after clearing', () => {
+  it('rows that inherited from the cleared row now inherit from the nearest previous row', () => {
+    // Row 1: speed 50
+    // Row 2: speed 80
+    // Row 3: no explicit speed, mark set -> originally inherits 80
+    const sheet: RoadbookRow[] = [
+      { id: 'row-1', mark: 'START', assignedTimeSeconds: 0, speedKmH: 50 },
+      { id: 'row-2', mark: 'PC1', assignedTimeSeconds: 100, speedKmH: 80 },
+      { id: 'row-3', mark: 'PC2', assignedTimeSeconds: 200, speedKmH: null },
+    ];
+
+    expect(getRowDisplaySpeed(sheet, 2).text).toBe('80,0');
+    expect(getRowDisplaySpeed(sheet, 2).isInherited).toBe(true);
+
+    // Clear row 2
+    const afterClear = clearRowInSheet(sheet, 'row-2');
+
+    // Row 2 is now completely empty
+    expect(getRowDisplaySpeed(afterClear, 1).text).toBe('--');
+    expect(getRowDisplaySpeed(afterClear, 1).isExplicit).toBe(false);
+    expect(getRowDisplaySpeed(afterClear, 1).isInherited).toBe(false);
+
+    // Row 3 now skips cleared row 2 and inherits speed 50 from row 1!
+    expect(getRowDisplaySpeed(afterClear, 2).text).toBe('50,0');
+    expect(getRowDisplaySpeed(afterClear, 2).isInherited).toBe(true);
+    expect(getEffectiveSpeed(afterClear, 2)).toBe(50);
+  });
+});
+
+describe('isRoadbookClearingAllowed', () => {
+  it('allows clearing when race stopwatch is not running', () => {
+    expect(isRoadbookClearingAllowed(false)).toBe(true);
+  });
+
+  it('blocks clearing when race stopwatch is running', () => {
+    expect(isRoadbookClearingAllowed(true)).toBe(false);
+  });
+
+  it('defines the standard blocked message', () => {
+    expect(ROADBOOK_CLEAR_BLOCKED_MESSAGE).toBe('DETENÉ LA CARRERA PARA BORRAR');
   });
 });

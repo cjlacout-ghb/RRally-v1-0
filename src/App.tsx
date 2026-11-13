@@ -27,7 +27,7 @@ export function App() {
   const { assignedSpeed, saveSpeed } = useStageSpeed();
   const { correctionFactor, saveFactor } = useCorrectionFactor();
   const { controlSystem, saveControlSystem } = useControlSystem();
-  const { rows, addRows, updateRow } = useRoadbookSheet();
+  const { rows, addRows, updateRow, clearRow, clearAllRows } = useRoadbookSheet();
 
   // activeTab is always initialized from the persisted control system, never hardcoded.
   // This is the single source of truth reconciliation: prevents CarreraTab from mounting
@@ -98,6 +98,8 @@ export function App() {
             rows={rows}
             onAddRows={addRows}
             onUpdateRow={updateRow}
+            onClearRow={clearRow}
+            onClearAll={clearAllRows}
             onBack={() => setScreen(cargarHojaOrigin)}
           />
         ) : screen === 'ayuda' ? (

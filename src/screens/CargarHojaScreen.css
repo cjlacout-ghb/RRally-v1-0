@@ -33,9 +33,11 @@
 /* ── Encabezado de columnas ───────────────────────────────────────── */
 .cargar-hoja-col-header {
   display: grid;
-  grid-template-columns: 32px 1fr 90px 60px;
+  grid-template-columns: 24px minmax(0, 1fr) 74px 48px 56px;
   gap: var(--spacing-space-xs);
   padding: 0 var(--spacing-space-md);
+  border: var(--border-width) solid transparent;
+  align-items: center;
 }
 
 .cargar-hoja-col-header > span {
@@ -48,6 +50,26 @@
   color: var(--color-on-surface-variant);
 }
 
+.cargar-hoja-col-num {
+  text-align: center;
+}
+
+.cargar-hoja-col-mark {
+  text-align: left;
+}
+
+.cargar-hoja-col-time {
+  text-align: center;
+}
+
+.cargar-hoja-col-speed {
+  text-align: right;
+}
+
+.cargar-hoja-col-clear {
+  width: 56px;
+}
+
 /* ── Lista de filas ────────────────────────────────────────────────── */
 .cargar-hoja-rows {
   display: flex;
@@ -57,7 +79,7 @@
 
 .cargar-hoja-row {
   display: grid;
-  grid-template-columns: 32px 1fr 90px 60px;
+  grid-template-columns: 24px minmax(0, 1fr) 74px 48px 56px;
   gap: var(--spacing-space-xs);
   align-items: center;
   min-height: 52px;
@@ -127,11 +149,92 @@
   background: var(--color-surface-container-high);
 }
 
-/* ── Botón "+ 10 FILAS" (último ítem de la lista, se desplaza con ella) ── */
+/* ── Celda y botón de borrar fila ("X") ───────────────────────────── */
+.cargar-hoja-row-clear-cell {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  width: 56px;
+  height: 52px;
+}
+
+.cargar-hoja-row-clear {
+  background: transparent;
+  border: none;
+  color: var(--color-on-surface-variant);
+  font-family: var(--font-sans);
+  font-size: 16px;
+  line-height: 1;
+  width: 44px;
+  height: 44px;
+  margin-left: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  touch-action: manipulation;
+  padding: 0;
+  border-radius: var(--rounded-default);
+}
+
+.cargar-hoja-row-clear:active {
+  background: var(--color-surface-container-high);
+  color: var(--color-on-surface);
+}
+
+.cargar-hoja-row-clear:disabled,
+.cargar-hoja-row-clear--disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+/* ── Botón "+ 10 FILAS" (ítem de la lista, se desplaza con ella) ── */
 .cargar-hoja-add-btn {
   min-height: 64px;
   margin-top: var(--spacing-space-xs);
   flex: none;
+}
+
+/* ── Botón BORRAR TODO y mensaje de bloqueo ───────────────────────── */
+.cargar-hoja-borrar-container {
+  display: flex;
+  flex-direction: column;
+  margin-top: var(--spacing-space-xs);
+  flex: none;
+}
+
+.cargar-hoja-borrar-btn {
+  min-height: 64px;
+}
+
+.cargar-hoja-borrar-btn--armed {
+  border: 2px solid var(--color-status-behind) !important;
+  color: var(--color-on-surface);
+}
+
+.cargar-hoja-blocked-msg {
+  min-height: var(--typography-body-md-line-height);
+  line-height: var(--typography-body-md-line-height);
+  font-family: var(--font-sans);
+  font-weight: 700;
+  font-size: var(--typography-body-md-font-size);
+  color: var(--color-on-surface);
+  text-align: center;
+  margin-top: var(--spacing-space-xs);
+}
+
+/* Utilidad para anuncios de accesibilidad fuera de pantalla */
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }
 
 /* ── Contenedor anclado al fondo (directamente encima de LISTO) ───── */

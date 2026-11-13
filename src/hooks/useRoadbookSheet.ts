@@ -6,9 +6,11 @@ import { useState, useCallback, useRef } from 'react';
 import {
   readRoadbookSheet,
   writeRoadbookSheet,
+  clearAllRoadbookData,
 } from '../storage';
 import {
   addSheetRows,
+  clearRowInSheet,
   sanitizeMarkText,
   validateRowSpeed,
   ROWS_ADD_CHUNK,
@@ -21,6 +23,8 @@ export interface UseRoadbookSheetResult {
   rows: RoadbookRow[];
   addRows: () => void;
   updateRow: (rowId: string, changes: Partial<Pick<RoadbookRow, 'mark' | 'assignedTimeSeconds' | 'speedKmH'>>) => SaveResult;
+  clearRow: (rowId: string) => SaveResult;
+  clearAllRows: () => SaveResult;
   replaceSheet: (rows: RoadbookRow[]) => SaveResult;
 }
 
@@ -70,6 +74,26 @@ export function useRoadbookSheet(): UseRoadbookSheetResult {
     []
   );
 
+  const clearRow = useCallback(
+    (rowId: string): SaveResult => {
+      const updated = clearRowInSheet(rowsRef.current, rowId);
+      const result = writeRoadbookSheet(updated);
+      if (result.ok) {
+        setRows(updated);
+      }
+      return result;
+    },
+    []
+  );
+
+  const clearAllRows = useCallback((): SaveResult => {
+    const { rows: initialRows, saveResult } = clearAllRoadbookData();
+    if (saveResult.ok) {
+      setRows(initialRows);
+    }
+    return saveResult;
+  }, []);
+
   const replaceSheet = useCallback(
     (newRows: RoadbookRow[]): SaveResult => {
       return persist(newRows);
@@ -77,5 +101,5 @@ export function useRoadbookSheet(): UseRoadbookSheetResult {
     [persist]
   );
 
-  return { rows, addRows, updateRow, replaceSheet };
+  return { rows, addRows, updateRow, clearRow, clearAllRows, replaceSheet };
 }
