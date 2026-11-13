@@ -1,0 +1,86 @@
+/* MarcaMenu — menú de textos predefinidos para el campo MARCA de la hoja de ruta. */
+
+.marca-menu {
+  display: flex;
+  flex-direction: column;
+  max-height: 40vh;
+  max-height: 40dvh;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  background: var(--color-surface-container);
+  border: 1px solid var(--color-outline-variant);
+  border-radius: var(--rounded-default);
+  box-sizing: border-box;
+}
+
+.marca-menu-item {
+  display: flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 var(--spacing-space-md);
+  background: var(--color-surface-container);
+  border: none;
+  border-bottom: 1px solid var(--color-outline-variant);
+  border-radius: 0;
+  color: var(--color-on-surface);
+  font-family: var(--font-sans);
+  font-weight: 400;
+  font-size: var(--typography-body-md-font-size);
+  line-height: var(--typography-body-md-line-height);
+  text-align: left;
+  cursor: pointer;
+  touch-action: manipulation;
+  width: 100%;
+  box-sizing: border-box;
+  flex-shrink: 0;
+}
+
+.marca-menu-item:last-child {
+  border-bottom: none;
+}
+
+.marca-menu-item:active {
+  background: var(--color-surface-container-high);
+}
+
+/* 1) Términos oficiales de carrera (en mayúsculas): texto brass (secondary) y negrita */
+.marca-menu-item--oficial {
+  color: var(--color-secondary);
+  font-weight: 700;
+}
+
+.marca-menu-item--oficial:active {
+  background: var(--color-surface-container-high);
+}
+
+/* 2) Ítems de navegación: CARTEL › y ‹ VOLVER con fondo surface-container-high, borde 2px primary y texto primary negrita.
+   El relleno se compensa en -2px horizontalmente para mantener alineación y tamaño de caja exactos (44px) sin saltos. */
+.marca-menu-item--nav {
+  background: var(--color-surface-container-high);
+  color: var(--color-primary);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  border: 2px solid var(--color-primary);
+  border-radius: var(--rounded-default);
+  padding: 0 calc(var(--spacing-space-md) - 2px);
+}
+
+.marca-menu-item--nav:active {
+  background: var(--color-surface-container-lowest);
+  transform: translateY(var(--pressed-shift));
+}
+
+/* 3) Sticky ‹ VOLVER: fijado en el tope del área de scroll del submenú con fondo opaco */
+.marca-menu-item--volver {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+}
+
+/* "SIN COINCIDENCIAS": no interactivo */
+.marca-menu-item--empty {
+  color: var(--color-on-surface-variant);
+  font-style: italic;
+  cursor: default;
+  pointer-events: none;
+}

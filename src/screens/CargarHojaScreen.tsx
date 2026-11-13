@@ -1,6 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
 import {
-  QUICK_TEXTS,
   MAX_SHEET_ROWS,
   formatRoadbookCounter,
   getRowDisplaySpeed,
@@ -11,6 +10,7 @@ import {
   EMPTY_TIME_PLACEHOLDER,
   formatTimeHms,
 } from '../logic/roadbookTime';
+import { MarcaMenu } from '../components/MarcaMenu';
 import './CargarHojaScreen.css';
 
 interface CargarHojaScreenProps {
@@ -45,6 +45,9 @@ export function CargarHojaScreen({
     }
     return '';
   });
+  const [isMenuCollapsed, setIsMenuCollapsed] = useState<boolean>(false);
+  const [filterQuery, setFilterQuery] = useState<string | null>(null);
+  const [menuResetKey, setMenuResetKey] = useState<number>(0);
 
   const scrollContainerRef = useRef<HTMLDivElement | null>(null);
   const rowRefs = useRef<Map<string, HTMLDivElement>>(new Map());
@@ -57,6 +60,9 @@ export function CargarHojaScreen({
 
     if (field === 'mark') {
       setMarkInput(row.mark);
+      setIsMenuCollapsed(false);
+      setFilterQuery(null);
+      setMenuResetKey((k) => k + 1);
     } else if (field === 'time') {
       if (row.assignedTimeSeconds !== null) {
         const h = Math.floor(row.assignedTimeSeconds / 3600);
@@ -94,11 +100,12 @@ export function CargarHojaScreen({
     }
   }, [editingRowId, editingField]);
 
-  function handleQuickText(text: string) {
+  function handleMenuSeleccionar(textoCompleto: string) {
     if (!editingRowId) return;
-    setMarkInput(text);
-    onUpdateRow(editingRowId, { mark: text });
-    // Edited row stays selected and quick-text panel stays visible.
+    setMarkInput(textoCompleto);
+    onUpdateRow(editingRowId, { mark: textoCompleto });
+    setIsMenuCollapsed(true);
+    setFilterQuery(null);
   }
 
   function handleMarkInputChange(e: React.ChangeEvent<HTMLInputElement>) {
@@ -107,6 +114,8 @@ export function CargarHojaScreen({
     if (editingRowId) {
       onUpdateRow(editingRowId, { mark: value });
     }
+    setIsMenuCollapsed(false);
+    setFilterQuery(value);
   }
 
   function handleTimeDigit(digit: string) {
@@ -165,9 +174,9 @@ export function CargarHojaScreen({
         </span>
       </header>
 
-      {/* Scrollable list area */}
+      {/* Área de lista con scroll */}
       <div className="cargar-hoja-scroll-area" ref={scrollContainerRef}>
-        {/* Column header */}
+        {/* Encabezado de columnas */}
         <div className="cargar-hoja-col-header">
           <span className="cargar-hoja-col-num">N°</span>
           <span className="cargar-hoja-col-mark">MARCA</span>
@@ -175,7 +184,7 @@ export function CargarHojaScreen({
           <span className="cargar-hoja-col-speed">KM/H</span>
         </div>
 
-        {/* Rows */}
+        {/* Filas */}
         <div className="cargar-hoja-rows">
           {rows.map((row, idx) => {
             const isEditing = row.id === editingRowId;
@@ -230,7 +239,7 @@ export function CargarHojaScreen({
           })}
         </div>
 
-        {/* "+ 10 FILAS" button as the last item of the list (scrolls with rows) */}
+        {/* Botón "+ 10 FILAS" como último ítem de la lista (se desplaza con las filas) */}
         {canAddMore && (
           <button
             type="button"
@@ -242,25 +251,18 @@ export function CargarHojaScreen({
         )}
       </div>
 
-      {/* Pinned bottom panel directly above LISTO */}
+      {/* Panel anclado directamente encima de LISTO */}
       <div className="cargar-hoja-pinned-bottom">
-        {/* Quick texts panel: visible only when editingField === 'mark' */}
+        {/* Menú de textos predefinidos para MARCA y campo libre */}
         {editingField === 'mark' && editingRow && (
-          <div className="cargar-hoja-section cargar-hoja-quicktexts-panel">
-            <span className="preparar-field-label">TEXTOS RÁPIDOS</span>
-            <div className="cargar-hoja-quicktexts">
-              {QUICK_TEXTS.map((qt) => (
-                <button
-                  key={qt}
-                  type="button"
-                  className="btn-secondary cargar-hoja-qt-btn"
-                  onMouseDown={(e) => e.preventDefault()}
-                  onClick={() => handleQuickText(qt)}
-                >
-                  {qt}
-                </button>
-              ))}
-            </div>
+          <div className="cargar-hoja-section cargar-hoja-marca-panel">
+            {!isMenuCollapsed && (
+              <MarcaMenu
+                key={`marca-menu-${menuResetKey}`}
+                filterQuery={filterQuery}
+                onSeleccionar={handleMenuSeleccionar}
+              />
+            )}
             <div className="cargar-hoja-mark-edit">
               <input
                 type="text"
@@ -274,7 +276,7 @@ export function CargarHojaScreen({
           </div>
         )}
 
-        {/* Time keypad: visible only when editingField === 'time' */}
+        {/* Teclado de tiempo: visible sólo cuando editingField === 'time' */}
         {editingField === 'time' && editingRow && (
           <div className="cargar-hoja-section">
             <span className="preparar-field-label">TIEMPO (H:MM:SS)</span>
@@ -310,7 +312,7 @@ export function CargarHojaScreen({
           </div>
         )}
 
-        {/* Speed entry: visible only when editingField === 'speed' */}
+        {/* Entrada de velocidad: visible sólo cuando editingField === 'speed' */}
         {editingField === 'speed' && editingRow && (
           <div className="cargar-hoja-section">
             <span className="preparar-field-label">
@@ -330,7 +332,7 @@ export function CargarHojaScreen({
           </div>
         )}
 
-        {/* LISTO button stays pinned at the very bottom */}
+        {/* Botón LISTO anclado al fondo */}
         <button
           type="button"
           className="btn-primary btn-full cargar-hoja-listo-btn"

@@ -9,16 +9,6 @@ export const ROWS_ADD_CHUNK = 10;
 export const MAX_SHEET_ROWS = 300;
 export const MAX_MARK_TEXT_LENGTH = 40;
 
-export const QUICK_TEXTS = [
-  'AUTOLARGADA',
-  'AUTOCONTROL',
-  'NEUTRALIZACIÓN',
-  'CONTROL HORARIO',
-  'FIN',
-] as const;
-
-export type QuickText = typeof QUICK_TEXTS[number];
-
 export interface RoadbookRow {
   id: string;
   mark: string;

@@ -13,7 +13,6 @@ import {
   ROWS_ADD_CHUNK,
   MAX_SHEET_ROWS,
   MAX_MARK_TEXT_LENGTH,
-  QUICK_TEXTS,
   RoadbookRow,
 } from './roadbookModel';
 
@@ -114,16 +113,6 @@ describe('roadbookModel', () => {
     const expanded = addSheetRows(emptySheet, 10);
     expect(countLoadedRows(expanded)).toEqual({ loaded: 38, total: 60 });
     expect(formatRoadbookCounter(expanded)).toBe('38 DE 60 FILAS');
-  });
-
-  it('provides all 5 quick texts as constants', () => {
-    expect(QUICK_TEXTS).toEqual([
-      'AUTOLARGADA',
-      'AUTOCONTROL',
-      'NEUTRALIZACIÓN',
-      'CONTROL HORARIO',
-      'FIN',
-    ]);
   });
 });
 

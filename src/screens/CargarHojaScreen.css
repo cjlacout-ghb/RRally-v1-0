@@ -1,4 +1,4 @@
-/* CargarHojaScreen — sheet loading secondary screen. */
+/* CargarHojaScreen — pantalla de carga de hoja de ruta. */
 
 .cargar-hoja-screen {
   display: flex;
@@ -8,7 +8,7 @@
   overflow: hidden;
 }
 
-/* Row count badge in header */
+/* Contador de filas en el encabezado */
 .cargar-hoja-count {
   font-family: var(--font-mono);
   font-weight: 700;
@@ -18,7 +18,7 @@
   margin-left: auto;
 }
 
-/* ── Scrollable list area ────────────────────────────────────── */
+/* ── Área de lista con scroll ────────────────────────────────────── */
 .cargar-hoja-scroll-area {
   flex: 1;
   min-height: 0;
@@ -30,7 +30,7 @@
   padding: var(--spacing-gutter) var(--spacing-margin);
 }
 
-/* ── Column header ───────────────────────────────────────────── */
+/* ── Encabezado de columnas ───────────────────────────────────────── */
 .cargar-hoja-col-header {
   display: grid;
   grid-template-columns: 32px 1fr 90px 60px;
@@ -48,7 +48,7 @@
   color: var(--color-on-surface-variant);
 }
 
-/* ── Row list ────────────────────────────────────────────────── */
+/* ── Lista de filas ────────────────────────────────────────────────── */
 .cargar-hoja-rows {
   display: flex;
   flex-direction: column;
@@ -127,14 +127,14 @@
   background: var(--color-surface-container-high);
 }
 
-/* ── "+ 10 FILAS" button (last item in scrollable list) ──────── */
+/* ── Botón "+ 10 FILAS" (último ítem de la lista, se desplaza con ella) ── */
 .cargar-hoja-add-btn {
   min-height: 64px;
   margin-top: var(--spacing-space-xs);
   flex: none;
 }
 
-/* ── Pinned bottom container (directly above LISTO) ──────────── */
+/* ── Contenedor anclado al fondo (directamente encima de LISTO) ───── */
 .cargar-hoja-pinned-bottom {
   flex: none;
   display: flex;
@@ -147,7 +147,7 @@
   z-index: 10;
 }
 
-/* ── Section (quicktexts, numpad, speed) ─────────────────────── */
+/* ── Sección (menú de marca, teclado, velocidad) ─────────────────── */
 .cargar-hoja-section {
   background: var(--color-surface-container);
   border: var(--border-width) solid var(--color-outline-variant);
@@ -158,20 +158,14 @@
   gap: var(--spacing-space-md);
 }
 
-/* ── Quick text buttons ──────────────────────────────────────── */
-.cargar-hoja-quicktexts {
+/* ── Panel de menú de marca ──────────────────────────────────────── */
+.cargar-hoja-marca-panel {
   display: flex;
-  flex-wrap: wrap;
-  gap: var(--spacing-space-sm);
+  flex-direction: column;
+  gap: var(--spacing-space-md);
 }
 
-.cargar-hoja-qt-btn {
-  min-height: 44px;
-  font-size: var(--typography-body-md-font-size);
-  white-space: nowrap;
-}
-
-/* ── Mark free text input ────────────────────────────────────── */
+/* ── Campo de texto libre para marca ────────────────────────────── */
 .cargar-hoja-mark-edit {
   display: flex;
   align-items: baseline;
@@ -195,7 +189,7 @@
   width: 100%;
 }
 
-/* ── Time display ────────────────────────────────────────────── */
+/* ── Visualización de tiempo ────────────────────────────────────── */
 .cargar-hoja-time-display {
   font-family: var(--font-mono);
   font-weight: 700;
@@ -206,7 +200,7 @@
   text-align: center;
 }
 
-/* ── Numeric keypad (3x4 grid) ───────────────────────────────── */
+/* ── Teclado numérico (grilla 3x4) ─────────────────────────────── */
 .cargar-hoja-numpad {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -218,7 +212,7 @@
   font-size: 20px;
 }
 
-/* ── LISTO button (pinned at bottom) ─────────────────────────── */
+/* ── Botón LISTO (anclado al fondo) ─────────────────────────────── */
 .cargar-hoja-listo-btn {
   min-height: 64px;
 }

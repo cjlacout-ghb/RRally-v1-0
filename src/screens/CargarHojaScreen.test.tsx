@@ -93,8 +93,74 @@ describe('CargarHojaScreen Component', () => {
     vi.restoreAllMocks();
   });
 
-  describe('Bug 1 reproduction and fix: Quick-text application & focus loss', () => {
-    it('applies quick-text when pressed, keeps the row selected and the panel visible (including focus-loss sequence)', () => {
+  describe('Menú de textos predefinidos: visibilidad', () => {
+    it('muestra el menú de marca únicamente cuando se edita MARCA', () => {
+      const rows: RoadbookRow[] = [
+        { id: 'row-1', mark: '', assignedTimeSeconds: null, speedKmH: null },
+      ];
+
+      // 1. Inicial / nada seleccionado
+      const htmlNada = renderToString(
+        <CargarHojaScreen
+          rows={rows}
+          onAddRows={() => {}}
+          onUpdateRow={() => {}}
+          onBack={() => {}}
+        />
+      );
+      expect(htmlNada).not.toContain('cargar-hoja-marca-panel');
+      expect(htmlNada).not.toContain('marca-menu');
+      expect(htmlNada).not.toContain('TEXTOS RÁPIDOS');
+
+      // 2. Editando MARCA
+      const htmlMarca = renderToString(
+        <CargarHojaScreen
+          rows={rows}
+          onAddRows={() => {}}
+          onUpdateRow={() => {}}
+          onBack={() => {}}
+          initialEditingRowId="row-1"
+          initialEditingField="mark"
+        />
+      );
+      expect(htmlMarca).toContain('cargar-hoja-marca-panel');
+      expect(htmlMarca).toContain('marca-menu');
+      expect(htmlMarca).toContain('marca-menu-item--oficial');
+      expect(htmlMarca).toContain('marca-menu-item--nav');
+      expect(htmlMarca).not.toContain('TEXTOS RÁPIDOS');
+
+      // 3. Editando TIEMPO
+      const htmlTiempo = renderToString(
+        <CargarHojaScreen
+          rows={rows}
+          onAddRows={() => {}}
+          onUpdateRow={() => {}}
+          onBack={() => {}}
+          initialEditingRowId="row-1"
+          initialEditingField="time"
+        />
+      );
+      expect(htmlTiempo).not.toContain('cargar-hoja-marca-panel');
+      expect(htmlTiempo).toContain('TIEMPO (H:MM:SS)');
+
+      // 4. Editando VELOCIDAD
+      const htmlVel = renderToString(
+        <CargarHojaScreen
+          rows={rows}
+          onAddRows={() => {}}
+          onUpdateRow={() => {}}
+          onBack={() => {}}
+          initialEditingRowId="row-1"
+          initialEditingField="speed"
+        />
+      );
+      expect(htmlVel).not.toContain('cargar-hoja-marca-panel');
+      expect(htmlVel).toContain('VELOCIDAD (KM/H)');
+    });
+  });
+
+  describe('Selección de ítem, colapso del menú y reapertura', () => {
+    it('al seleccionar un ítem escribe el texto completo, colapsa el menú y mantiene la fila seleccionada', () => {
       let rows: RoadbookRow[] = [
         { id: 'row-1', mark: '', assignedTimeSeconds: null, speedKmH: null },
         { id: 'row-2', mark: '', assignedTimeSeconds: null, speedKmH: null },
@@ -123,7 +189,7 @@ describe('CargarHojaScreen Component', () => {
 
       renderApp();
 
-      // 1. Select row 1 MARCA field
+      // 1. Tocar campo MARCA de la fila 1
       const markBtn = findElement(container, (el) => {
         const props = getReactProps(el);
         return props?.['aria-label'] === 'Editar marca de la fila 1';
@@ -135,38 +201,20 @@ describe('CargarHojaScreen Component', () => {
       });
       renderApp();
 
-      // Assert row is editing and quick-text panel is visible
+      // Fila 1 en edición y menú visible
       const editingRowBefore = findElement(container, (el) => {
         const props = getReactProps(el);
-        const className = String(props?.className || '');
-        return className.includes('cargar-hoja-row--editing');
+        return String(props?.className || '').includes('cargar-hoja-row--editing');
       });
       expect(editingRowBefore).not.toBeNull();
 
-      const qtPanel = findElement(container, (el) => {
+      const menuBefore = findElement(container, (el) => {
         const props = getReactProps(el);
-        const className = String(props?.className || '');
-        return className.includes('cargar-hoja-quicktexts-panel');
+        return String(props?.className || '').includes('marca-menu');
       });
-      expect(qtPanel).not.toBeNull();
+      expect(menuBefore).not.toBeNull();
 
-      // 2. Focus-loss sequence: find free-text input and trigger onBlur
-      // In the old buggy code, onBlur ran commitEdit which cleared editingRowId and unmounted the panel.
-      const textInput = findElement(container, (el) => {
-        const props = getReactProps(el);
-        return props?.placeholder === 'Texto libre';
-      });
-      expect(textInput).not.toBeNull();
-
-      const inputProps = getReactProps(textInput!);
-      if (typeof inputProps?.onBlur === 'function') {
-        flushSync(() => {
-          (inputProps.onBlur as () => void)();
-        });
-        renderApp();
-      }
-
-      // 3. Press quick-text button AUTOLARGADA
+      // 2. Seleccionar AUTOLARGADA en el menú
       const autolargadaBtn = findElement(container, (el) => {
         const props = getReactProps(el);
         return props?.children === 'AUTOLARGADA';
@@ -178,28 +226,54 @@ describe('CargarHojaScreen Component', () => {
       });
       renderApp();
 
-      // Assert row 1 text is updated to AUTOLARGADA
+      // Verifica que onUpdateRow fue llamado con el texto completo
       expect(onUpdateRow).toHaveBeenCalledWith('row-1', { mark: 'AUTOLARGADA' });
       expect(rows[0].mark).toBe('AUTOLARGADA');
 
-      // Assert row 1 is STILL selected
+      // Verifica que la fila SIGUE seleccionada
       const editingRowAfter = findElement(container, (el) => {
         const props = getReactProps(el);
-        const className = String(props?.className || '');
-        return className.includes('cargar-hoja-row--editing');
+        return String(props?.className || '').includes('cargar-hoja-row--editing');
       });
       expect(editingRowAfter).not.toBeNull();
 
-      // Assert quick-text panel is STILL visible
-      const qtPanelAfter = findElement(container, (el) => {
+      // Verifica que el menú se colapsó (no está en el DOM), pero el campo libre sigue visible con el texto
+      const menuAfter = findElement(container, (el) => {
         const props = getReactProps(el);
-        const className = String(props?.className || '');
-        return className.includes('cargar-hoja-quicktexts-panel');
+        return String(props?.className || '').includes('marca-menu');
       });
-      expect(qtPanelAfter).not.toBeNull();
-    });
+      expect(menuAfter).toBeNull();
 
-    it('updates row mark live as the user types in the free-text field', () => {
+      const textInput = findElement(container, (el) => {
+        const props = getReactProps(el);
+        return props?.placeholder === 'Texto libre';
+      });
+      expect(textInput).not.toBeNull();
+      expect(getReactProps(textInput!)?.value).toBe('AUTOLARGADA');
+
+      // 3. Tocar el campo MARCA de la fila nuevamente reabre el menú en el nivel superior
+      flushSync(() => {
+        (getReactProps(markBtn!)?.onClick as () => void)?.();
+      });
+      renderApp();
+
+      const menuReopened = findElement(container, (el) => {
+        const props = getReactProps(el);
+        return String(props?.className || '').includes('marca-menu');
+      });
+      expect(menuReopened).not.toBeNull();
+
+      // El menú reabierto está en el nivel superior (contiene CARTEL ›)
+      const cartelEntry = findElement(container, (el) => {
+        const props = getReactProps(el);
+        return props?.children === 'CARTEL ›';
+      });
+      expect(cartelEntry).not.toBeNull();
+    });
+  });
+
+  describe('Campo libre y filtrado en tiempo real', () => {
+    it('actualiza la fila en tiempo real al escribir y filtra el menú con carteles incluidos', () => {
       let rows: RoadbookRow[] = [
         { id: 'row-1', mark: '', assignedTimeSeconds: null, speedKmH: null },
       ];
@@ -235,92 +309,43 @@ describe('CargarHojaScreen Component', () => {
       });
       expect(textInput).not.toBeNull();
 
-      // Type "Control Curva" into the input
+      // Escribir "curva" en el campo libre
       flushSync(() => {
         const props = getReactProps(textInput!);
-        (props?.onChange as (e: unknown) => void)?.({ target: { value: 'Control Curva' } });
+        (props?.onChange as (e: unknown) => void)?.({ target: { value: 'curva' } });
       });
-
-      // Assert onUpdateRow was called live without needing blur or a confirm button
-      expect(onUpdateRow).toHaveBeenCalledWith('row-1', { mark: 'Control Curva' });
-      expect(rows[0].mark).toBe('Control Curva');
-
-      // Assert row is still selected
       renderApp();
-      const editingRow = findElement(container, (el) => {
+
+      // Se actualizó la fila en vivo
+      expect(onUpdateRow).toHaveBeenCalledWith('row-1', { mark: 'curva' });
+      expect(rows[0].mark).toBe('curva');
+
+      // El menú muestra los carteles con texto completo
+      const cartelCurvaDer = findElement(container, (el) => {
         const props = getReactProps(el);
-        const className = String(props?.className || '');
-        return className.includes('cargar-hoja-row--editing');
+        return props?.children === 'cartel curva derecha';
       });
-      expect(editingRow).not.toBeNull();
-    });
+      expect(cartelCurvaDer).not.toBeNull();
 
-    it('hides the quick-text panel when no MARCA is being edited and shows it when one is', () => {
-      const rows: RoadbookRow[] = [
-        { id: 'row-1', mark: '', assignedTimeSeconds: null, speedKmH: null },
-      ];
+      // Probar búsqueda sin coincidencias
+      flushSync(() => {
+        const props = getReactProps(textInput!);
+        (props?.onChange as (e: unknown) => void)?.({ target: { value: 'xyzsincoincidencia999' } });
+      });
+      renderApp();
 
-      // 1. Initial / Nothing selected
-      const htmlNothing = renderToString(
-        <CargarHojaScreen
-          rows={rows}
-          onAddRows={() => {}}
-          onUpdateRow={() => {}}
-          onBack={() => {}}
-        />
-      );
-      expect(htmlNothing).not.toContain('TEXTOS RÁPIDOS');
-      expect(htmlNothing).not.toContain('cargar-hoja-quicktexts-panel');
-
-      // 2. Editing MARCA
-      const htmlMark = renderToString(
-        <CargarHojaScreen
-          rows={rows}
-          onAddRows={() => {}}
-          onUpdateRow={() => {}}
-          onBack={() => {}}
-          initialEditingRowId="row-1"
-          initialEditingField="mark"
-        />
-      );
-      expect(htmlMark).toContain('TEXTOS RÁPIDOS');
-      expect(htmlMark).toContain('cargar-hoja-quicktexts-panel');
-      expect(htmlMark).toContain('AUTOLARGADA');
-
-      // 3. Editing TIEMPO
-      const htmlTime = renderToString(
-        <CargarHojaScreen
-          rows={rows}
-          onAddRows={() => {}}
-          onUpdateRow={() => {}}
-          onBack={() => {}}
-          initialEditingRowId="row-1"
-          initialEditingField="time"
-        />
-      );
-      expect(htmlTime).not.toContain('TEXTOS RÁPIDOS');
-      expect(htmlTime).toContain('TIEMPO (H:MM:SS)');
-
-      // 4. Editing SPEED
-      const htmlSpeed = renderToString(
-        <CargarHojaScreen
-          rows={rows}
-          onAddRows={() => {}}
-          onUpdateRow={() => {}}
-          onBack={() => {}}
-          initialEditingRowId="row-1"
-          initialEditingField="speed"
-        />
-      );
-      expect(htmlSpeed).not.toContain('TEXTOS RÁPIDOS');
-      expect(htmlSpeed).toContain('VELOCIDAD (KM/H)');
+      const emptyMatch = findElement(container, (el) => {
+        const props = getReactProps(el);
+        return props?.children === 'SIN COINCIDENCIAS';
+      });
+      expect(emptyMatch).not.toBeNull();
     });
   });
 
-  describe('Small Fix B: Loaded rows counter text on both screens', () => {
-    it('displays the exact "N DE M FILAS" counter on both screens across empty, partially loaded, and expanded sheets', () => {
-      // 1. Empty sheet (50 rows, none loaded)
-      const emptySheet = createInitialSheet(); // 50 rows
+  describe('Contador de filas cargadas en Cargar Hoja y Preparar Etapa', () => {
+    it('muestra el contador exacto "N DE M FILAS" en ambas pantallas', () => {
+      // 1. Hoja vacía (50 filas, ninguna cargada)
+      const emptySheet = createInitialSheet();
       const htmlCargarEmpty = renderToString(
         <CargarHojaScreen
           rows={emptySheet}
@@ -341,7 +366,7 @@ describe('CargarHojaScreen Component', () => {
       expect(htmlCargarEmpty).toContain('0 DE 50 FILAS');
       expect(htmlPrepararEmpty).toContain('0 DE 50 FILAS');
 
-      // 2. Partially loaded sheet (38 of 50 loaded)
+      // 2. Hoja parcialmente cargada (38 de 50)
       const partialSheet = createInitialSheet();
       for (let i = 0; i < 38; i++) {
         partialSheet[i].assignedTimeSeconds = (i + 1) * 30;
@@ -366,7 +391,7 @@ describe('CargarHojaScreen Component', () => {
       expect(htmlCargarPartial).toContain('38 DE 50 FILAS');
       expect(htmlPrepararPartial).toContain('38 DE 50 FILAS');
 
-      // 3. After adding 10 rows (38 of 60 loaded)
+      // 3. Después de agregar 10 filas (38 de 60)
       const expandedSheet = addSheetRows(partialSheet, 10);
       const htmlCargarExpanded = renderToString(
         <CargarHojaScreen
@@ -390,8 +415,8 @@ describe('CargarHojaScreen Component', () => {
     });
   });
 
-  describe('Small Fix A: Check mark spacing in PrepararEtapaScreen selector', () => {
-    it('renders checkmark with visible space before label', () => {
+  describe('Espaciado del check en PrepararEtapaScreen', () => {
+    it('renderiza el check con espacio visible antes de la etiqueta', () => {
       const html = renderToString(
         <PrepararEtapaScreen
           savedSpeed={null}
@@ -400,7 +425,6 @@ describe('CargarHojaScreen Component', () => {
           controlSystem="carrera"
         />
       );
-      // Selected Carrera has system-check class and separate span for CARRERA
       expect(html).toContain('class="system-check" aria-hidden="true">✓</span>');
       expect(html).toContain('<span>CARRERA</span>');
     });
