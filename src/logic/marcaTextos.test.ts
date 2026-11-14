@@ -5,28 +5,30 @@ import {
   filtrarMarcaTextos,
   coincideFiltro,
   normalizarTexto,
-  esTerminoOficial,
-  obtenerTerminoOficial,
-  getOfficialRaceTerm,
+  ETIQUETAS_VALIDAS,
+  isEtiquetaValida,
 } from './marcaTextos';
 
 describe('marcaTextos — listas y orden alfabético', () => {
-  it('la lista principal contiene exactamente 49 textos', () => {
-    expect(MARCA_TEXTOS_MAIN).toHaveLength(49);
+  it('la lista principal contiene exactamente 38 textos de señales de ruta', () => {
+    expect(MARCA_TEXTOS_MAIN).toHaveLength(38);
   });
 
   it('el grupo cartel contiene exactamente 31 textos', () => {
     expect(MARCA_TEXTOS_CARTEL).toHaveLength(31);
   });
 
-  it('AUTOLARGADA y CONTROL HORARIO están en la lista principal', () => {
-    expect(MARCA_TEXTOS_MAIN).toContain('AUTOLARGADA');
-    expect(MARCA_TEXTOS_MAIN).toContain('CONTROL HORARIO');
+  it('ninguno de los 11 términos oficiales está en la lista principal de MARCA', () => {
+    for (const termino of ETIQUETAS_VALIDAS) {
+      expect(MARCA_TEXTOS_MAIN).not.toContain(termino);
+      expect(MARCA_TEXTOS_CARTEL).not.toContain(termino);
+    }
   });
 
-  it('FIN no está en la lista principal ni en el grupo cartel', () => {
-    expect(MARCA_TEXTOS_MAIN).not.toContain('FIN');
-    expect(MARCA_TEXTOS_CARTEL).not.toContain('FIN');
+  it('todos los textos de la lista principal son señales de ruta en minúsculas', () => {
+    for (const texto of MARCA_TEXTOS_MAIN) {
+      expect(texto).toBe(texto.toLowerCase());
+    }
   });
 
   it('todos los textos de carteles inician con "cartel "', () => {
@@ -35,20 +37,15 @@ describe('marcaTextos — listas y orden alfabético', () => {
     }
   });
 
-  it('la lista principal está ordenada con colación en español, insensible a mayúsculas y acentos', () => {
+  it('la lista principal está ordenada con colación en español, insensible a acentos', () => {
     const idx = (t: string) => MARCA_TEXTOS_MAIN.indexOf(t);
-
-    // árbol debe ir antes de AUTOCONTROL, y este antes de AUTOLARGADA
-    expect(idx('árbol')).toBeLessThan(idx('AUTOCONTROL'));
-    expect(idx('AUTOCONTROL')).toBeLessThan(idx('AUTOLARGADA'));
-
-    // NEUTRALIZACIÓN debe ir entre mojón km y pantalla electrónica
-    expect(idx('mojón km')).toBeLessThan(idx('NEUTRALIZACIÓN'));
-    expect(idx('NEUTRALIZACIÓN')).toBeLessThan(idx('pantalla electrónica'));
 
     // alcantarilla al inicio y vías tren al final
     expect(MARCA_TEXTOS_MAIN[0]).toBe('alcantarilla');
     expect(MARCA_TEXTOS_MAIN[MARCA_TEXTOS_MAIN.length - 1]).toBe('vías tren');
+
+    // badén después de árbol
+    expect(idx('árbol')).toBeLessThan(idx('badén'));
   });
 
   it('el grupo cartel está ordenado alfabéticamente', () => {
@@ -73,8 +70,7 @@ describe('marcaTextos — normalizarTexto', () => {
 describe('marcaTextos — coincideFiltro', () => {
   it('coincide de forma insensible a mayúsculas y acentos', () => {
     expect(coincideFiltro('árbol', 'arbol')).toBe(true);
-    expect(coincideFiltro('NEUTRALIZACIÓN', 'neutralizacion')).toBe(true);
-    expect(coincideFiltro('AUTOLARGADA', 'autolargada')).toBe(true);
+    expect(coincideFiltro('badén', 'baden')).toBe(true);
   });
 
   it('coincide cuando cada palabra de la consulta está contenida en alguna palabra del texto', () => {
@@ -97,7 +93,6 @@ describe('marcaTextos — filtrarMarcaTextos', () => {
     const textos = res!.map((r) => r.textoCompleto);
     expect(textos).toContain('cartel curva derecha');
     expect(textos).toContain('cartel curva izquierda');
-    // Para carteles filtrados, textoMostrado es el texto completo
     const item = res!.find((r) => r.textoCompleto === 'cartel curva derecha');
     expect(item?.textoMostrado).toBe('cartel curva derecha');
   });
@@ -109,58 +104,18 @@ describe('marcaTextos — filtrarMarcaTextos', () => {
     expect(sinAcento?.map((r) => r.textoCompleto)).toContain('árbol');
   });
 
-  it('busca NEUTRALIZACIÓN y AUTOLARGADA', () => {
-    const resNeu = filtrarMarcaTextos('neutralizacion');
-    expect(resNeu?.map((r) => r.textoCompleto)).toContain('NEUTRALIZACIÓN');
-
-    const resAuto = filtrarMarcaTextos('autolargada');
-    expect(resAuto?.map((r) => r.textoCompleto)).toContain('AUTOLARGADA');
+  it('no encuentra términos oficiales porque fueron removidos del campo MARCA', () => {
+    expect(filtrarMarcaTextos('AUTOLARGADA')).toEqual([]);
+    expect(filtrarMarcaTextos('autocontrol')).toEqual([]);
+    expect(filtrarMarcaTextos('neutralizacion')).toEqual([]);
   });
 
   it('devuelve array vacío cuando no hay coincidencias', () => {
-    const res = filtrarMarcaTextos('xyztextoinexistente999');
-    expect(res).not.toBeNull();
-    expect(res).toEqual([]);
+    expect(filtrarMarcaTextos('texto que no existe 12345')).toEqual([]);
   });
 });
 
-describe('marcaTextos — esTerminoOficial', () => {
-  it('identifica exactamente 11 términos oficiales de carrera en la lista principal', () => {
-    const oficialesEnMain = MARCA_TEXTOS_MAIN.filter((t) => esTerminoOficial(t));
-    expect(oficialesEnMain).toHaveLength(11);
-  });
-
-  it('devuelve true para cada uno de los 11 términos oficiales en mayúsculas', () => {
-    const terminosEsperados = [
-      'AUTOCONTROL',
-      'AUTOLARGADA',
-      'CONTROL DE PASO',
-      'CONTROL HORARIO',
-      'CONTROL SECRETO',
-      'ETAPA FIN',
-      'ETAPA INICIO',
-      'LARGADA',
-      'LLEGADA',
-      'NEUTRALIZACIÓN',
-      'REINICIO',
-    ];
-
-    for (const termino of terminosEsperados) {
-      expect(esTerminoOficial(termino)).toBe(true);
-    }
-  });
-
-  it('devuelve false para todos los textos en minúsculas y para todos los carteles', () => {
-    const noOficialesEnMain = MARCA_TEXTOS_MAIN.filter((t) => !esTerminoOficial(t));
-    expect(noOficialesEnMain).toHaveLength(49 - 11);
-
-    for (const cartel of MARCA_TEXTOS_CARTEL) {
-      expect(esTerminoOficial(cartel)).toBe(false);
-    }
-  });
-});
-
-describe('marcaTextos — obtenerTerminoOficial', () => {
+describe('marcaTextos — ETIQUETAS_VALIDAS e isEtiquetaValida', () => {
   const terminosEsperados = [
     'AUTOCONTROL',
     'AUTOLARGADA',
@@ -175,114 +130,40 @@ describe('marcaTextos — obtenerTerminoOficial', () => {
     'REINICIO',
   ];
 
-  it('coincidencia exacta en mayúsculas para todos los 11 términos oficiales', () => {
-    for (const termino of terminosEsperados) {
-      const res = obtenerTerminoOficial(termino);
-      expect(res.esOficial).toBe(true);
-      expect(res.canonico).toBe(termino);
-      expect(res.isOfficial).toBe(true);
-      expect(res.canonical).toBe(termino);
+  it('ETIQUETAS_VALIDAS contiene exactamente los 11 términos oficiales en orden alfabético español', () => {
+    expect(ETIQUETAS_VALIDAS).toHaveLength(11);
+    expect(ETIQUETAS_VALIDAS).toEqual(terminosEsperados);
+  });
+
+  it('isEtiquetaValida acepta "none" y todos los 11 términos oficiales canónicos', () => {
+    expect(isEtiquetaValida('none')).toBe(true);
+    for (const etiqueta of ETIQUETAS_VALIDAS) {
+      expect(isEtiquetaValida(etiqueta)).toBe(true);
     }
   });
 
-  it('coincidencia insensible a mayúsculas devuelve forma canónica en mayúsculas', () => {
-    const lowercases: Record<string, string> = {
-      'autocontrol': 'AUTOCONTROL',
-      'autolargada': 'AUTOLARGADA',
-      'control de paso': 'CONTROL DE PASO',
-      'control horario': 'CONTROL HORARIO',
-      'control secreto': 'CONTROL SECRETO',
-      'etapa fin': 'ETAPA FIN',
-      'etapa inicio': 'ETAPA INICIO',
-      'largada': 'LARGADA',
-      'llegada': 'LLEGADA',
-      'neutralización': 'NEUTRALIZACIÓN',
-      'reinicio': 'REINICIO',
-      'AutoControl': 'AUTOCONTROL',
-      'AutoLargada': 'AUTOLARGADA',
-      'Control Horario': 'CONTROL HORARIO',
-    };
+  it('isEtiquetaValida rechaza variantes en minúsculas, sin acentos o con espaciado incorrecto', () => {
+    expect(isEtiquetaValida('autocontrol')).toBe(false);
+    expect(isEtiquetaValida('Autocontrol')).toBe(false);
+    expect(isEtiquetaValida('largada')).toBe(false);
+    expect(isEtiquetaValida('control horario')).toBe(false);
 
-    for (const [input, expectedCanonical] of Object.entries(lowercases)) {
-      const res = obtenerTerminoOficial(input);
-      expect(res.esOficial).toBe(true);
-      expect(res.canonico).toBe(expectedCanonical);
-    }
+    expect(isEtiquetaValida('NEUTRALIZACION')).toBe(false);
+    expect(isEtiquetaValida('neutralizacion')).toBe(false);
+
+    expect(isEtiquetaValida('  AUTOCONTROL  ')).toBe(false);
+    expect(isEtiquetaValida(' none ')).toBe(false);
   });
 
-  it('coincidencia insensible a acentos (e.g. neutralizacion)', () => {
-    const sinAcento = obtenerTerminoOficial('neutralizacion');
-    expect(sinAcento.esOficial).toBe(true);
-    expect(sinAcento.canonico).toBe('NEUTRALIZACIÓN');
-
-    const mayusSinAcento = obtenerTerminoOficial('NEUTRALIZACION');
-    expect(mayusSinAcento.esOficial).toBe(true);
-    expect(mayusSinAcento.canonico).toBe('NEUTRALIZACIÓN');
-  });
-
-  it('ignora espacios iniciales y finales', () => {
-    const conEspacios = obtenerTerminoOficial('   control horario   ');
-    expect(conEspacios.esOficial).toBe(true);
-    expect(conEspacios.canonico).toBe('CONTROL HORARIO');
-
-    const conTabulaciones = obtenerTerminoOficial('\t  autolargada \n ');
-    expect(conTabulaciones.esOficial).toBe(true);
-    expect(conTabulaciones.canonico).toBe('AUTOLARGADA');
-  });
-
-  it('no coincide con textos no oficiales ni señales de ruta', () => {
-    const noOficiales = ['árbol', 'badén', 'FIN', 'antena', 'puente', 'rotonda', 'semáforo'];
-    for (const txt of noOficiales) {
-      const res = obtenerTerminoOficial(txt);
-      expect(res.esOficial).toBe(false);
-      expect(res.canonico).toBeNull();
-    }
-  });
-
-  it('no coincide con ningún texto del grupo cartel', () => {
-    for (const cartel of MARCA_TEXTOS_CARTEL) {
-      const res = obtenerTerminoOficial(cartel);
-      expect(res.esOficial).toBe(false);
-      expect(res.canonico).toBeNull();
-    }
-  });
-
-  it('no coincide con texto vacío o compuesto sólo de espacios', () => {
-    expect(obtenerTerminoOficial('')).toEqual({
-      esOficial: false,
-      canonico: null,
-      isOfficial: false,
-      canonical: null,
-    });
-    expect(obtenerTerminoOficial('   ')).toEqual({
-      esOficial: false,
-      canonico: null,
-      isOfficial: false,
-      canonical: null,
-    });
-  });
-
-  it('no coincide con textos que sólo contienen un término oficial como subcadena', () => {
-    const subcadenas = [
-      'autocontrol 2',
-      'autocontrol2',
-      '2 autocontrol',
-      'PRE-LARGADA',
-      'LARGADA FINAL',
-      'largada y llegada',
-      'control de paso 1',
-      'reinicio etapa',
-      'mi neutralizacion',
-    ];
-
-    for (const txt of subcadenas) {
-      const res = obtenerTerminoOficial(txt);
-      expect(res.esOficial).toBe(false);
-      expect(res.canonico).toBeNull();
-    }
-  });
-
-  it('getOfficialRaceTerm alias funciona idénticamente', () => {
-    expect(getOfficialRaceTerm('autolargada')).toEqual(obtenerTerminoOficial('autolargada'));
+  it('isEtiquetaValida rechaza cadenas vacías, valores desconocidos o no-string', () => {
+    expect(isEtiquetaValida('')).toBe(false);
+    expect(isEtiquetaValida('   ')).toBe(false);
+    expect(isEtiquetaValida('OTHER')).toBe(false);
+    expect(isEtiquetaValida('árbol')).toBe(false);
+    expect(isEtiquetaValida('cartel curva derecha')).toBe(false);
+    expect(isEtiquetaValida(null)).toBe(false);
+    expect(isEtiquetaValida(undefined)).toBe(false);
+    expect(isEtiquetaValida(123)).toBe(false);
+    expect(isEtiquetaValida({})).toBe(false);
   });
 });

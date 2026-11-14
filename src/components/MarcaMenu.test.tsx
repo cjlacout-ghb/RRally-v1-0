@@ -4,7 +4,7 @@ import { createRoot } from 'react-dom/client';
 import { flushSync } from 'react-dom';
 import { renderToString } from 'react-dom/server';
 import { MarcaMenu } from './MarcaMenu';
-import { MARCA_TEXTOS_MAIN, MARCA_TEXTOS_CARTEL } from '../logic/marcaTextos';
+import { ETIQUETAS_VALIDAS } from '../logic/marcaTextos';
 
 // Setup minimal DOM mock for interactive React tests in Node
 function setupMockDom() {
@@ -103,15 +103,21 @@ describe('MarcaMenu Component', () => {
   });
 
   describe('Nivel superior', () => {
-    it('muestra exactamente 50 entradas (49 textos + CARTEL ›)', () => {
+    it('muestra exactamente 39 entradas (38 textos de señales + CARTEL ›)', () => {
       const html = renderToString(<MarcaMenu filterQuery={null} onSeleccionar={() => {}} />);
       const options = html.match(/role="option"/g);
       expect(options).not.toBeNull();
-      expect(options?.length).toBe(50);
+      expect(options?.length).toBe(39);
       expect(html).toContain('CARTEL ›');
-      expect(html).toContain('AUTOLARGADA');
-      expect(html).toContain('CONTROL HORARIO');
-      expect(html).not.toMatch(/>FIN</);
+      expect(html).toContain('alcantarilla');
+      expect(html).toContain('árbol');
+    });
+
+    it('no contiene ninguno de los 11 términos oficiales de carrera', () => {
+      const html = renderToString(<MarcaMenu filterQuery={null} onSeleccionar={() => {}} />);
+      for (const termino of ETIQUETAS_VALIDAS) {
+        expect(html).not.toMatch(new RegExp(`>${termino}<`));
+      }
     });
 
     it('ordena CARTEL › alfabéticamente entre cambio de velocidad y cementerio', () => {
@@ -127,40 +133,12 @@ describe('MarcaMenu Component', () => {
       expect(posCartel).toBeLessThan(posCementerio);
     });
 
-    it('ordena árbol antes de AUTOCONTROL y este antes de AUTOLARGADA', () => {
-      const html = renderToString(<MarcaMenu filterQuery={null} onSeleccionar={() => {}} />);
-      const posArbol = html.indexOf('árbol');
-      const posAutocontrol = html.indexOf('AUTOCONTROL');
-      const posAutolargada = html.indexOf('AUTOLARGADA');
-
-      expect(posArbol).toBeLessThan(posAutocontrol);
-      expect(posAutocontrol).toBeLessThan(posAutolargada);
-    });
-
-    it('aplica el estilo oficial (brass/bold) exactamente a los 11 términos oficiales y a ninguno en minúsculas', () => {
-      const html = renderToString(<MarcaMenu filterQuery={null} onSeleccionar={() => {}} />);
-      const officialMatches = html.match(/marca-menu-item--oficial/g);
-      expect(officialMatches).not.toBeNull();
-      expect(officialMatches?.length).toBe(11);
-
-      // Comprobar términos oficiales
-      expect(html).toMatch(/class="[^"]*marca-menu-item--oficial[^"]*"[^>]*>AUTOLARGADA</);
-      expect(html).toMatch(/class="[^"]*marca-menu-item--oficial[^"]*"[^>]*>NEUTRALIZACIÓN</);
-      expect(html).toMatch(/class="[^"]*marca-menu-item--oficial[^"]*"[^>]*>CONTROL HORARIO</);
-
-      // Comprobar que términos en minúsculas NO tienen la clase oficial
-      expect(html).not.toMatch(/class="[^"]*marca-menu-item--oficial[^"]*"[^>]*>árbol</);
-      expect(html).not.toMatch(/class="[^"]*marca-menu-item--oficial[^"]*"[^>]*>alcantarilla</);
-    });
-
     it('aplica el estilo de navegación (borde primary 2px y texto primary) a CARTEL › y a ningún otro ítem del nivel superior', () => {
       const html = renderToString(<MarcaMenu filterQuery={null} onSeleccionar={() => {}} />);
       const navMatches = html.match(/marca-menu-item--nav/g);
       expect(navMatches).not.toBeNull();
       expect(navMatches?.length).toBe(1);
-      expect(html).toMatch(/class="[^"]*marca-menu-item--nav[^"]*"[^>]*>CARTEL ›</);
-      // No debe existir ningún elemento con relleno o clase primary-container dentro del menú
-      expect(html).not.toContain('primary-container');
+      expect(html).toContain('marca-menu-item--cartel');
     });
 
     it('anuncia CARTEL › como apertura de submenú en su aria-label', () => {
@@ -178,17 +156,17 @@ describe('MarcaMenu Component', () => {
         root.render(<MarcaMenu filterQuery={null} onSeleccionar={onSeleccionar} />);
       });
 
-      const autolargadaBtn = findElement(container, (el) => {
+      const arbolBtn = findElement(container, (el) => {
         const props = getReactProps(el);
-        return props?.children === 'AUTOLARGADA';
+        return props?.children === 'árbol';
       });
-      expect(autolargadaBtn).not.toBeNull();
+      expect(arbolBtn).not.toBeNull();
 
       flushSync(() => {
-        (getReactProps(autolargadaBtn!)?.onClick as () => void)?.();
+        (getReactProps(arbolBtn!)?.onClick as () => void)?.();
       });
 
-      expect(onSeleccionar).toHaveBeenCalledWith('AUTOLARGADA');
+      expect(onSeleccionar).toHaveBeenCalledWith('árbol');
     });
   });
 
@@ -230,7 +208,6 @@ describe('MarcaMenu Component', () => {
         const props = getReactProps(el);
         return props?.role === 'option';
       });
-      // 1 de VOLVER + 31 de carteles = 32
       expect(allOptions.length).toBe(32);
 
       // Comprobar que ningún cartel tiene clase nav
@@ -239,10 +216,6 @@ describe('MarcaMenu Component', () => {
         return props?.children !== '‹ VOLVER' && String(props?.className).includes('marca-menu-item--nav');
       });
       expect(cartelOptionsWithNav).toHaveLength(0);
-
-      // Comprobar que en el submenú no existe primary-container
-      const allClassNames = allOptions.map((opt) => String(getReactProps(opt)?.className || '')).join(' ');
-      expect(allClassNames).not.toContain('primary-container');
 
       // Comprobar que se muestran sin "cartel "
       const curvaDerBtn = findElement(container, (el) => {
@@ -257,7 +230,7 @@ describe('MarcaMenu Component', () => {
       });
       expect(onSeleccionar).toHaveBeenCalledWith('cartel curva derecha');
 
-      // 5. Tocar VOLVER regresa al nivel principal
+      // 5. Tocar VOLVER regresa al nivel principal (39 entradas)
       flushSync(() => {
         (getReactProps(volverBtn!)?.onClick as () => void)?.();
       });
@@ -265,7 +238,7 @@ describe('MarcaMenu Component', () => {
         const props = getReactProps(el);
         return props?.role === 'option';
       });
-      expect(topOptions.length).toBe(50);
+      expect(topOptions.length).toBe(39);
     });
   });
 
@@ -274,10 +247,8 @@ describe('MarcaMenu Component', () => {
       const html = renderToString(<MarcaMenu filterQuery="curva" onSeleccionar={() => {}} />);
       expect(html).toContain('cartel curva derecha');
       expect(html).toContain('cartel curva izquierda');
-      // No debe contener VOLVER ni CARTEL ›
       expect(html).not.toContain('‹ VOLVER');
       expect(html).not.toContain('CARTEL ›');
-      // Los carteles filtrados se muestran con su texto completo
       expect(html).toMatch(/>cartel curva derecha</);
     });
 
@@ -285,23 +256,19 @@ describe('MarcaMenu Component', () => {
       const html = renderToString(<MarcaMenu filterQuery="zzzincoincidencia123" onSeleccionar={() => {}} />);
       expect(html).toContain('SIN COINCIDENCIAS');
       expect(html).toContain('marca-menu-item--empty');
-      // No contiene ningún botón de opción
       expect(html).not.toContain('role="option"');
     });
 
-    it('aplica el estilo oficial (brass/bold) a términos oficiales en la lista filtrada', () => {
-      const html = renderToString(<MarcaMenu filterQuery="control" onSeleccionar={() => {}} />);
-      // AUTOCONTROL, CONTROL DE PASO, CONTROL HORARIO, CONTROL SECRETO son oficiales
-      expect(html).toMatch(/class="[^"]*marca-menu-item--oficial[^"]*"[^>]*>AUTOCONTROL</);
-      expect(html).toMatch(/class="[^"]*marca-menu-item--oficial[^"]*"[^>]*>CONTROL DE PASO</);
-      expect(html).toMatch(/class="[^"]*marca-menu-item--oficial[^"]*"[^>]*>CONTROL HORARIO</);
-      expect(html).toMatch(/class="[^"]*marca-menu-item--oficial[^"]*"[^>]*>CONTROL SECRETO</);
+    it('no busca términos oficiales porque fueron removidos del menú MARCA', () => {
+      const html = renderToString(<MarcaMenu filterQuery="autolargada" onSeleccionar={() => {}} />);
+      expect(html).toContain('SIN COINCIDENCIAS');
+      expect(html).not.toContain('AUTOLARGADA');
     });
 
     it('vuelve al menú normal cuando la consulta está vacía', () => {
       const html = renderToString(<MarcaMenu filterQuery="" onSeleccionar={() => {}} />);
       const options = html.match(/role="option"/g);
-      expect(options?.length).toBe(50);
+      expect(options?.length).toBe(39);
     });
   });
 });

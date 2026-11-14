@@ -17,7 +17,7 @@ import { clearAllRoadbookData } from '../storage';
 import { useConfirmReset } from '../hooks/useConfirmReset';
 import { useRaceSession } from '../context/RaceContext';
 import { MarcaMenu } from '../components/MarcaMenu';
-import { obtenerTerminoOficial } from '../logic/marcaTextos';
+import { ETIQUETAS_VALIDAS } from '../logic/marcaTextos';
 import './CargarHojaScreen.css';
 
 interface CargarHojaScreenProps {
@@ -25,7 +25,7 @@ interface CargarHojaScreenProps {
   onAddRows: () => void;
   onUpdateRow: (
     rowId: string,
-    changes: Partial<Pick<RoadbookRow, 'mark' | 'assignedTimeSeconds' | 'speedKmH'>>
+    changes: Partial<Pick<RoadbookRow, 'mark' | 'assignedTimeSeconds' | 'speedKmH' | 'etiqueta'>>
   ) => void;
   onBack: () => void;
   /** Optional handler to clear a single row */
@@ -63,6 +63,7 @@ export function CargarHojaScreen({
   const isClearBlocked = !isRoadbookClearingAllowed(isRaceRunning);
   const [editingRowId, setEditingRowId] = useState<string | null>(initialEditingRowId);
   const [editingField, setEditingField] = useState<'mark' | 'time' | 'speed' | null>(initialEditingField);
+  const [activeMarcaTab, setActiveMarcaTab] = useState<'marca' | 'etiqueta'>('marca');
   const [timeDigits, setTimeDigits] = useState<string>('');
   const [speedInput, setSpeedInput] = useState<string>('');
   const [markInput, setMarkInput] = useState<string>(() => {
@@ -90,6 +91,7 @@ export function CargarHojaScreen({
     setSpeedInput('');
     setIsMenuCollapsed(false);
     setFilterQuery(null);
+    setActiveMarcaTab('marca');
 
     if (onClearAll) {
       onClearAll();
@@ -118,7 +120,7 @@ export function CargarHojaScreen({
     if (onClearRow) {
       onClearRow(row.id);
     } else {
-      onUpdateRow(row.id, { mark: '', assignedTimeSeconds: null, speedKmH: null });
+      onUpdateRow(row.id, { mark: '', assignedTimeSeconds: null, speedKmH: null, etiqueta: 'none' });
     }
 
     if (editingRowId === row.id) {
@@ -139,6 +141,7 @@ export function CargarHojaScreen({
     setEditingField(field);
 
     if (field === 'mark') {
+      setActiveMarcaTab('marca');
       setMarkInput(row.mark);
       setIsMenuCollapsed(false);
       setFilterQuery(null);
@@ -276,8 +279,8 @@ export function CargarHojaScreen({
                 : EMPTY_TIME_PLACEHOLDER;
             const speedDisplay = getRowDisplaySpeed(rows, idx);
             const hasContent = rowHasContent(row);
-            const officialInfo = obtenerTerminoOficial(row.mark);
-            const markDisplayText = officialInfo.esOficial ? officialInfo.canonico : row.mark;
+            const hasEtiqueta = Boolean(row.etiqueta && row.etiqueta !== 'none');
+            const hasMark = Boolean(row.mark && row.mark.trim());
 
             return (
               <div
@@ -293,11 +296,20 @@ export function CargarHojaScreen({
                 </span>
                 <button
                   type="button"
-                  className={`cargar-hoja-row-mark${officialInfo.esOficial ? ' cargar-hoja-row-mark--oficial' : ''}`}
+                  className="cargar-hoja-row-mark"
                   onClick={() => startEditRow(row, 'mark')}
-                  aria-label={`Editar marca de la fila ${idx + 1}`}
+                  aria-label={`Editar marca de la fila ${idx + 1}${hasEtiqueta ? `, etiqueta: ${row.etiqueta}` : ''}`}
                 >
-                  {markDisplayText || (
+                  {hasEtiqueta ? (
+                    <>
+                      <span className="cargar-hoja-row-etiqueta brass">{row.etiqueta}</span>
+                      {hasMark && (
+                        <span className="cargar-hoja-row-mark-text">{row.mark}</span>
+                      )}
+                    </>
+                  ) : hasMark ? (
+                    <span className="cargar-hoja-row-mark-text">{row.mark}</span>
+                  ) : (
                     <span className="cargar-hoja-placeholder">
                       Tocá para elegir texto
                     </span>
@@ -387,26 +399,109 @@ export function CargarHojaScreen({
 
       {/* Panel anclado directamente encima de LISTO */}
       <div className="cargar-hoja-pinned-bottom">
-        {/* Menú de textos predefinidos para MARCA y campo libre */}
+        {/* Menú de opciones MARCA / ETIQUETA y campo libre */}
         {editingField === 'mark' && editingRow && (
           <div className="cargar-hoja-section cargar-hoja-marca-panel">
-            {!isMenuCollapsed && (
-              <MarcaMenu
-                key={`marca-menu-${menuResetKey}`}
-                filterQuery={filterQuery}
-                onSeleccionar={handleMenuSeleccionar}
-              />
-            )}
-            <div className="cargar-hoja-mark-edit">
-              <input
-                type="text"
-                className="preparar-input cargar-hoja-mark-input"
-                value={markInput}
-                onChange={handleMarkInputChange}
-                placeholder="Texto libre"
-                maxLength={40}
-              />
+            {/* Selector de pestañas MARCA | ETIQUETA */}
+            <div className="cargar-hoja-tabs" role="tablist" aria-label="Opciones de marca y etiqueta">
+              <button
+                type="button"
+                role="tab"
+                id="tab-marca"
+                aria-controls="panel-marca"
+                aria-selected={activeMarcaTab === 'marca'}
+                className={`cargar-hoja-tab-btn${activeMarcaTab === 'marca' ? ' active' : ''}`}
+                onClick={() => setActiveMarcaTab('marca')}
+              >
+                MARCA
+              </button>
+              <button
+                type="button"
+                role="tab"
+                id="tab-etiqueta"
+                aria-controls="panel-etiqueta"
+                aria-selected={activeMarcaTab === 'etiqueta'}
+                className={`cargar-hoja-tab-btn${activeMarcaTab === 'etiqueta' ? ' active' : ''}`}
+                onClick={() => setActiveMarcaTab('etiqueta')}
+              >
+                ETIQUETA
+              </button>
             </div>
+
+            {/* Pestaña MARCA */}
+            {activeMarcaTab === 'marca' && (
+              <div id="panel-marca" role="tabpanel" aria-labelledby="tab-marca" className="cargar-hoja-tab-panel">
+                {!isMenuCollapsed && (
+                  <MarcaMenu
+                    key={`marca-menu-${menuResetKey}`}
+                    filterQuery={filterQuery}
+                    onSeleccionar={handleMenuSeleccionar}
+                  />
+                )}
+                <div className="cargar-hoja-mark-edit">
+                  <input
+                    type="text"
+                    className="preparar-input cargar-hoja-mark-input"
+                    value={markInput}
+                    onChange={handleMarkInputChange}
+                    placeholder="Texto libre"
+                    maxLength={40}
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* Pestaña ETIQUETA */}
+            {activeMarcaTab === 'etiqueta' && (
+              <div id="panel-etiqueta" role="tabpanel" aria-labelledby="tab-etiqueta" className="cargar-hoja-tab-panel">
+                <div
+                  className="marca-menu etiqueta-menu"
+                  role="listbox"
+                  aria-label="Etiquetas oficiales de carrera"
+                >
+                  {/* Opción SIN ETIQUETA */}
+                  {(() => {
+                    const isSinEtiquetaSelected = !editingRow.etiqueta || editingRow.etiqueta === 'none';
+                    return (
+                      <button
+                        type="button"
+                        role="option"
+                        aria-selected={isSinEtiquetaSelected}
+                        aria-checked={isSinEtiquetaSelected}
+                        className={`marca-menu-item etiqueta-menu-item${isSinEtiquetaSelected ? ' etiqueta-menu-item--selected' : ''}`}
+                        onMouseDown={(e) => e.preventDefault()}
+                        onClick={() => onUpdateRow(editingRow.id, { etiqueta: 'none' })}
+                        aria-label={isSinEtiquetaSelected ? 'SIN ETIQUETA, seleccionado' : 'SIN ETIQUETA'}
+                      >
+                        {isSinEtiquetaSelected && <span className="etiqueta-check">✓ </span>}
+                        SIN ETIQUETA
+                      </button>
+                    );
+                  })()}
+
+                  {/* 11 opciones oficiales */}
+                  {ETIQUETAS_VALIDAS.map((etiqueta) => {
+                    const isSelected = editingRow.etiqueta === etiqueta;
+                    return (
+                      <button
+                        key={etiqueta}
+                        type="button"
+                        role="option"
+                        aria-selected={isSelected}
+                        aria-checked={isSelected}
+                        className={`marca-menu-item etiqueta-menu-item etiqueta-menu-item--oficial${isSelected ? ' etiqueta-menu-item--selected' : ''}`}
+                        onMouseDown={(e) => e.preventDefault()}
+                        onClick={() => onUpdateRow(editingRow.id, { etiqueta })}
+                        aria-label={isSelected ? `${etiqueta}, seleccionado` : etiqueta}
+                      >
+                        {isSelected && <span className="etiqueta-check">✓ </span>}
+                        {etiqueta}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
           </div>
         )}
 

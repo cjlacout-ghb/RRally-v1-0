@@ -30,7 +30,7 @@
   padding: var(--spacing-gutter) var(--spacing-margin);
 }
 
-/* ── Encabezado de columnas ───────────────────────────────────────── */
+/* ── Encabezado de columnas ──────────────────────────────────────── */
 .cargar-hoja-col-header {
   display: grid;
   grid-template-columns: 24px minmax(0, 1fr) 74px 48px 56px;
@@ -70,7 +70,7 @@
   width: 56px;
 }
 
-/* ── Lista de filas ────────────────────────────────────────────────── */
+/* ── Lista de filas ──────────────────────────────────────────────── */
 .cargar-hoja-rows {
   display: flex;
   flex-direction: column;
@@ -119,6 +119,35 @@
   text-overflow: ellipsis;
 }
 
+/* Celda MARCA: admite 2 líneas (etiqueta en label-md brass bold arriba, marca abajo), manteniendo 52px */
+.cargar-hoja-row-mark {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-height: 0;
+  height: 48px;
+  box-sizing: border-box;
+}
+
+.cargar-hoja-row-etiqueta {
+  font-family: var(--font-sans);
+  font-weight: 700;
+  font-size: var(--typography-label-md-font-size);
+  line-height: var(--typography-label-md-line-height);
+  letter-spacing: var(--typography-label-md-letter-spacing);
+  text-transform: uppercase;
+  color: var(--color-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cargar-hoja-row-mark-text {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 .cargar-hoja-row-time {
   font-family: var(--font-mono);
   font-weight: 700;
@@ -143,11 +172,6 @@
   font-size: var(--typography-body-md-font-size);
 }
 
-.cargar-hoja-row-mark--oficial {
-  color: var(--color-secondary);
-  font-weight: 700;
-}
-
 .cargar-hoja-row-mark:active,
 .cargar-hoja-row-time:active,
 .cargar-hoja-row-speed:active {
@@ -168,40 +192,42 @@
   border: none;
   color: var(--color-on-surface-variant);
   font-family: var(--font-sans);
-  font-size: 16px;
+  font-size: 18px;
   line-height: 1;
-  width: 44px;
-  height: 44px;
-  margin-left: 12px;
+  width: 48px;
+  height: 48px;
+  min-width: 48px;
+  min-height: 48px;
+  border-radius: var(--rounded-default);
+  cursor: pointer;
+  touch-action: manipulation;
   display: flex;
   align-items: center;
   justify-content: center;
-  cursor: pointer;
-  touch-action: manipulation;
   padding: 0;
-  border-radius: var(--rounded-default);
+  box-sizing: border-box;
 }
 
-.cargar-hoja-row-clear:active {
+.cargar-hoja-row-clear:active:not(:disabled) {
   background: var(--color-surface-container-high);
   color: var(--color-on-surface);
 }
 
-.cargar-hoja-row-clear:disabled,
-.cargar-hoja-row-clear--disabled {
-  opacity: 0.4;
+.cargar-hoja-row-clear--disabled,
+.cargar-hoja-row-clear:disabled {
+  opacity: 0.35;
   cursor: not-allowed;
   pointer-events: none;
 }
 
-/* ── Botón "+ 10 FILAS" (ítem de la lista, se desplaza con ella) ── */
+/* ── Botón "+ 10 FILAS" (ítem dentro de la lista scrollable) ───────── */
 .cargar-hoja-add-btn {
   min-height: 64px;
   margin-top: var(--spacing-space-xs);
   flex: none;
 }
 
-/* ── Botón BORRAR TODO y mensaje de bloqueo ───────────────────────── */
+/* ── Contenedor y botón BORRAR TODO (con mensaje de bloqueo) ──────── */
 .cargar-hoja-borrar-container {
   display: flex;
   flex-direction: column;
@@ -266,11 +292,83 @@
   gap: var(--spacing-space-md);
 }
 
-/* ── Panel de menú de marca ──────────────────────────────────────── */
+/* ── Selector de pestañas MARCA | ETIQUETA en panel anclado ───────── */
+.cargar-hoja-tabs {
+  display: flex;
+  gap: var(--spacing-gutter);
+  width: 100%;
+}
+
+.cargar-hoja-tab-btn {
+  flex: 1;
+  min-height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  color: var(--color-on-surface-variant);
+  border: none;
+  border-top: 2px solid transparent;
+  border-radius: var(--rounded-default);
+  font-family: var(--font-sans);
+  font-size: var(--typography-body-md-font-size);
+  font-weight: 400;
+  line-height: 18px;
+  letter-spacing: var(--tab-bar-letter-spacing);
+  text-transform: uppercase;
+  cursor: pointer;
+  touch-action: manipulation;
+  box-sizing: border-box;
+}
+
+.cargar-hoja-tab-btn.active {
+  background-color: var(--color-surface-container-high);
+  color: var(--color-on-surface);
+  font-weight: 700;
+  border-top: 2px solid var(--color-primary);
+}
+
+.cargar-hoja-tab-btn:active:not(.active) {
+  background-color: var(--color-surface-container-high);
+  transform: translateY(var(--pressed-shift));
+}
+
+.cargar-hoja-tab-panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-space-md);
+}
+
+/* ── Panel de menú de marca y etiqueta ────────────────────────────── */
 .cargar-hoja-marca-panel {
   display: flex;
   flex-direction: column;
   gap: var(--spacing-space-md);
+}
+
+/* Estilos de la lista de etiquetas */
+.etiqueta-menu {
+  display: flex;
+  flex-direction: column;
+}
+
+.etiqueta-menu-item {
+  color: var(--color-on-surface);
+}
+
+.etiqueta-menu-item--oficial {
+  color: var(--color-secondary);
+  font-weight: 700;
+}
+
+.etiqueta-menu-item--selected {
+  background: var(--color-surface-container-high);
+}
+
+.etiqueta-check {
+  font-weight: 700;
+  color: var(--color-primary);
+  margin-right: 4px;
 }
 
 /* ── Campo de texto libre para marca ────────────────────────────── */

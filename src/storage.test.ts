@@ -258,16 +258,16 @@ describe('storage module', () => {
 
     it('round trips valid roadbook sheet', () => {
       const sampleSheet = [
-        { id: '1', mark: 'Start', assignedTimeSeconds: 0, speedKmH: 50 },
-        { id: '2', mark: 'PC1', assignedTimeSeconds: 120, speedKmH: 60 },
+        { id: '1', mark: 'Start', assignedTimeSeconds: 0, speedKmH: 50, etiqueta: 'LARGADA' },
+        { id: '2', mark: 'PC1', assignedTimeSeconds: 120, speedKmH: 60, etiqueta: 'none' },
       ];
       const writeRes = writeRoadbookSheet(sampleSheet);
       expect(writeRes).toEqual({ ok: true });
 
       const loaded = readRoadbookSheet();
       expect(loaded).toHaveLength(2);
-      expect(loaded[0]).toEqual({ id: '1', mark: 'Start', assignedTimeSeconds: 0, speedKmH: 50 });
-      expect(loaded[1]).toEqual({ id: '2', mark: 'PC1', assignedTimeSeconds: 120, speedKmH: 60 });
+      expect(loaded[0]).toEqual({ id: '1', mark: 'Start', assignedTimeSeconds: 0, speedKmH: 50, etiqueta: 'LARGADA' });
+      expect(loaded[1]).toEqual({ id: '2', mark: 'PC1', assignedTimeSeconds: 120, speedKmH: 60, etiqueta: 'none' });
     });
 
     it('loads previously saved sheet with 50 rows intact without truncation', () => {
@@ -299,13 +299,13 @@ describe('storage module', () => {
       expect(readRoadbookSheet()).toHaveLength(INITIAL_SHEET_ROWS);
     });
 
-    it('sanitizes rows on read (truncates long marks, strips invalid speed)', () => {
+    it('sanitizes rows on read (truncates long marks, strips invalid speed, defaults invalid etiqueta)', () => {
       mockStorage.setItem(
         ROADBOOK_SHEET_KEY,
         JSON.stringify({
-          version: 1,
+          version: 2,
           rows: [
-            { id: '1', mark: 'A'.repeat(60), assignedTimeSeconds: 10.5, speedKmH: -20 },
+            { id: '1', mark: 'A'.repeat(60), assignedTimeSeconds: 10.5, speedKmH: -20, etiqueta: 'INVALIDA' },
           ],
         })
       );
@@ -314,6 +314,80 @@ describe('storage module', () => {
       expect(loaded[0].mark).toHaveLength(40);
       expect(loaded[0].assignedTimeSeconds).toBe(10); // floored whole seconds
       expect(loaded[0].speedKmH).toBeNull(); // negative speed converted to null
+      expect(loaded[0].etiqueta).toBe('none'); // invalid etiqueta coerced to none
+    });
+
+    it('an old-version (v1) sheet is discarded to 20 empty rows and race state is cleared, while stopwatch is untouched', () => {
+      // Setup v1 sheet
+      mockStorage.setItem(
+        ROADBOOK_SHEET_KEY,
+        JSON.stringify({
+          version: 1,
+          rows: [
+            { id: '1', mark: 'Old row', assignedTimeSeconds: 50, speedKmH: 60 },
+          ],
+        })
+      );
+      // Setup active race state
+      mockStorage.setItem(
+        ROADBOOK_RACE_STATE_KEY,
+        JSON.stringify({
+          version: 1,
+          startWallClock: 1700000000000,
+          running: true,
+          marks: { 0: { status: 'marked', realElapsedMs: 1500 } },
+          history: [{ type: 'mark', rowIndex: 0, realElapsedMs: 1500 }],
+          currentRowIndex: 1,
+        })
+      );
+      // Setup carrera stopwatch
+      const sampleStopwatch: StoredCarreraStopwatchState = {
+        version: 1,
+        startWallClock: 1700000000000,
+        running: true,
+        accumulatedMs: 5000,
+      };
+      writeCarreraStopwatchState(sampleStopwatch);
+
+      // Read sheet -> triggers discard of v1 sheet and clearing of race state
+      const loaded = readRoadbookSheet();
+      expect(loaded).toHaveLength(INITIAL_SHEET_ROWS);
+      expect(loaded[0].mark).toBe('');
+      expect(loaded[0].etiqueta).toBe('none');
+
+      // Race state must be cleared
+      expect(readRoadbookRaceState()).toBeNull();
+
+      // Carrera stopwatch must be untouched
+      const stopwatch = readCarreraStopwatchState(Date.now() + 10000);
+      expect(stopwatch).not.toBeNull();
+      expect(stopwatch?.accumulatedMs).toBe(5000);
+    });
+
+    it('an invalid stored etiqueta becomes "none" while the rest of the sheet is kept', () => {
+      mockStorage.setItem(
+        ROADBOOK_SHEET_KEY,
+        JSON.stringify({
+          version: 2,
+          rows: [
+            { id: '1', mark: 'Control 1', assignedTimeSeconds: 120, speedKmH: 50, etiqueta: 'UNKNOWN_TAG' },
+            { id: '2', mark: 'Control 2', assignedTimeSeconds: 240, speedKmH: 50, etiqueta: 'autocontrol' }, // lowercase is not canonical
+            { id: '3', mark: 'Control 3', assignedTimeSeconds: 360, speedKmH: 50, etiqueta: 'AUTOCONTROL' }, // valid
+          ],
+        })
+      );
+
+      const loaded = readRoadbookSheet();
+      expect(loaded).toHaveLength(3);
+      expect(loaded[0].etiqueta).toBe('none');
+      expect(loaded[0].mark).toBe('Control 1');
+      expect(loaded[0].assignedTimeSeconds).toBe(120);
+
+      expect(loaded[1].etiqueta).toBe('none');
+      expect(loaded[1].mark).toBe('Control 2');
+
+      expect(loaded[2].etiqueta).toBe('AUTOCONTROL');
+      expect(loaded[2].mark).toBe('Control 3');
     });
   });
 
@@ -397,6 +471,7 @@ describe('storage module', () => {
         mark: '',
         assignedTimeSeconds: null,
         speedKmH: null,
+        etiqueta: 'none',
       });
 
       // Storage has 20 empty rows and no race state

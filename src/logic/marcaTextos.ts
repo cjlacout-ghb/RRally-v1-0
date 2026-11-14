@@ -1,12 +1,13 @@
 /**
- * Textos predefinidos para el campo MARCA de la hoja de ruta.
+ * Textos predefinidos para el campo MARCA y etiquetas de la hoja de ruta.
  *
- * Fuente única de verdad: agregar o editar un texto requiere
- * modificar únicamente este módulo.
+ * Fuente única de verdad:
+ * - ETIQUETAS_VALIDAS contiene exclusivamente los 11 términos oficiales de carrera.
+ * - MARCA_TEXTOS_MAIN contiene exclusivamente las 38 señales de ruta en minúsculas.
+ * - MARCA_TEXTOS_CARTEL contiene los 31 textos del grupo CARTEL.
  *
- * Los dos grupos se ordenan al cargar el módulo con colación española,
- * insensible a mayúsculas y acentos, para que "árbol", "AUTOCONTROL"
- * y "NEUTRALIZACIÓN" queden en su posición alfabética correcta.
+ * Los grupos se ordenan al cargar el módulo con colación española,
+ * insensible a mayúsculas y acentos.
  */
 
 /** Comparador de orden español, insensible a mayúsculas y acentos. */
@@ -19,13 +20,53 @@ function sortEs(arr: readonly string[]): string[] {
   return [...arr].sort((a, b) => esCollator.compare(a, b));
 }
 
-/** Los 49 textos principales del campo MARCA. */
+/**
+ * Los 11 términos oficiales de carrera, en su forma canónica en mayúsculas.
+ * Fuente única de verdad para las etiquetas oficiales de carrera (ETIQUETAS_VALIDAS).
+ */
+const TERMINOS_OFICIALES_CANONICOS = [
+  'AUTOCONTROL',
+  'AUTOLARGADA',
+  'CONTROL DE PASO',
+  'CONTROL HORARIO',
+  'CONTROL SECRETO',
+  'ETAPA FIN',
+  'ETAPA INICIO',
+  'LARGADA',
+  'LLEGADA',
+  'NEUTRALIZACIÓN',
+  'REINICIO',
+] as const;
+
+/**
+ * Lista ordenada (con colación española) de los 11 términos oficiales de carrera.
+ * Es la fuente única de verdad para los valores válidos del campo `etiqueta`
+ * de cada fila de hoja de ruta.
+ */
+export const ETIQUETAS_VALIDAS: readonly string[] = sortEs(TERMINOS_OFICIALES_CANONICOS);
+
+/**
+ * Determina si un valor es una etiqueta de fila válida (uno de los 11 términos oficiales
+ * canónicos en mayúsculas) o "none".
+ * - "none" → válido (sin etiqueta asignada).
+ * - Un término oficial canónico en mayúsculas → válido.
+ * - Cualquier otro valor (vacío, desconocido, minúsculas, con acento diferente) → inválido.
+ * La comparación es de igualdad estricta sobre la cadena canónica.
+ */
+export function isEtiquetaValida(value: unknown): value is string {
+  if (typeof value !== 'string') return false;
+  if (value === 'none') return true;
+  return ETIQUETAS_VALIDAS.includes(value);
+}
+
+/**
+ * Los 38 textos principales del campo MARCA (únicamente señales de ruta en minúsculas).
+ * Los 11 términos oficiales han sido removidos y pertenecen exclusivamente a ETIQUETAS_VALIDAS.
+ */
 const MARCA_TEXTOS_MAIN_RAW = [
   'alcantarilla',
   'antena',
   'árbol',
-  'AUTOCONTROL',
-  'AUTOLARGADA',
   'badén',
   'cables alta tensión',
   'cambio de velocidad',
@@ -34,9 +75,6 @@ const MARCA_TEXTOS_MAIN_RAW = [
   'chapón rojo y blanco',
   'cinta',
   'columna alumbrado',
-  'CONTROL DE PASO',
-  'CONTROL HORARIO',
-  'CONTROL SECRETO',
   'cubierta blanca',
   'cubierta negra',
   'cubierta tractor',
@@ -44,8 +82,6 @@ const MARCA_TEXTOS_MAIN_RAW = [
   'edificación',
   'escuela',
   'estación de servicio',
-  'ETAPA FIN',
-  'ETAPA INICIO',
   'garita parada ómnibus',
   'gomería',
   'guardacanto',
@@ -53,18 +89,14 @@ const MARCA_TEXTOS_MAIN_RAW = [
   'iglesia',
   'ingreso',
   'kiosko',
-  'LARGADA',
-  'LLEGADA',
   'loma de burro',
   'mojón km',
-  'NEUTRALIZACIÓN',
   'pantalla electrónica',
   'portal ingreso',
   'poste con cables',
   'poste con cámara',
   'poste pintado',
   'puente',
-  'REINICIO',
   'rotonda',
   'semáforo',
   'tranquera',
@@ -110,8 +142,15 @@ const MARCA_TEXTOS_CARTEL_RAW = [
   'cartel verde',
 ] as const;
 
-/** Lista principal ordenada (49 textos). */
-export const MARCA_TEXTOS_MAIN: readonly string[] = sortEs(MARCA_TEXTOS_MAIN_RAW);
+/** Conjunto para exclusión garantizada de términos oficiales. */
+const oficialesSet = new Set<string>(ETIQUETAS_VALIDAS);
+
+/**
+ * Lista principal ordenada (38 textos). Excluye rigurosamente los 11 términos oficiales.
+ */
+export const MARCA_TEXTOS_MAIN: readonly string[] = sortEs(
+  MARCA_TEXTOS_MAIN_RAW.filter((t) => !oficialesSet.has(t))
+);
 
 /** Lista completa del grupo cartel, ordenada (31 textos con prefijo "cartel"). */
 export const MARCA_TEXTOS_CARTEL: readonly string[] = sortEs(MARCA_TEXTOS_CARTEL_RAW);
@@ -127,72 +166,6 @@ export function normalizarTexto(text: string): string {
 }
 
 /**
- * Los 11 términos oficiales de carrera, derivados de la lista principal
- * (textos escritos totalmente en mayúsculas).
- *
- * Fuente única de verdad para el énfasis visual oficial:
- * AUTOCONTROL, AUTOLARGADA, CONTROL DE PASO, CONTROL HORARIO, CONTROL SECRETO,
- * ETAPA FIN, ETAPA INICIO, LARGADA, LLEGADA, NEUTRALIZACIÓN, REINICIO.
- */
-const TERMINOS_OFICIALES_RAW = MARCA_TEXTOS_MAIN_RAW.filter(
-  (t) => t === t.toUpperCase() && /[A-ZÁÉÍÓÚÑ]/.test(t)
-);
-
-/**
- * Mapa de búsqueda de términos oficiales indexado por forma normalizada
- * (minúsculas y sin acentos) para resolución exacta e insensible a mayúsculas/acentos.
- */
-const TERMINOS_OFICIALES_MAP: ReadonlyMap<string, string> = new Map(
-  TERMINOS_OFICIALES_RAW.map((canonical) => [normalizarTexto(canonical), canonical])
-);
-
-/**
- * Resultado de la resolución de un término oficial de carrera.
- */
-export interface TerminoOficialInfo {
-  /** Indica si el texto corresponde exactamente a un término oficial de carrera. */
-  esOficial: boolean;
-  /** Forma canónica en mayúsculas del término oficial, o null si no lo es. */
-  canonico: string | null;
-  /** Alias en inglés para compatibilidad y conveniencia. */
-  isOfficial: boolean;
-  canonical: string | null;
-}
-
-/**
- * Helper compartido único que, dado un texto de marca, determina si es un término oficial
- * de carrera y devuelve su forma canónica en mayúsculas.
- * La coincidencia es exacta sobre el texto completo, insensible a mayúsculas y acentos,
- * ignorando espacios iniciales y finales.
- */
-export function obtenerTerminoOficial(texto: string): TerminoOficialInfo {
-  const trimmed = texto.trim();
-  if (trimmed === '') {
-    return { esOficial: false, canonico: null, isOfficial: false, canonical: null };
-  }
-  const normalizado = normalizarTexto(trimmed);
-  const canonico = TERMINOS_OFICIALES_MAP.get(normalizado) ?? null;
-  const esOficial = canonico !== null;
-  return {
-    esOficial,
-    canonico,
-    isOfficial: esOficial,
-    canonical: canonico,
-  };
-}
-
-export const getTerminoOficial = obtenerTerminoOficial;
-export const getOfficialRaceTerm = obtenerTerminoOficial;
-
-/**
- * Determina si un texto de marca corresponde a un término oficial de carrera.
- * Un término oficial se renderiza con color brass (secondary) y peso negrita.
- */
-export function esTerminoOficial(texto: string): boolean {
-  return obtenerTerminoOficial(texto).esOficial;
-}
-
-/**
  * Estructura de un ítem para el menú de textos de marca.
  */
 export interface MarcaMenuItem {
@@ -203,12 +176,12 @@ export interface MarcaMenuItem {
 }
 
 /**
- * Lista combinada de todos los textos (principales + carteles) ordenados alfabéticamente
- * para la búsqueda filtrada.
+ * Lista combinada de todos los textos de MARCA (38 principales + 31 carteles = 69 textos)
+ * ordenados alfabéticamente para la búsqueda filtrada.
  */
 const TODOS_TEXTOS_ORDENADOS: readonly string[] = sortEs([
-  ...MARCA_TEXTOS_MAIN_RAW,
-  ...MARCA_TEXTOS_CARTEL_RAW,
+  ...MARCA_TEXTOS_MAIN,
+  ...MARCA_TEXTOS_CARTEL,
 ]);
 
 /**
@@ -227,7 +200,7 @@ export function coincideFiltro(texto: string, consulta: string): boolean {
 }
 
 /**
- * Filtra los textos (principales + carteles juntos) según la consulta escrita.
+ * Filtra los textos de MARCA (principales + carteles juntos) según la consulta escrita.
  * - Si la consulta está vacía o contiene sólo espacios, devuelve null (indica modo jerárquico normal).
  * - Si no está vacía, devuelve la lista plana de ítems coincidentes con su texto completo.
  * - Si no hay coincidencias, devuelve un array vacío [].

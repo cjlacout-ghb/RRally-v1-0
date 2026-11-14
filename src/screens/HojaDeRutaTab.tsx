@@ -14,7 +14,6 @@ import {
   writeRoadbookRaceState,
   clearRoadbookRaceState,
 } from '../storage';
-import { obtenerTerminoOficial } from '../logic/marcaTextos';
 import './HojaDeRutaTab.css';
 
 interface HojaDeRutaTabProps {
@@ -229,6 +228,45 @@ export function HojaDeRutaTab({ isVisible, rows, onOpenCargarHoja }: HojaDeRutaT
   const anteriorInfo = getRowDisplayInfo(anteriorIdx);
   const actualInfo = getRowDisplayInfo(currentIdx);
 
+  function renderCardContent(
+    etiqueta: string | undefined | null,
+    mark: string | undefined | null,
+    emptyFallback: string = '—',
+    isMuted: boolean = false
+  ) {
+    const hasEtiqueta = Boolean(etiqueta && etiqueta !== 'none');
+    const trimmedMark = mark && mark.trim() ? mark.trim() : null;
+
+    if (hasEtiqueta && trimmedMark) {
+      return (
+        <span className={`hdr-mark-text${isMuted ? ' on-surface-variant' : ''}`}>
+          <span className="hdr-mark-etiqueta brass">{etiqueta}</span>
+          <span className="hdr-mark-separator"> · </span>
+          <span className="hdr-mark-marca">{trimmedMark}</span>
+        </span>
+      );
+    }
+    if (hasEtiqueta) {
+      return (
+        <span className={`hdr-mark-text${isMuted ? ' on-surface-variant' : ''}`}>
+          <span className="hdr-mark-etiqueta brass">{etiqueta}</span>
+        </span>
+      );
+    }
+    if (trimmedMark) {
+      return (
+        <span className={`hdr-mark-text${isMuted ? ' on-surface-variant' : ''}`}>
+          <span className="hdr-mark-marca">{trimmedMark}</span>
+        </span>
+      );
+    }
+    return (
+      <span className="hdr-mark-text on-surface-variant">
+        {emptyFallback}
+      </span>
+    );
+  }
+
   return (
     <div className="hoja-de-ruta-tab">
       {/* ── Time block (48px buttons — explicit exception) ── */}
@@ -337,19 +375,14 @@ export function HojaDeRutaTab({ isVisible, rows, onOpenCargarHoja }: HojaDeRutaT
         <div className="hdr-mark-card hdr-mark-card--anterior card">
           <div className="hdr-mark-card-left">
             <span className="hdr-mark-card-badge label-md on-surface-variant">ANTERIOR</span>
-            {anteriorInfo ? (() => {
-              const antOficial = obtenerTerminoOficial(anteriorInfo.row.mark);
-              return (
-                <>
-                  <span className="hdr-mark-num label-md on-surface-variant">
-                    {anteriorIdx! + 1}
-                  </span>
-                  <span className={`hdr-mark-text${antOficial.esOficial ? ' hdr-mark-text--oficial' : ''}`}>
-                    {antOficial.esOficial ? antOficial.canonico : (anteriorInfo.row.mark || '—')}
-                  </span>
-                </>
-              );
-            })() : (
+            {anteriorInfo ? (
+              <>
+                <span className="hdr-mark-num label-md on-surface-variant">
+                  {anteriorIdx! + 1}
+                </span>
+                {renderCardContent(raceSnapshot.previousRowEtiqueta, anteriorInfo.row.mark, '—')}
+              </>
+            ) : (
               <span className="hdr-mark-text on-surface-variant">—</span>
             )}
           </div>
@@ -397,14 +430,9 @@ export function HojaDeRutaTab({ isVisible, rows, onOpenCargarHoja }: HojaDeRutaT
             ) : null}
           </div>
           <div className="hdr-mark-card-text-row">
-            {actualInfo ? (() => {
-              const actOficial = obtenerTerminoOficial(actualInfo.row.mark);
-              return (
-                <span className={`hdr-mark-text${actOficial.esOficial ? ' hdr-mark-text--oficial' : ''}`}>
-                  {actOficial.esOficial ? actOficial.canonico : (actualInfo.row.mark || '—')}
-                </span>
-              );
-            })() : (
+            {actualInfo ? (
+              renderCardContent(raceSnapshot.currentRowEtiqueta, actualInfo.row.mark, '—')
+            ) : (
               <span className="hdr-mark-text on-surface-variant">
                 {raceSnapshot.isFinished ? 'FIN DE HOJA' : '—'}
               </span>
@@ -416,19 +444,14 @@ export function HojaDeRutaTab({ isVisible, rows, onOpenCargarHoja }: HojaDeRutaT
         <div className="hdr-mark-card hdr-mark-card--siguiente card">
           <div className="hdr-mark-card-left">
             <span className="hdr-mark-card-badge label-md on-surface-variant">SIGUIENTE</span>
-            {siguienteIdx !== null && rows[siguienteIdx] ? (() => {
-              const sigOficial = obtenerTerminoOficial(rows[siguienteIdx].mark);
-              return (
-                <>
-                  <span className="hdr-mark-num label-md on-surface-variant">
-                    {siguienteIdx + 1}
-                  </span>
-                  <span className={`hdr-mark-text${sigOficial.esOficial ? ' hdr-mark-text--oficial' : ' on-surface-variant'}`}>
-                    {sigOficial.esOficial ? sigOficial.canonico : (rows[siguienteIdx].mark || '—')}
-                  </span>
-                </>
-              );
-            })() : (
+            {siguienteIdx !== null && rows[siguienteIdx] ? (
+              <>
+                <span className="hdr-mark-num label-md on-surface-variant">
+                  {siguienteIdx + 1}
+                </span>
+                {renderCardContent(raceSnapshot.nextRowEtiqueta, rows[siguienteIdx].mark, '—', true)}
+              </>
+            ) : (
               <span className="hdr-mark-text on-surface-variant">—</span>
             )}
           </div>

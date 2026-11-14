@@ -31,7 +31,9 @@ describe('roadbookModel', () => {
       mark: '',
       assignedTimeSeconds: null,
       speedKmH: null,
+      etiqueta: 'none',
     });
+    expect(sheet.every((r) => r.etiqueta === 'none')).toBe(true);
     expect(sheet[19].id).toBe('row-20');
   });
 
@@ -211,6 +213,28 @@ describe('rowHasContent rule', () => {
         mark: '',
         assignedTimeSeconds: null,
         speedKmH: null,
+        etiqueta: 'none',
+      })
+    ).toBe(false);
+  });
+
+  it('returns true when row only has an etiqueta (for showing X button)', () => {
+    expect(
+      rowHasContent({
+        id: '1',
+        mark: '',
+        assignedTimeSeconds: null,
+        speedKmH: null,
+        etiqueta: 'CONTROL HORARIO',
+      })
+    ).toBe(true);
+    expect(
+      rowHasContent({
+        id: '1',
+        mark: '',
+        assignedTimeSeconds: null,
+        speedKmH: null,
+        etiqueta: 'none',
       })
     ).toBe(false);
   });
@@ -281,12 +305,13 @@ describe('rowHasContent rule', () => {
 });
 
 describe('clearing one row (clearRoadbookRow and clearRowInSheet)', () => {
-  it('clearRoadbookRow empties mark, time and speed while preserving id', () => {
+  it('clearRoadbookRow empties mark, time, speed and resets etiqueta to none while preserving id', () => {
     const row: RoadbookRow = {
       id: 'row-5',
       mark: 'CONTROL HORARIO',
       assignedTimeSeconds: 1234,
       speedKmH: 55.5,
+      etiqueta: 'CONTROL HORARIO',
     };
     const cleared = clearRoadbookRow(row);
     expect(cleared).toEqual({
@@ -294,14 +319,15 @@ describe('clearing one row (clearRoadbookRow and clearRowInSheet)', () => {
       mark: '',
       assignedTimeSeconds: null,
       speedKmH: null,
+      etiqueta: 'none',
     });
   });
 
   it('clearRowInSheet clears only the targeted row, leaving other rows and numbering unchanged', () => {
     const sheet: RoadbookRow[] = [
-      { id: 'row-1', mark: 'R1', assignedTimeSeconds: 10, speedKmH: 50 },
-      { id: 'row-2', mark: 'R2', assignedTimeSeconds: 20, speedKmH: 60 },
-      { id: 'row-3', mark: 'R3', assignedTimeSeconds: 30, speedKmH: 70 },
+      { id: 'row-1', mark: 'R1', assignedTimeSeconds: 10, speedKmH: 50, etiqueta: 'none' },
+      { id: 'row-2', mark: 'R2', assignedTimeSeconds: 20, speedKmH: 60, etiqueta: 'LARGADA' },
+      { id: 'row-3', mark: 'R3', assignedTimeSeconds: 30, speedKmH: 70, etiqueta: 'none' },
     ];
     const updated = clearRowInSheet(sheet, 'row-2');
     expect(updated).toHaveLength(3);
@@ -311,8 +337,28 @@ describe('clearing one row (clearRoadbookRow and clearRowInSheet)', () => {
       mark: '',
       assignedTimeSeconds: null,
       speedKmH: null,
+      etiqueta: 'none',
     });
     expect(updated[2]).toEqual(sheet[2]);
+  });
+});
+
+describe('etiqueta creation paths default to "none"', () => {
+  it('createEmptyRow defaults etiqueta to "none"', () => {
+    expect(createEmptyRow('test').etiqueta).toBe('none');
+    expect(createEmptyRow(5).etiqueta).toBe('none');
+  });
+
+  it('createInitialSheet sets etiqueta to "none" for all rows', () => {
+    const sheet = createInitialSheet();
+    expect(sheet.every((r) => r.etiqueta === 'none')).toBe(true);
+  });
+
+  it('addSheetRows (+10 rows) sets etiqueta to "none" for all newly added rows', () => {
+    const sheet = createInitialSheet(5);
+    const expanded = addSheetRows(sheet, 10);
+    expect(expanded).toHaveLength(15);
+    expect(expanded.slice(5).every((r) => r.etiqueta === 'none')).toBe(true);
   });
 });
 

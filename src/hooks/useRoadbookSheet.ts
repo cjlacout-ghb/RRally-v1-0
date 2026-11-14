@@ -17,12 +17,16 @@ import {
   MAX_SHEET_ROWS,
   type RoadbookRow,
 } from '../logic/roadbookModel';
+import { isEtiquetaValida } from '../logic/marcaTextos';
 import type { SaveResult } from '../storage';
 
 export interface UseRoadbookSheetResult {
   rows: RoadbookRow[];
   addRows: () => void;
-  updateRow: (rowId: string, changes: Partial<Pick<RoadbookRow, 'mark' | 'assignedTimeSeconds' | 'speedKmH'>>) => SaveResult;
+  updateRow: (
+    rowId: string,
+    changes: Partial<Pick<RoadbookRow, 'mark' | 'assignedTimeSeconds' | 'speedKmH' | 'etiqueta'>>
+  ) => SaveResult;
   clearRow: (rowId: string) => SaveResult;
   clearAllRows: () => SaveResult;
   replaceSheet: (rows: RoadbookRow[]) => SaveResult;
@@ -52,7 +56,7 @@ export function useRoadbookSheet(): UseRoadbookSheetResult {
   const updateRow = useCallback(
     (
       rowId: string,
-      changes: Partial<Pick<RoadbookRow, 'mark' | 'assignedTimeSeconds' | 'speedKmH'>>
+      changes: Partial<Pick<RoadbookRow, 'mark' | 'assignedTimeSeconds' | 'speedKmH' | 'etiqueta'>>
     ): SaveResult => {
       const updated = rowsRef.current.map((row) => {
         if (row.id !== rowId) return row;
@@ -63,7 +67,11 @@ export function useRoadbookSheet(): UseRoadbookSheetResult {
             : row.assignedTimeSeconds;
         const speedKmH =
           'speedKmH' in changes ? validateRowSpeed(changes.speedKmH) : row.speedKmH;
-        return { ...row, mark, assignedTimeSeconds, speedKmH };
+        const etiqueta =
+          'etiqueta' in changes && isEtiquetaValida(changes.etiqueta)
+            ? (changes.etiqueta as string)
+            : row.etiqueta;
+        return { ...row, mark, assignedTimeSeconds, speedKmH, etiqueta };
       });
       const result = writeRoadbookSheet(updated);
       if (result.ok) {

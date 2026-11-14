@@ -14,6 +14,12 @@ export interface RoadbookRow {
   mark: string;
   assignedTimeSeconds: number | null;
   speedKmH: number | null;
+  /**
+   * Etiqueta oficial de carrera asignada a esta fila.
+   * "none" = sin etiqueta (valor por defecto para toda fila nueva).
+   * Un valor canónico en mayúsculas de ETIQUETAS_VALIDAS = etiqueta asignada.
+   */
+  etiqueta: string;
 }
 
 export interface RoadbookCounts {
@@ -70,6 +76,7 @@ export function createEmptyRow(idOrIndex: string | number): RoadbookRow {
     mark: '',
     assignedTimeSeconds: null,
     speedKmH: null,
+    etiqueta: 'none',
   };
 }
 
@@ -85,7 +92,8 @@ export function isRoadbookClearingAllowed(isRaceRunning: boolean): boolean {
 
 /**
  * Determines whether a roadbook row has content.
- * Content means: non-empty mark text, an assigned time, or an explicitly typed speed (> 0).
+ * Content means: non-empty mark text, an assigned time, an explicitly typed speed (> 0),
+ * or an etiqueta other than "none".
  * An inherited speed does not count.
  */
 export function rowHasContent(row: RoadbookRow | null | undefined): boolean {
@@ -100,11 +108,13 @@ export function rowHasContent(row: RoadbookRow | null | undefined): boolean {
     row.speedKmH !== undefined &&
     Number.isFinite(row.speedKmH) &&
     row.speedKmH > 0;
-  return hasMark || hasTime || hasSpeed;
+  const hasEtiqueta =
+    typeof row.etiqueta === 'string' && row.etiqueta !== 'none' && row.etiqueta.length > 0;
+  return hasMark || hasTime || hasSpeed || hasEtiqueta;
 }
 
 /**
- * Empties mark, time, and speed of a row, preserving its id.
+ * Empties mark, time, speed and etiqueta of a row, preserving its id.
  */
 export function clearRoadbookRow(row: RoadbookRow): RoadbookRow {
   return {
@@ -112,6 +122,7 @@ export function clearRoadbookRow(row: RoadbookRow): RoadbookRow {
     mark: '',
     assignedTimeSeconds: null,
     speedKmH: null,
+    etiqueta: 'none',
   };
 }
 

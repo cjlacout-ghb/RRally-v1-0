@@ -225,9 +225,14 @@
   text-overflow: ellipsis;
 }
 
-.hdr-mark-text--oficial {
+.hdr-mark-etiqueta {
   color: var(--color-secondary);
   font-weight: 700;
+}
+
+.hdr-mark-separator {
+  color: var(--color-on-surface-variant);
+  margin: 0 4px;
 }
 
 .hdr-mark-estipulado {

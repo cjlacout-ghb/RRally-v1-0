@@ -156,11 +156,11 @@ describe('HojaDeRutaTab Component', () => {
     });
   });
 
-  describe('Énfasis de términos oficiales en tarjetas ANTERIOR / ACTUAL / SIGUIENTE', () => {
-    it('aplica clase hdr-mark-text--oficial y mayúsculas canónicas en ACTUAL y SIGUIENTE', () => {
+  describe('Visualización de etiqueta y marca en tarjetas ANTERIOR / ACTUAL / SIGUIENTE', () => {
+    it('muestra la etiqueta en brass bold y la marca con separador en ACTUAL y SIGUIENTE', () => {
       const testRows: RoadbookRow[] = [
-        { id: 'row-1', mark: 'autolargada', assignedTimeSeconds: 0, speedKmH: 50 },
-        { id: 'row-2', mark: 'control horario', assignedTimeSeconds: 60, speedKmH: 50 },
+        { id: 'row-1', mark: 'puente', assignedTimeSeconds: 0, speedKmH: 50, etiqueta: 'AUTOLARGADA' },
+        { id: 'row-2', mark: 'estación de servicio', assignedTimeSeconds: 60, speedKmH: 50, etiqueta: 'CONTROL HORARIO' },
       ];
 
       const html = renderToString(
@@ -169,18 +169,21 @@ describe('HojaDeRutaTab Component', () => {
         </RaceProvider>
       );
 
-      // ACTUAL muestra AUTOLARGADA en mayúsculas canónicas con hdr-mark-text--oficial
+      // ACTUAL muestra AUTOLARGADA en brass y marca con separador
+      expect(html).toContain('hdr-mark-etiqueta brass');
       expect(html).toContain('AUTOLARGADA');
-      expect(html).toContain('hdr-mark-text--oficial');
+      expect(html).toContain('hdr-mark-separator');
+      expect(html).toContain('puente');
 
-      // SIGUIENTE muestra CONTROL HORARIO en mayúsculas canónicas con hdr-mark-text--oficial
+      // SIGUIENTE muestra CONTROL HORARIO en brass y su marca
       expect(html).toContain('CONTROL HORARIO');
+      expect(html).toContain('estación de servicio');
     });
 
-    it('marcas no oficiales como "árbol" o "autocontrol 2" no reciben hdr-mark-text--oficial', () => {
+    it('una marca libre igual a un término oficial se muestra neutra sin clase de etiqueta', () => {
       const testRows: RoadbookRow[] = [
-        { id: 'row-1', mark: 'árbol', assignedTimeSeconds: 0, speedKmH: 50 },
-        { id: 'row-2', mark: 'autocontrol 2', assignedTimeSeconds: 60, speedKmH: 50 },
+        { id: 'row-1', mark: 'autolargada', assignedTimeSeconds: 0, speedKmH: 50, etiqueta: 'none' },
+        { id: 'row-2', mark: 'árbol', assignedTimeSeconds: 60, speedKmH: 50, etiqueta: 'none' },
       ];
 
       const html = renderToString(
@@ -189,9 +192,9 @@ describe('HojaDeRutaTab Component', () => {
         </RaceProvider>
       );
 
+      expect(html).toContain('autolargada');
       expect(html).toContain('árbol');
-      expect(html).toContain('autocontrol 2');
-      expect(html).not.toContain('hdr-mark-text--oficial');
+      expect(html).not.toContain('hdr-mark-etiqueta');
     });
 
     it('conserva ESTIPULADO con clase brass y estilo intacto', () => {

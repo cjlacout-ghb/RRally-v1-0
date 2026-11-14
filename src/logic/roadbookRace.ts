@@ -24,6 +24,12 @@ export interface RoadbookRaceSnapshot {
   accumulatedDeviationSeconds: number | null;
   deltaState: DeltaState;
   lastMarkedRowIndex: number | null;
+  /** Etiqueta of the previous row (last row in history), or "none" if none. */
+  previousRowEtiqueta: string;
+  /** Etiqueta of the current row (next to be marked), or "none" if none/finished. */
+  currentRowEtiqueta: string;
+  /** Etiqueta of the next row after the current, or "none" if none. */
+  nextRowEtiqueta: string;
 }
 
 /**
@@ -225,6 +231,23 @@ export class RoadbookRaceTracker {
 
   getSnapshot(): RoadbookRaceSnapshot {
     const dev = this.getAccumulatedDeviation();
+
+    // Etiqueta helpers — read from the row's etiqueta field, defaulting to 'none'.
+    const getEtiqueta = (idx: number | null): string => {
+      if (idx === null || !this.rows[idx]) return 'none';
+      return this.rows[idx].etiqueta ?? 'none';
+    };
+
+    // Previous row: last action in history
+    const previousIdx =
+      this.history.length > 0 ? this.history[this.history.length - 1].rowIndex : null;
+
+    // Next row: first loaded row after currentRowIndex
+    let nextIdx: number | null = null;
+    if (this.currentRowIndex !== null) {
+      nextIdx = findNextLoadedRowIndex(this.rows, this.currentRowIndex + 1);
+    }
+
     return {
       currentRowIndex: this.currentRowIndex,
       marks: { ...this.marks },
@@ -233,6 +256,9 @@ export class RoadbookRaceTracker {
       accumulatedDeviationSeconds: dev,
       deltaState: classifyDelta(dev, NEUTRAL_BAND_SECONDS),
       lastMarkedRowIndex: this.getLastMarkedRowIndex(),
+      previousRowEtiqueta: getEtiqueta(previousIdx),
+      currentRowEtiqueta: getEtiqueta(this.currentRowIndex),
+      nextRowEtiqueta: getEtiqueta(nextIdx),
     };
   }
 }

@@ -16,6 +16,7 @@ import {
   INITIAL_SHEET_ROWS,
 } from './logic/roadbookModel';
 import { RowMark, RoadbookAction } from './logic/roadbookRace';
+import { isEtiquetaValida } from './logic/marcaTextos';
 
 /** localStorage key for stage speed — single source of truth. */
 export const STAGE_SPEED_KEY = 'rr_stage_speed';
@@ -45,7 +46,7 @@ export interface StoredCarreraStopwatchState {
 }
 
 export interface StoredRoadbookSheet {
-  version: 1;
+  version: 2;
   rows: RoadbookRow[];
 }
 
@@ -226,7 +227,10 @@ export function writeControlSystem(system: ControlSystem): SaveResult {
 
 /**
  * Reads the stored roadbook sheet from localStorage.
- * Falls back to an initial 20-row sheet if missing, corrupt, unknown version, or storage unavailable.
+ * Falls back to an initial 20-row sheet (and clears the race state) if missing, corrupt,
+ * unknown/old version, or storage unavailable.
+ * Version 2 is current. Any sheet stored in version 1 or an unknown version is discarded.
+ * An invalid or unknown etiqueta value in a row is silently coerced to "none".
  */
 export function readRoadbookSheet(): RoadbookRow[] {
   try {
@@ -237,7 +241,9 @@ export function readRoadbookSheet(): RoadbookRow[] {
     if (!raw) return createInitialSheet();
 
     const parsed = JSON.parse(raw) as Partial<StoredRoadbookSheet>;
-    if (parsed.version !== 1 || !Array.isArray(parsed.rows) || parsed.rows.length === 0) {
+    if (parsed.version !== 2 || !Array.isArray(parsed.rows) || parsed.rows.length === 0) {
+      // Old or unknown version: discard sheet and race state together.
+      clearAllRoadbookData();
       return createInitialSheet();
     }
 
@@ -251,8 +257,10 @@ export function readRoadbookSheet(): RoadbookRow[] {
           ? Math.floor(row.assignedTimeSeconds)
           : null;
       const speedKmH = validateRowSpeed(row.speedKmH);
+      // Validate etiqueta: must be "none" or a canonical official term. Fall back to "none".
+      const etiqueta = isEtiquetaValida(row.etiqueta) ? (row.etiqueta as string) : 'none';
 
-      return { id, mark, assignedTimeSeconds, speedKmH };
+      return { id, mark, assignedTimeSeconds, speedKmH, etiqueta };
     });
 
     return rows;
@@ -280,7 +288,7 @@ export function writeRoadbookSheet(rows: RoadbookRow[]): SaveResult {
     }
 
     const stored: StoredRoadbookSheet = {
-      version: 1,
+      version: 2,
       rows,
     };
     localStorage.setItem(ROADBOOK_SHEET_KEY, JSON.stringify(stored));

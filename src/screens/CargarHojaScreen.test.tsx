@@ -129,7 +129,6 @@ describe('CargarHojaScreen Component', () => {
       );
       expect(htmlMarca).toContain('cargar-hoja-marca-panel');
       expect(htmlMarca).toContain('marca-menu');
-      expect(htmlMarca).toContain('marca-menu-item--oficial');
       expect(htmlMarca).toContain('marca-menu-item--nav');
       expect(htmlMarca).not.toContain('TEXTOS RÁPIDOS');
 
@@ -218,21 +217,21 @@ describe('CargarHojaScreen Component', () => {
       });
       expect(menuBefore).not.toBeNull();
 
-      // 2. Seleccionar AUTOLARGADA en el menú
-      const autolargadaBtn = findElement(container, (el) => {
+      // 2. Seleccionar árbol en el menú
+      const arbolBtn = findElement(container, (el) => {
         const props = getReactProps(el);
-        return props?.children === 'AUTOLARGADA';
+        return props?.children === 'árbol';
       });
-      expect(autolargadaBtn).not.toBeNull();
+      expect(arbolBtn).not.toBeNull();
 
       flushSync(() => {
-        (getReactProps(autolargadaBtn!)?.onClick as () => void)?.();
+        (getReactProps(arbolBtn!)?.onClick as () => void)?.();
       });
       renderApp();
 
       // Verifica que onUpdateRow fue llamado con el texto completo
-      expect(onUpdateRow).toHaveBeenCalledWith('row-1', { mark: 'AUTOLARGADA' });
-      expect(rows[0].mark).toBe('AUTOLARGADA');
+      expect(onUpdateRow).toHaveBeenCalledWith('row-1', { mark: 'árbol' });
+      expect(rows[0].mark).toBe('árbol');
 
       // Verifica que la fila SIGUE seleccionada
       const editingRowAfter = findElement(container, (el) => {
@@ -253,7 +252,7 @@ describe('CargarHojaScreen Component', () => {
         return props?.placeholder === 'Texto libre';
       });
       expect(textInput).not.toBeNull();
-      expect(getReactProps(textInput!)?.value).toBe('AUTOLARGADA');
+      expect(getReactProps(textInput!)?.value).toBe('árbol');
 
       // 3. Tocar el campo MARCA de la fila nuevamente reabre el menú en el nivel superior
       flushSync(() => {
@@ -509,6 +508,7 @@ describe('CargarHojaScreen Component', () => {
         mark: '',
         assignedTimeSeconds: null,
         speedKmH: null,
+        etiqueta: 'none',
       });
 
       renderApp();
@@ -518,6 +518,7 @@ describe('CargarHojaScreen Component', () => {
         mark: '',
         assignedTimeSeconds: null,
         speedKmH: null,
+        etiqueta: 'none',
       });
       expect(rows[1].mark).toBe('PC2');
     });
@@ -837,15 +838,156 @@ describe('CargarHojaScreen Component', () => {
     });
   });
 
-  describe('Énfasis de términos oficiales de carrera en filas', () => {
-    it('muestra término oficial en mayúsculas canónicas y clase brass bold (cargar-hoja-row-mark--oficial)', () => {
+  describe('Pestañas MARCA | ETIQUETA y gestión de etiqueta', () => {
+    it('muestra el selector de pestañas MARCA | ETIQUETA al editar MARCA, iniciando en MARCA', () => {
       const rows: RoadbookRow[] = [
-        { id: 'row-1', mark: 'AUTOLARGADA', assignedTimeSeconds: null, speedKmH: null },
-        { id: 'row-2', mark: 'autolargada', assignedTimeSeconds: null, speedKmH: null },
-        { id: 'row-3', mark: 'neutralizacion', assignedTimeSeconds: null, speedKmH: null },
-        { id: 'row-4', mark: 'árbol', assignedTimeSeconds: null, speedKmH: null },
-        { id: 'row-5', mark: 'autocontrol 2', assignedTimeSeconds: null, speedKmH: null },
-        { id: 'row-6', mark: 'cartel curva derecha', assignedTimeSeconds: null, speedKmH: null },
+        { id: 'row-1', mark: 'árbol', assignedTimeSeconds: null, speedKmH: null, etiqueta: 'none' },
+      ];
+
+      const html = renderToString(
+        <CargarHojaScreen
+          rows={rows}
+          onAddRows={() => {}}
+          onUpdateRow={() => {}}
+          onBack={() => {}}
+          initialEditingRowId="row-1"
+          initialEditingField="mark"
+        />
+      );
+
+      expect(html).toContain('cargar-hoja-tabs');
+      expect(html).toContain('tab-marca');
+      expect(html).toContain('tab-etiqueta');
+      expect(html).toContain('Texto libre'); // input visible en tab MARCA
+    });
+
+    it('al cambiar a la pestaña ETIQUETA, muestra SIN ETIQUETA y las 11 opciones oficiales con check en la actual', () => {
+      const rows: RoadbookRow[] = [
+        { id: 'row-1', mark: 'árbol', assignedTimeSeconds: null, speedKmH: null, etiqueta: 'none' },
+      ];
+
+      const container = (globalThis as unknown as { document: { createElement: (tag: string) => Record<string, unknown> } }).document.createElement('div');
+      container.ownerDocument = (globalThis as unknown as { document: unknown }).document;
+      const root = createRoot(container as unknown as HTMLElement);
+
+      function renderApp() {
+        flushSync(() => {
+          root.render(
+            <CargarHojaScreen
+              rows={rows}
+              onAddRows={() => {}}
+              onUpdateRow={() => {}}
+              onBack={() => {}}
+              initialEditingRowId="row-1"
+              initialEditingField="mark"
+            />
+          );
+        });
+      }
+
+      renderApp();
+
+      // Cambiar a pestaña ETIQUETA
+      const tabEtiquetaBtn = findElement(container, (el) => {
+        const props = getReactProps(el);
+        return props?.id === 'tab-etiqueta';
+      });
+      expect(tabEtiquetaBtn).not.toBeNull();
+
+      flushSync(() => {
+        (getReactProps(tabEtiquetaBtn!)?.onClick as () => void)?.();
+      });
+      renderApp();
+
+      // En pestaña ETIQUETA, el campo libre de texto debe estar oculto
+      const inputEl = findElement(container, (el) => {
+        const props = getReactProps(el);
+        return props?.placeholder === 'Texto libre';
+      });
+      expect(inputEl).toBeNull();
+
+      // Debe mostrar la lista de etiquetas con SIN ETIQUETA seleccionado (con ✓)
+      const sinEtiquetaBtn = findElement(container, (el) => {
+        const props = getReactProps(el);
+        return props?.['aria-label'] === 'SIN ETIQUETA, seleccionado';
+      });
+      expect(sinEtiquetaBtn).not.toBeNull();
+
+      // Comprobar presencia de términos oficiales
+      const largadaBtn = findElement(container, (el) => {
+        const props = getReactProps(el);
+        return props?.['aria-label'] === 'LARGADA';
+      });
+      expect(largadaBtn).not.toBeNull();
+    });
+
+    it('al seleccionar una etiqueta de la lista llama a onUpdateRow y actualiza la fila', () => {
+      const rows: RoadbookRow[] = [
+        { id: 'row-1', mark: 'puente', assignedTimeSeconds: null, speedKmH: null, etiqueta: 'none' },
+      ];
+      const onUpdateRow = vi.fn((_id: string, changes: Partial<RoadbookRow>) => {
+        Object.assign(rows[0], changes);
+      });
+
+      const container = (globalThis as unknown as { document: { createElement: (tag: string) => Record<string, unknown> } }).document.createElement('div');
+      container.ownerDocument = (globalThis as unknown as { document: unknown }).document;
+      const root = createRoot(container as unknown as HTMLElement);
+
+      function renderApp() {
+        flushSync(() => {
+          root.render(
+            <CargarHojaScreen
+              rows={rows}
+              onAddRows={() => {}}
+              onUpdateRow={onUpdateRow}
+              onBack={() => {}}
+              initialEditingRowId="row-1"
+              initialEditingField="mark"
+            />
+          );
+        });
+      }
+
+      renderApp();
+
+      // Cambiar a pestaña ETIQUETA
+      const tabEtiquetaBtn = findElement(container, (el) => {
+        const props = getReactProps(el);
+        return props?.id === 'tab-etiqueta';
+      });
+      flushSync(() => {
+        (getReactProps(tabEtiquetaBtn!)?.onClick as () => void)?.();
+      });
+      renderApp();
+
+      // Seleccionar CONTROL HORARIO
+      const controlHorarioBtn = findElement(container, (el) => {
+        const props = getReactProps(el);
+        return props?.['aria-label'] === 'CONTROL HORARIO';
+      });
+      expect(controlHorarioBtn).not.toBeNull();
+
+      flushSync(() => {
+        (getReactProps(controlHorarioBtn!)?.onClick as () => void)?.();
+      });
+      renderApp();
+
+      expect(onUpdateRow).toHaveBeenCalledWith('row-1', { etiqueta: 'CONTROL HORARIO' });
+      expect(rows[0].etiqueta).toBe('CONTROL HORARIO');
+
+      // Ahora CONTROL HORARIO debe figurar como seleccionado
+      const updatedControlHorario = findElement(container, (el) => {
+        const props = getReactProps(el);
+        return props?.['aria-label'] === 'CONTROL HORARIO, seleccionado';
+      });
+      expect(updatedControlHorario).not.toBeNull();
+    });
+
+    it('muestra etiqueta en la primera línea de la celda MARCA en brass bold', () => {
+      const rows: RoadbookRow[] = [
+        { id: 'row-1', mark: 'puente', assignedTimeSeconds: null, speedKmH: null, etiqueta: 'AUTOLARGADA' },
+        { id: 'row-2', mark: '', assignedTimeSeconds: null, speedKmH: null, etiqueta: 'CONTROL DE PASO' },
+        { id: 'row-3', mark: 'árbol', assignedTimeSeconds: null, speedKmH: null, etiqueta: 'none' },
       ];
 
       const html = renderToString(
@@ -857,148 +999,46 @@ describe('CargarHojaScreen Component', () => {
         />
       );
 
-      // Fila 1 (AUTOLARGADA): clase oficial y texto canónico
-      expect(html).toContain('cargar-hoja-row-mark--oficial');
-      // Fila 2 ('autolargada' en minúsculas): se renderiza como AUTOLARGADA en mayúsculas
-      // Fila 3 ('neutralizacion' sin acento): se renderiza como NEUTRALIZACIÓN con acento canónico
-      expect(html).toContain('NEUTRALIZACIÓN');
+      // Fila 1: muestra AUTOLARGADA en brass y puente
+      expect(html).toContain('cargar-hoja-row-etiqueta brass');
+      expect(html).toContain('AUTOLARGADA');
+      expect(html).toContain('puente');
 
-      // Filas 4, 5 y 6 no son términos oficiales y se muestran tal cual
+      // Fila 2: sólo etiqueta
+      expect(html).toContain('CONTROL DE PASO');
+
+      // Fila 3: sólo marca neutra
       expect(html).toContain('árbol');
-      expect(html).toContain('autocontrol 2');
-      expect(html).toContain('cartel curva derecha');
     });
 
-    it('escribir "autolargada" a mano muestra AUTOLARGADA en brass bold sin cambiar el texto almacenado', () => {
+    it('un texto de marca igual a un término oficial se renderiza neutro si no tiene etiqueta', () => {
       const rows: RoadbookRow[] = [
-        { id: 'row-1', mark: '', assignedTimeSeconds: null, speedKmH: null },
+        { id: 'row-1', mark: 'autolargada', assignedTimeSeconds: null, speedKmH: null, etiqueta: 'none' },
       ];
-      const onUpdateRow = vi.fn((_id: string, changes: Partial<RoadbookRow>) => {
-        Object.assign(rows[0], changes);
-      });
 
-      const container = (globalThis as unknown as { document: { createElement: (tag: string) => Record<string, unknown> } }).document.createElement('div');
-      container.ownerDocument = (globalThis as unknown as { document: unknown }).document;
-      const root = createRoot(container as unknown as HTMLElement);
+      const html = renderToString(
+        <CargarHojaScreen
+          rows={rows}
+          onAddRows={() => {}}
+          onUpdateRow={() => {}}
+          onBack={() => {}}
+        />
+      );
 
-      function renderApp() {
-        flushSync(() => {
-          root.render(
-            <CargarHojaScreen
-              rows={rows}
-              onAddRows={() => {}}
-              onUpdateRow={onUpdateRow}
-              onBack={() => {}}
-            />
-          );
-        });
-      }
-
-      renderApp();
-
-      // Iniciar edición de la fila 1
-      const markBtn = findElement(container, (el) => {
-        const props = getReactProps(el);
-        return props?.['aria-label'] === 'Editar marca de la fila 1';
-      });
-      flushSync(() => {
-        (getReactProps(markBtn!)?.onClick as () => void)?.();
-      });
-      renderApp();
-
-      // Simular tipear "autolargada" en minúsculas en el input de texto libre
-      const inputEl = findElement(container, (el) => {
-        const props = getReactProps(el);
-        return props?.placeholder === 'Texto libre';
-      });
-      expect(inputEl).not.toBeNull();
-
-      flushSync(() => {
-        (getReactProps(inputEl!)?.onChange as (e: unknown) => void)?.({
-          target: { value: 'autolargada' },
-        });
-      });
-      renderApp();
-
-      // El valor almacenado es exactamente lo que tipeó el usuario
-      expect(onUpdateRow).toHaveBeenCalledWith('row-1', { mark: 'autolargada' });
-      expect(rows[0].mark).toBe('autolargada');
-
-      // Pero el botón de la fila muestra AUTOLARGADA en mayúsculas con la clase de énfasis oficial
-      const updatedMarkBtn = findElement(container, (el) => {
-        const props = getReactProps(el);
-        return props?.['aria-label'] === 'Editar marca de la fila 1';
-      });
-      expect(updatedMarkBtn).not.toBeNull();
-      const markProps = getReactProps(updatedMarkBtn!);
-      expect(String(markProps?.className || '')).toContain('cargar-hoja-row-mark--oficial');
-      expect(markProps?.children).toBe('AUTOLARGADA');
+      expect(html).toContain('autolargada');
+      expect(html).not.toContain('cargar-hoja-row-etiqueta');
     });
 
-    it('seleccionar AUTOLARGADA del menú lo muestra en brass bold en la fila', () => {
+    it('el botón X de vaciado de fila resetea también la etiqueta a "none"', () => {
       const rows: RoadbookRow[] = [
-        { id: 'row-1', mark: '', assignedTimeSeconds: null, speedKmH: null },
+        { id: 'row-1', mark: 'puente', assignedTimeSeconds: 100, speedKmH: 50, etiqueta: 'LARGADA' },
       ];
-      const onUpdateRow = vi.fn((_id: string, changes: Partial<RoadbookRow>) => {
-        Object.assign(rows[0], changes);
+      const onClearRow = vi.fn((id: string) => {
+        rows[0].mark = '';
+        rows[0].assignedTimeSeconds = null;
+        rows[0].speedKmH = null;
+        rows[0].etiqueta = 'none';
       });
-
-      const container = (globalThis as unknown as { document: { createElement: (tag: string) => Record<string, unknown> } }).document.createElement('div');
-      container.ownerDocument = (globalThis as unknown as { document: unknown }).document;
-      const root = createRoot(container as unknown as HTMLElement);
-
-      function renderApp() {
-        flushSync(() => {
-          root.render(
-            <CargarHojaScreen
-              rows={rows}
-              onAddRows={() => {}}
-              onUpdateRow={onUpdateRow}
-              onBack={() => {}}
-            />
-          );
-        });
-      }
-
-      renderApp();
-
-      // Iniciar edición
-      const markBtn = findElement(container, (el) => {
-        const props = getReactProps(el);
-        return props?.['aria-label'] === 'Editar marca de la fila 1';
-      });
-      flushSync(() => {
-        (getReactProps(markBtn!)?.onClick as () => void)?.();
-      });
-      renderApp();
-
-      // Seleccionar AUTOLARGADA
-      const autolargadaBtn = findElement(container, (el) => {
-        const props = getReactProps(el);
-        return props?.children === 'AUTOLARGADA';
-      });
-      expect(autolargadaBtn).not.toBeNull();
-
-      flushSync(() => {
-        (getReactProps(autolargadaBtn!)?.onClick as () => void)?.();
-      });
-      renderApp();
-
-      expect(onUpdateRow).toHaveBeenCalledWith('row-1', { mark: 'AUTOLARGADA' });
-      const updatedMarkBtn = findElement(container, (el) => {
-        const props = getReactProps(el);
-        return props?.['aria-label'] === 'Editar marca de la fila 1';
-      });
-      const markProps = getReactProps(updatedMarkBtn!);
-      expect(String(markProps?.className || '')).toContain('cargar-hoja-row-mark--oficial');
-      expect(markProps?.children).toBe('AUTOLARGADA');
-    });
-
-    it('textos no oficiales como "autocontrol 2" o señales de ruta no reciben clase oficial', () => {
-      const rows: RoadbookRow[] = [
-        { id: 'row-1', mark: 'autocontrol 2', assignedTimeSeconds: null, speedKmH: null },
-        { id: 'row-2', mark: 'árbol', assignedTimeSeconds: null, speedKmH: null },
-      ];
 
       const container = (globalThis as unknown as { document: { createElement: (tag: string) => Record<string, unknown> } }).document.createElement('div');
       container.ownerDocument = (globalThis as unknown as { document: unknown }).document;
@@ -1010,26 +1050,24 @@ describe('CargarHojaScreen Component', () => {
             rows={rows}
             onAddRows={() => {}}
             onUpdateRow={() => {}}
+            onClearRow={onClearRow}
             onBack={() => {}}
           />
         );
       });
 
-      const markBtn1 = findElement(container, (el) => {
+      const clearBtn = findElement(container, (el) => {
         const props = getReactProps(el);
-        return props?.['aria-label'] === 'Editar marca de la fila 1';
+        return props?.['aria-label'] === 'Borrar fila 1';
       });
-      const props1 = getReactProps(markBtn1!);
-      expect(String(props1?.className || '')).not.toContain('cargar-hoja-row-mark--oficial');
-      expect(props1?.children).toBe('autocontrol 2');
+      expect(clearBtn).not.toBeNull();
 
-      const markBtn2 = findElement(container, (el) => {
-        const props = getReactProps(el);
-        return props?.['aria-label'] === 'Editar marca de la fila 2';
+      flushSync(() => {
+        (getReactProps(clearBtn!)?.onClick as () => void)?.();
       });
-      const props2 = getReactProps(markBtn2!);
-      expect(String(props2?.className || '')).not.toContain('cargar-hoja-row-mark--oficial');
-      expect(props2?.children).toBe('árbol');
+
+      expect(onClearRow).toHaveBeenCalledWith('row-1');
+      expect(rows[0].etiqueta).toBe('none');
     });
   });
 });

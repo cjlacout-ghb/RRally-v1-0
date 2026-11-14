@@ -3,7 +3,6 @@ import {
   MARCA_TEXTOS_MAIN,
   MARCA_TEXTOS_CARTEL,
   filtrarMarcaTextos,
-  esTerminoOficial,
 } from '../logic/marcaTextos';
 import './MarcaMenu.css';
 
@@ -22,8 +21,8 @@ interface TopLevelEntry {
 
 /**
  * Entradas del nivel superior ordenadas con colación española:
- * 49 textos principales + entrada "CARTEL ›" (que se ordena como la palabra "cartel").
- * Total: exactamente 50 entradas.
+ * 38 textos principales de señales de ruta + entrada "CARTEL ›" (ordenada como la palabra "cartel").
+ * Total: exactamente 39 entradas.
  */
 const TOP_LEVEL_ENTRIES: readonly TopLevelEntry[] = (() => {
   const esCollator = new Intl.Collator('es', {
@@ -85,23 +84,20 @@ export function MarcaMenu({ filterQuery, onSeleccionar }: MarcaMenuProps) {
             SIN COINCIDENCIAS
           </div>
         ) : (
-          filterMatches.map((item) => {
-            const esOficial = esTerminoOficial(item.textoCompleto);
-            return (
-              <button
-                key={item.textoCompleto}
-                type="button"
-                role="option"
-                aria-selected="false"
-                className={`marca-menu-item${esOficial ? ' marca-menu-item--oficial' : ''}`}
-                onMouseDown={(e) => e.preventDefault()}
-                onClick={() => onSeleccionar(item.textoCompleto)}
-                aria-label={item.textoCompleto}
-              >
-                {item.textoMostrado}
-              </button>
-            );
-          })
+          filterMatches.map((item) => (
+            <button
+              key={item.textoCompleto}
+              type="button"
+              role="option"
+              aria-selected="false"
+              className="marca-menu-item"
+              onMouseDown={(e) => e.preventDefault()}
+              onClick={() => onSeleccionar(item.textoCompleto)}
+              aria-label={item.textoCompleto}
+            >
+              {item.textoMostrado}
+            </button>
+          ))
         )}
       </div>
     );
@@ -149,7 +145,7 @@ export function MarcaMenu({ filterQuery, onSeleccionar }: MarcaMenuProps) {
     );
   }
 
-  // Nivel superior (50 entradas: 49 textos principales + CARTEL ›)
+  // Nivel superior (39 entradas: 38 textos principales + CARTEL ›)
   return (
     <div
       ref={containerRef}
@@ -174,14 +170,13 @@ export function MarcaMenu({ filterQuery, onSeleccionar }: MarcaMenuProps) {
             </button>
           );
         }
-        const esOficial = esTerminoOficial(entry.textoCompleto);
         return (
           <button
             key={entry.textoCompleto}
             type="button"
             role="option"
             aria-selected="false"
-            className={`marca-menu-item${esOficial ? ' marca-menu-item--oficial' : ''}`}
+            className="marca-menu-item"
             onMouseDown={(e) => e.preventDefault()}
             onClick={() => onSeleccionar(entry.textoCompleto)}
             aria-label={entry.textoCompleto}

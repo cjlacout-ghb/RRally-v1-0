@@ -238,4 +238,52 @@ describe('roadbookRace', () => {
       expect(tracker.isFinished()).toBe(false);
     });
   });
+
+  describe('etiqueta exposure in race snapshot (previous, current, next)', () => {
+    const labeledRows: RoadbookRow[] = [
+      { id: '1', mark: 'Start', assignedTimeSeconds: 0, speedKmH: 50, etiqueta: 'LARGADA' },
+      { id: '2', mark: 'Empty', assignedTimeSeconds: null, speedKmH: null, etiqueta: 'none' }, // unloaded row
+      { id: '3', mark: 'PC1', assignedTimeSeconds: 100, speedKmH: 60, etiqueta: 'CONTROL DE PASO' },
+      { id: '4', mark: 'PC2', assignedTimeSeconds: 200, speedKmH: 60, etiqueta: 'none' },
+      { id: '5', mark: 'Fin', assignedTimeSeconds: 300, speedKmH: 50, etiqueta: 'LLEGADA' },
+    ];
+
+    it('exposes initial previous="none", current="LARGADA", next="CONTROL DE PASO"', () => {
+      const tracker = new RoadbookRaceTracker(labeledRows);
+      const snap = tracker.getSnapshot();
+
+      expect(snap.previousRowEtiqueta).toBe('none');
+      expect(snap.currentRowEtiqueta).toBe('LARGADA');
+      expect(snap.nextRowEtiqueta).toBe('CONTROL DE PASO');
+    });
+
+    it('updates previous, current and next etiquetas when advancing', () => {
+      const tracker = new RoadbookRaceTracker(labeledRows);
+      tracker.mark(0); // marks row 0 (LARGADA). Next loaded row is row 2 (CONTROL DE PASO).
+
+      const snap1 = tracker.getSnapshot();
+      expect(snap1.previousRowEtiqueta).toBe('LARGADA');
+      expect(snap1.currentRowEtiqueta).toBe('CONTROL DE PASO');
+      expect(snap1.nextRowEtiqueta).toBe('none'); // row 3 has etiqueta: 'none'
+
+      tracker.skip(); // skips row 2. Next loaded row is row 3.
+      const snap2 = tracker.getSnapshot();
+      expect(snap2.previousRowEtiqueta).toBe('CONTROL DE PASO');
+      expect(snap2.currentRowEtiqueta).toBe('none');
+      expect(snap2.nextRowEtiqueta).toBe('LLEGADA'); // row 4 has etiqueta: 'LLEGADA'
+
+      tracker.mark(200000); // marks row 3. Next loaded row is row 4 (LLEGADA, last row).
+      const snap3 = tracker.getSnapshot();
+      expect(snap3.previousRowEtiqueta).toBe('none');
+      expect(snap3.currentRowEtiqueta).toBe('LLEGADA');
+      expect(snap3.nextRowEtiqueta).toBe('none'); // no row after
+
+      tracker.mark(300000); // marks row 4. Finished.
+      const snap4 = tracker.getSnapshot();
+      expect(snap4.isFinished).toBe(true);
+      expect(snap4.previousRowEtiqueta).toBe('LLEGADA');
+      expect(snap4.currentRowEtiqueta).toBe('none');
+      expect(snap4.nextRowEtiqueta).toBe('none');
+    });
+  });
 });
