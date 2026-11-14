@@ -226,7 +226,7 @@ export function writeControlSystem(system: ControlSystem): SaveResult {
 
 /**
  * Reads the stored roadbook sheet from localStorage.
- * Falls back to an initial 50-row sheet if missing, corrupt, unknown version, or storage unavailable.
+ * Falls back to an initial 20-row sheet if missing, corrupt, unknown version, or storage unavailable.
  */
 export function readRoadbookSheet(): RoadbookRow[] {
   try {
@@ -374,7 +374,7 @@ export function clearRoadbookRaceState(): SaveResult {
 
 /**
  * Clears all roadbook data on BORRAR TODO confirm:
- * - Empties all rows, resetting the sheet back to 50 empty rows.
+ * - Empties all rows, resetting the sheet back to 20 empty rows.
  * - Clears real marks, skips, and race state from localStorage.
  * - Leaves stopwatch untouched.
  * - Persists the initial sheet like any other sheet edit.

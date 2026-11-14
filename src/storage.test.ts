@@ -26,6 +26,7 @@ import {
   StoredCarreraStopwatchState,
 } from './storage';
 import { DEFAULT_CORRECTION_FACTOR } from './logic/gpsConstants';
+import { INITIAL_SHEET_ROWS } from './logic/roadbookModel';
 
 class MockStorage implements Storage {
   private store: Map<string, string> = new Map();
@@ -248,9 +249,10 @@ describe('storage module', () => {
   });
 
   describe('readRoadbookSheet and writeRoadbookSheet', () => {
-    it('returns default 50-row sheet when nothing is stored', () => {
+    it('returns default 20-row sheet when nothing is stored', () => {
       const sheet = readRoadbookSheet();
-      expect(sheet).toHaveLength(50);
+      expect(sheet).toHaveLength(INITIAL_SHEET_ROWS);
+      expect(INITIAL_SHEET_ROWS).toBe(20);
       expect(sheet[0].assignedTimeSeconds).toBeNull();
     });
 
@@ -268,18 +270,33 @@ describe('storage module', () => {
       expect(loaded[1]).toEqual({ id: '2', mark: 'PC1', assignedTimeSeconds: 120, speedKmH: 60 });
     });
 
+    it('loads previously saved sheet with 50 rows intact without truncation', () => {
+      const existing50Rows = Array.from({ length: 50 }, (_, i) => ({
+        id: `row-${i + 1}`,
+        mark: i === 0 ? 'START' : '',
+        assignedTimeSeconds: i === 0 ? 0 : null,
+        speedKmH: i === 0 ? 60 : null,
+      }));
+      writeRoadbookSheet(existing50Rows);
+
+      const loaded = readRoadbookSheet();
+      expect(loaded).toHaveLength(50);
+      expect(loaded[0].mark).toBe('START');
+      expect(loaded[49].id).toBe('row-50');
+    });
+
     it('falls back to initial sheet on corrupted JSON', () => {
       mockStorage.setItem(ROADBOOK_SHEET_KEY, '{ invalid json');
       const loaded = readRoadbookSheet();
-      expect(loaded).toHaveLength(50);
+      expect(loaded).toHaveLength(INITIAL_SHEET_ROWS);
     });
 
     it('falls back to initial sheet on unknown version or missing rows', () => {
       mockStorage.setItem(ROADBOOK_SHEET_KEY, JSON.stringify({ version: 99, rows: [] }));
-      expect(readRoadbookSheet()).toHaveLength(50);
+      expect(readRoadbookSheet()).toHaveLength(INITIAL_SHEET_ROWS);
 
       mockStorage.setItem(ROADBOOK_SHEET_KEY, JSON.stringify({ version: 1 }));
-      expect(readRoadbookSheet()).toHaveLength(50);
+      expect(readRoadbookSheet()).toHaveLength(INITIAL_SHEET_ROWS);
     });
 
     it('sanitizes rows on read (truncates long marks, strips invalid speed)', () => {
@@ -357,7 +374,7 @@ describe('storage module', () => {
       expect(readRoadbookSheet()).toHaveLength(1);
     });
 
-    it('clearAllRoadbookData resets sheet to 50 empty rows and clears race state', () => {
+    it('clearAllRoadbookData resets sheet to 20 empty rows and clears race state', () => {
       // Setup populated sheet and race state
       const populatedSheet = Array.from({ length: 70 }, (_, i) => ({
         id: `row-${i + 1}`,
@@ -374,7 +391,7 @@ describe('storage module', () => {
       // Clear all
       const { rows, saveResult } = clearAllRoadbookData();
       expect(saveResult).toEqual({ ok: true });
-      expect(rows).toHaveLength(50);
+      expect(rows).toHaveLength(INITIAL_SHEET_ROWS);
       expect(rows[0]).toEqual({
         id: 'row-1',
         mark: '',
@@ -382,9 +399,9 @@ describe('storage module', () => {
         speedKmH: null,
       });
 
-      // Storage has 50 empty rows and no race state
+      // Storage has 20 empty rows and no race state
       const reloadedSheet = readRoadbookSheet();
-      expect(reloadedSheet).toHaveLength(50);
+      expect(reloadedSheet).toHaveLength(INITIAL_SHEET_ROWS);
       expect(reloadedSheet.every((r) => r.mark === '' && r.assignedTimeSeconds === null && r.speedKmH === null)).toBe(true);
       expect(readRoadbookRaceState()).toBeNull();
     });

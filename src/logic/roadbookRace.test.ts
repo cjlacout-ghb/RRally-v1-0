@@ -179,4 +179,63 @@ describe('roadbookRace', () => {
       expect(tracker.getSnapshot().deltaState).toBe('neutral');
     });
   });
+
+  describe('race behavior with short sheet (20 rows)', () => {
+    it('advances cleanly to the end of a 20-row sheet without out-of-range index', () => {
+      // 20-row sheet where every row has an assigned time
+      const twentyRows: RoadbookRow[] = Array.from({ length: 20 }, (_, i) => ({
+        id: `row-${i + 1}`,
+        mark: `Marca ${i + 1}`,
+        assignedTimeSeconds: i * 60,
+        speedKmH: 50,
+      }));
+
+      const tracker = new RoadbookRaceTracker(twentyRows);
+      expect(tracker.getCurrentRowIndex()).toBe(0);
+
+      // Advance through first 19 rows
+      for (let i = 0; i < 19; i++) {
+        expect(tracker.getCurrentRowIndex()).toBe(i);
+        const ok = tracker.mark(i * 60 * 1000);
+        expect(ok).toBe(true);
+      }
+
+      // Current row is now the last row: index 19
+      expect(tracker.getCurrentRowIndex()).toBe(19);
+      expect(tracker.isFinished()).toBe(false);
+
+      // Mark the 20th (last) row
+      const finalMark = tracker.mark(19 * 60 * 1000);
+      expect(finalMark).toBe(true);
+
+      // Finished state reached safely
+      expect(tracker.getCurrentRowIndex()).toBeNull();
+      expect(tracker.isFinished()).toBe(true);
+      expect(tracker.mark(20 * 60 * 1000)).toBe(false);
+      expect(tracker.skip()).toBe(false);
+
+      // Undo goes back to the last row (19)
+      const undoOk = tracker.undo();
+      expect(undoOk).toBe(true);
+      expect(tracker.getCurrentRowIndex()).toBe(19);
+      expect(tracker.isFinished()).toBe(false);
+    });
+
+    it('works with a single-row loaded sheet', () => {
+      const singleRow: RoadbookRow[] = [
+        { id: 'row-1', mark: 'ONLY', assignedTimeSeconds: 0, speedKmH: 50 },
+      ];
+      const tracker = new RoadbookRaceTracker(singleRow);
+      expect(tracker.getCurrentRowIndex()).toBe(0);
+      expect(tracker.isFinished()).toBe(false);
+
+      tracker.mark(100);
+      expect(tracker.getCurrentRowIndex()).toBeNull();
+      expect(tracker.isFinished()).toBe(true);
+
+      tracker.undo();
+      expect(tracker.getCurrentRowIndex()).toBe(0);
+      expect(tracker.isFinished()).toBe(false);
+    });
+  });
 });

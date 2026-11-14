@@ -4,7 +4,7 @@
 
 import { formatSpeed } from './format';
 
-export const INITIAL_SHEET_ROWS = 50;
+export const INITIAL_SHEET_ROWS = 20;
 export const ROWS_ADD_CHUNK = 10;
 export const MAX_SHEET_ROWS = 300;
 export const MAX_MARK_TEXT_LENGTH = 40;
@@ -34,7 +34,7 @@ export function countLoadedRows(rows: RoadbookRow[]): RoadbookCounts {
 
 /**
  * Formats the loaded rows counter as "N DE M FILAS"
- * (e.g. "0 DE 50 FILAS", "38 DE 50 FILAS", "38 DE 60 FILAS").
+ * (e.g. "0 DE 20 FILAS", "15 DE 20 FILAS", "15 DE 30 FILAS").
  */
 export function formatRoadbookCounter(rows: RoadbookRow[]): string {
   const { loaded, total } = countLoadedRows(rows);
@@ -123,7 +123,7 @@ export function clearRowInSheet(rows: RoadbookRow[], rowId: string): RoadbookRow
 }
 
 /**
- * Creates an initial sheet with 50 empty rows.
+ * Creates an initial sheet with 20 empty rows (or custom rowCount up to MAX_SHEET_ROWS).
  */
 export function createInitialSheet(rowCount: number = INITIAL_SHEET_ROWS): RoadbookRow[] {
   const count = Math.min(Math.max(1, rowCount), MAX_SHEET_ROWS);

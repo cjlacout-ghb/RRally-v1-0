@@ -22,8 +22,9 @@ import {
 } from './roadbookModel';
 
 describe('roadbookModel', () => {
-  it('creates an initial sheet with 50 empty rows', () => {
+  it('creates an initial sheet with 20 empty rows', () => {
     const sheet = createInitialSheet();
+    expect(INITIAL_SHEET_ROWS).toBe(20);
     expect(sheet).toHaveLength(INITIAL_SHEET_ROWS);
     expect(sheet[0]).toEqual({
       id: 'row-1',
@@ -31,20 +32,20 @@ describe('roadbookModel', () => {
       assignedTimeSeconds: null,
       speedKmH: null,
     });
-    expect(sheet[49].id).toBe('row-50');
+    expect(sheet[19].id).toBe('row-20');
   });
 
   it('adds 10 rows when addSheetRows is called', () => {
     const sheet = createInitialSheet();
     const updated = addSheetRows(sheet, ROWS_ADD_CHUNK);
-    expect(updated).toHaveLength(60);
-    expect(updated[50].id).toBe('row-51');
-    expect(updated[59].id).toBe('row-60');
+    expect(updated).toHaveLength(30);
+    expect(updated[20].id).toBe('row-21');
+    expect(updated[29].id).toBe('row-30');
   });
 
   it('enforces maximum row limit of 300', () => {
-    let sheet = createInitialSheet(); // 50
-    for (let i = 0; i < 30; i++) {
+    let sheet = createInitialSheet(); // 20
+    for (let i = 0; i < 35; i++) {
       sheet = addSheetRows(sheet, 10);
     }
     expect(sheet).toHaveLength(MAX_SHEET_ROWS);
@@ -103,21 +104,21 @@ describe('roadbookModel', () => {
   });
 
   it('counts loaded rows and formats as N DE M FILAS', () => {
-    const emptySheet = createInitialSheet(); // 50 rows
-    expect(countLoadedRows(emptySheet)).toEqual({ loaded: 0, total: 50 });
-    expect(formatRoadbookCounter(emptySheet)).toBe('0 DE 50 FILAS');
+    const emptySheet = createInitialSheet(); // 20 rows
+    expect(countLoadedRows(emptySheet)).toEqual({ loaded: 0, total: INITIAL_SHEET_ROWS });
+    expect(formatRoadbookCounter(emptySheet)).toBe('0 DE 20 FILAS');
 
-    // Load 38 rows
-    for (let i = 0; i < 38; i++) {
+    // Load 15 rows
+    for (let i = 0; i < 15; i++) {
       emptySheet[i].assignedTimeSeconds = (i + 1) * 10;
     }
-    expect(countLoadedRows(emptySheet)).toEqual({ loaded: 38, total: 50 });
-    expect(formatRoadbookCounter(emptySheet)).toBe('38 DE 50 FILAS');
+    expect(countLoadedRows(emptySheet)).toEqual({ loaded: 15, total: 20 });
+    expect(formatRoadbookCounter(emptySheet)).toBe('15 DE 20 FILAS');
 
     // Add 10 rows
     const expanded = addSheetRows(emptySheet, 10);
-    expect(countLoadedRows(expanded)).toEqual({ loaded: 38, total: 60 });
-    expect(formatRoadbookCounter(expanded)).toBe('38 DE 60 FILAS');
+    expect(countLoadedRows(expanded)).toEqual({ loaded: 15, total: 30 });
+    expect(formatRoadbookCounter(expanded)).toBe('15 DE 30 FILAS');
   });
 });
 
