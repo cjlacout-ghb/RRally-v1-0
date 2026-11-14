@@ -17,6 +17,7 @@ import { clearAllRoadbookData } from '../storage';
 import { useConfirmReset } from '../hooks/useConfirmReset';
 import { useRaceSession } from '../context/RaceContext';
 import { MarcaMenu } from '../components/MarcaMenu';
+import { obtenerTerminoOficial } from '../logic/marcaTextos';
 import './CargarHojaScreen.css';
 
 interface CargarHojaScreenProps {
@@ -275,6 +276,8 @@ export function CargarHojaScreen({
                 : EMPTY_TIME_PLACEHOLDER;
             const speedDisplay = getRowDisplaySpeed(rows, idx);
             const hasContent = rowHasContent(row);
+            const officialInfo = obtenerTerminoOficial(row.mark);
+            const markDisplayText = officialInfo.esOficial ? officialInfo.canonico : row.mark;
 
             return (
               <div
@@ -290,11 +293,11 @@ export function CargarHojaScreen({
                 </span>
                 <button
                   type="button"
-                  className="cargar-hoja-row-mark"
+                  className={`cargar-hoja-row-mark${officialInfo.esOficial ? ' cargar-hoja-row-mark--oficial' : ''}`}
                   onClick={() => startEditRow(row, 'mark')}
                   aria-label={`Editar marca de la fila ${idx + 1}`}
                 >
-                  {row.mark || (
+                  {markDisplayText || (
                     <span className="cargar-hoja-placeholder">
                       Tocá para elegir texto
                     </span>

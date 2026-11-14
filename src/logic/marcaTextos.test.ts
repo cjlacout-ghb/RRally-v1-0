@@ -6,6 +6,8 @@ import {
   coincideFiltro,
   normalizarTexto,
   esTerminoOficial,
+  obtenerTerminoOficial,
+  getOfficialRaceTerm,
 } from './marcaTextos';
 
 describe('marcaTextos — listas y orden alfabético', () => {
@@ -155,5 +157,132 @@ describe('marcaTextos — esTerminoOficial', () => {
     for (const cartel of MARCA_TEXTOS_CARTEL) {
       expect(esTerminoOficial(cartel)).toBe(false);
     }
+  });
+});
+
+describe('marcaTextos — obtenerTerminoOficial', () => {
+  const terminosEsperados = [
+    'AUTOCONTROL',
+    'AUTOLARGADA',
+    'CONTROL DE PASO',
+    'CONTROL HORARIO',
+    'CONTROL SECRETO',
+    'ETAPA FIN',
+    'ETAPA INICIO',
+    'LARGADA',
+    'LLEGADA',
+    'NEUTRALIZACIÓN',
+    'REINICIO',
+  ];
+
+  it('coincidencia exacta en mayúsculas para todos los 11 términos oficiales', () => {
+    for (const termino of terminosEsperados) {
+      const res = obtenerTerminoOficial(termino);
+      expect(res.esOficial).toBe(true);
+      expect(res.canonico).toBe(termino);
+      expect(res.isOfficial).toBe(true);
+      expect(res.canonical).toBe(termino);
+    }
+  });
+
+  it('coincidencia insensible a mayúsculas devuelve forma canónica en mayúsculas', () => {
+    const lowercases: Record<string, string> = {
+      'autocontrol': 'AUTOCONTROL',
+      'autolargada': 'AUTOLARGADA',
+      'control de paso': 'CONTROL DE PASO',
+      'control horario': 'CONTROL HORARIO',
+      'control secreto': 'CONTROL SECRETO',
+      'etapa fin': 'ETAPA FIN',
+      'etapa inicio': 'ETAPA INICIO',
+      'largada': 'LARGADA',
+      'llegada': 'LLEGADA',
+      'neutralización': 'NEUTRALIZACIÓN',
+      'reinicio': 'REINICIO',
+      'AutoControl': 'AUTOCONTROL',
+      'AutoLargada': 'AUTOLARGADA',
+      'Control Horario': 'CONTROL HORARIO',
+    };
+
+    for (const [input, expectedCanonical] of Object.entries(lowercases)) {
+      const res = obtenerTerminoOficial(input);
+      expect(res.esOficial).toBe(true);
+      expect(res.canonico).toBe(expectedCanonical);
+    }
+  });
+
+  it('coincidencia insensible a acentos (e.g. neutralizacion)', () => {
+    const sinAcento = obtenerTerminoOficial('neutralizacion');
+    expect(sinAcento.esOficial).toBe(true);
+    expect(sinAcento.canonico).toBe('NEUTRALIZACIÓN');
+
+    const mayusSinAcento = obtenerTerminoOficial('NEUTRALIZACION');
+    expect(mayusSinAcento.esOficial).toBe(true);
+    expect(mayusSinAcento.canonico).toBe('NEUTRALIZACIÓN');
+  });
+
+  it('ignora espacios iniciales y finales', () => {
+    const conEspacios = obtenerTerminoOficial('   control horario   ');
+    expect(conEspacios.esOficial).toBe(true);
+    expect(conEspacios.canonico).toBe('CONTROL HORARIO');
+
+    const conTabulaciones = obtenerTerminoOficial('\t  autolargada \n ');
+    expect(conTabulaciones.esOficial).toBe(true);
+    expect(conTabulaciones.canonico).toBe('AUTOLARGADA');
+  });
+
+  it('no coincide con textos no oficiales ni señales de ruta', () => {
+    const noOficiales = ['árbol', 'badén', 'FIN', 'antena', 'puente', 'rotonda', 'semáforo'];
+    for (const txt of noOficiales) {
+      const res = obtenerTerminoOficial(txt);
+      expect(res.esOficial).toBe(false);
+      expect(res.canonico).toBeNull();
+    }
+  });
+
+  it('no coincide con ningún texto del grupo cartel', () => {
+    for (const cartel of MARCA_TEXTOS_CARTEL) {
+      const res = obtenerTerminoOficial(cartel);
+      expect(res.esOficial).toBe(false);
+      expect(res.canonico).toBeNull();
+    }
+  });
+
+  it('no coincide con texto vacío o compuesto sólo de espacios', () => {
+    expect(obtenerTerminoOficial('')).toEqual({
+      esOficial: false,
+      canonico: null,
+      isOfficial: false,
+      canonical: null,
+    });
+    expect(obtenerTerminoOficial('   ')).toEqual({
+      esOficial: false,
+      canonico: null,
+      isOfficial: false,
+      canonical: null,
+    });
+  });
+
+  it('no coincide con textos que sólo contienen un término oficial como subcadena', () => {
+    const subcadenas = [
+      'autocontrol 2',
+      'autocontrol2',
+      '2 autocontrol',
+      'PRE-LARGADA',
+      'LARGADA FINAL',
+      'largada y llegada',
+      'control de paso 1',
+      'reinicio etapa',
+      'mi neutralizacion',
+    ];
+
+    for (const txt of subcadenas) {
+      const res = obtenerTerminoOficial(txt);
+      expect(res.esOficial).toBe(false);
+      expect(res.canonico).toBeNull();
+    }
+  });
+
+  it('getOfficialRaceTerm alias funciona idénticamente', () => {
+    expect(getOfficialRaceTerm('autolargada')).toEqual(obtenerTerminoOficial('autolargada'));
   });
 });

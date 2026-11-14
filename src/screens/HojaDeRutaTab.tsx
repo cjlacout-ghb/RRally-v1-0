@@ -14,6 +14,7 @@ import {
   writeRoadbookRaceState,
   clearRoadbookRaceState,
 } from '../storage';
+import { obtenerTerminoOficial } from '../logic/marcaTextos';
 import './HojaDeRutaTab.css';
 
 interface HojaDeRutaTabProps {
@@ -336,14 +337,19 @@ export function HojaDeRutaTab({ isVisible, rows, onOpenCargarHoja }: HojaDeRutaT
         <div className="hdr-mark-card hdr-mark-card--anterior card">
           <div className="hdr-mark-card-left">
             <span className="hdr-mark-card-badge label-md on-surface-variant">ANTERIOR</span>
-            {anteriorInfo ? (
-              <>
-                <span className="hdr-mark-num label-md on-surface-variant">
-                  {anteriorIdx! + 1}
-                </span>
-                <span className="hdr-mark-text">{anteriorInfo.row.mark || '—'}</span>
-              </>
-            ) : (
+            {anteriorInfo ? (() => {
+              const antOficial = obtenerTerminoOficial(anteriorInfo.row.mark);
+              return (
+                <>
+                  <span className="hdr-mark-num label-md on-surface-variant">
+                    {anteriorIdx! + 1}
+                  </span>
+                  <span className={`hdr-mark-text${antOficial.esOficial ? ' hdr-mark-text--oficial' : ''}`}>
+                    {antOficial.esOficial ? antOficial.canonico : (anteriorInfo.row.mark || '—')}
+                  </span>
+                </>
+              );
+            })() : (
               <span className="hdr-mark-text on-surface-variant">—</span>
             )}
           </div>
@@ -391,11 +397,18 @@ export function HojaDeRutaTab({ isVisible, rows, onOpenCargarHoja }: HojaDeRutaT
             ) : null}
           </div>
           <div className="hdr-mark-card-text-row">
-            <span className={`hdr-mark-text${actualInfo ? '' : ' on-surface-variant'}`}>
-              {actualInfo
-                ? (actualInfo.row.mark || '—')
-                : (raceSnapshot.isFinished ? 'FIN DE HOJA' : '—')}
-            </span>
+            {actualInfo ? (() => {
+              const actOficial = obtenerTerminoOficial(actualInfo.row.mark);
+              return (
+                <span className={`hdr-mark-text${actOficial.esOficial ? ' hdr-mark-text--oficial' : ''}`}>
+                  {actOficial.esOficial ? actOficial.canonico : (actualInfo.row.mark || '—')}
+                </span>
+              );
+            })() : (
+              <span className="hdr-mark-text on-surface-variant">
+                {raceSnapshot.isFinished ? 'FIN DE HOJA' : '—'}
+              </span>
+            )}
           </div>
         </div>
 
@@ -403,16 +416,19 @@ export function HojaDeRutaTab({ isVisible, rows, onOpenCargarHoja }: HojaDeRutaT
         <div className="hdr-mark-card hdr-mark-card--siguiente card">
           <div className="hdr-mark-card-left">
             <span className="hdr-mark-card-badge label-md on-surface-variant">SIGUIENTE</span>
-            {siguienteIdx !== null && rows[siguienteIdx] ? (
-              <>
-                <span className="hdr-mark-num label-md on-surface-variant">
-                  {siguienteIdx + 1}
-                </span>
-                <span className="hdr-mark-text on-surface-variant">
-                  {rows[siguienteIdx].mark || '—'}
-                </span>
-              </>
-            ) : (
+            {siguienteIdx !== null && rows[siguienteIdx] ? (() => {
+              const sigOficial = obtenerTerminoOficial(rows[siguienteIdx].mark);
+              return (
+                <>
+                  <span className="hdr-mark-num label-md on-surface-variant">
+                    {siguienteIdx + 1}
+                  </span>
+                  <span className={`hdr-mark-text${sigOficial.esOficial ? ' hdr-mark-text--oficial' : ' on-surface-variant'}`}>
+                    {sigOficial.esOficial ? sigOficial.canonico : (rows[siguienteIdx].mark || '—')}
+                  </span>
+                </>
+              );
+            })() : (
               <span className="hdr-mark-text on-surface-variant">—</span>
             )}
           </div>

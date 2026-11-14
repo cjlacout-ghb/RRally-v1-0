@@ -117,26 +117,6 @@ export const MARCA_TEXTOS_MAIN: readonly string[] = sortEs(MARCA_TEXTOS_MAIN_RAW
 export const MARCA_TEXTOS_CARTEL: readonly string[] = sortEs(MARCA_TEXTOS_CARTEL_RAW);
 
 /**
- * Conjunto de los 11 términos oficiales de carrera, derivados de la lista principal
- * (textos escritos totalmente en mayúsculas).
- *
- * Fuente única de verdad para el énfasis visual oficial:
- * AUTOCONTROL, AUTOLARGADA, CONTROL DE PASO, CONTROL HORARIO, CONTROL SECRETO,
- * ETAPA FIN, ETAPA INICIO, LARGADA, LLEGADA, NEUTRALIZACIÓN, REINICIO.
- */
-const TERMINOS_OFICIALES_SET: ReadonlySet<string> = new Set(
-  MARCA_TEXTOS_MAIN_RAW.filter((t) => t === t.toUpperCase() && /[A-ZÁÉÍÓÚÑ]/.test(t))
-);
-
-/**
- * Determina si un texto de marca corresponde a un término oficial de carrera.
- * Un término oficial se renderiza con color brass (secondary) y peso negrita.
- */
-export function esTerminoOficial(texto: string): boolean {
-  return TERMINOS_OFICIALES_SET.has(texto);
-}
-
-/**
  * Normaliza una cadena para comparación: minúsculas, sin acentos ni diacríticos.
  */
 export function normalizarTexto(text: string): string {
@@ -144,6 +124,72 @@ export function normalizarTexto(text: string): string {
     .toLowerCase()
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '');
+}
+
+/**
+ * Los 11 términos oficiales de carrera, derivados de la lista principal
+ * (textos escritos totalmente en mayúsculas).
+ *
+ * Fuente única de verdad para el énfasis visual oficial:
+ * AUTOCONTROL, AUTOLARGADA, CONTROL DE PASO, CONTROL HORARIO, CONTROL SECRETO,
+ * ETAPA FIN, ETAPA INICIO, LARGADA, LLEGADA, NEUTRALIZACIÓN, REINICIO.
+ */
+const TERMINOS_OFICIALES_RAW = MARCA_TEXTOS_MAIN_RAW.filter(
+  (t) => t === t.toUpperCase() && /[A-ZÁÉÍÓÚÑ]/.test(t)
+);
+
+/**
+ * Mapa de búsqueda de términos oficiales indexado por forma normalizada
+ * (minúsculas y sin acentos) para resolución exacta e insensible a mayúsculas/acentos.
+ */
+const TERMINOS_OFICIALES_MAP: ReadonlyMap<string, string> = new Map(
+  TERMINOS_OFICIALES_RAW.map((canonical) => [normalizarTexto(canonical), canonical])
+);
+
+/**
+ * Resultado de la resolución de un término oficial de carrera.
+ */
+export interface TerminoOficialInfo {
+  /** Indica si el texto corresponde exactamente a un término oficial de carrera. */
+  esOficial: boolean;
+  /** Forma canónica en mayúsculas del término oficial, o null si no lo es. */
+  canonico: string | null;
+  /** Alias en inglés para compatibilidad y conveniencia. */
+  isOfficial: boolean;
+  canonical: string | null;
+}
+
+/**
+ * Helper compartido único que, dado un texto de marca, determina si es un término oficial
+ * de carrera y devuelve su forma canónica en mayúsculas.
+ * La coincidencia es exacta sobre el texto completo, insensible a mayúsculas y acentos,
+ * ignorando espacios iniciales y finales.
+ */
+export function obtenerTerminoOficial(texto: string): TerminoOficialInfo {
+  const trimmed = texto.trim();
+  if (trimmed === '') {
+    return { esOficial: false, canonico: null, isOfficial: false, canonical: null };
+  }
+  const normalizado = normalizarTexto(trimmed);
+  const canonico = TERMINOS_OFICIALES_MAP.get(normalizado) ?? null;
+  const esOficial = canonico !== null;
+  return {
+    esOficial,
+    canonico,
+    isOfficial: esOficial,
+    canonical: canonico,
+  };
+}
+
+export const getTerminoOficial = obtenerTerminoOficial;
+export const getOfficialRaceTerm = obtenerTerminoOficial;
+
+/**
+ * Determina si un texto de marca corresponde a un término oficial de carrera.
+ * Un término oficial se renderiza con color brass (secondary) y peso negrita.
+ */
+export function esTerminoOficial(texto: string): boolean {
+  return obtenerTerminoOficial(texto).esOficial;
 }
 
 /**

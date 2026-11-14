@@ -225,6 +225,11 @@
   text-overflow: ellipsis;
 }
 
+.hdr-mark-text--oficial {
+  color: var(--color-secondary);
+  font-weight: 700;
+}
+
 .hdr-mark-estipulado {
   font-family: var(--font-mono);
   font-weight: 700;

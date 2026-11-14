@@ -143,6 +143,11 @@
   font-size: var(--typography-body-md-font-size);
 }
 
+.cargar-hoja-row-mark--oficial {
+  color: var(--color-secondary);
+  font-weight: 700;
+}
+
 .cargar-hoja-row-mark:active,
 .cargar-hoja-row-time:active,
 .cargar-hoja-row-speed:active {

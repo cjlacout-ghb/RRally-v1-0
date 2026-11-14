@@ -155,4 +155,60 @@ describe('HojaDeRutaTab Component', () => {
       expect(html).toContain('hdr-marcar-btn');
     });
   });
+
+  describe('Énfasis de términos oficiales en tarjetas ANTERIOR / ACTUAL / SIGUIENTE', () => {
+    it('aplica clase hdr-mark-text--oficial y mayúsculas canónicas en ACTUAL y SIGUIENTE', () => {
+      const testRows: RoadbookRow[] = [
+        { id: 'row-1', mark: 'autolargada', assignedTimeSeconds: 0, speedKmH: 50 },
+        { id: 'row-2', mark: 'control horario', assignedTimeSeconds: 60, speedKmH: 50 },
+      ];
+
+      const html = renderToString(
+        <RaceProvider initialReader={mockReader}>
+          <HojaDeRutaTab isVisible={true} rows={testRows} />
+        </RaceProvider>
+      );
+
+      // ACTUAL muestra AUTOLARGADA en mayúsculas canónicas con hdr-mark-text--oficial
+      expect(html).toContain('AUTOLARGADA');
+      expect(html).toContain('hdr-mark-text--oficial');
+
+      // SIGUIENTE muestra CONTROL HORARIO en mayúsculas canónicas con hdr-mark-text--oficial
+      expect(html).toContain('CONTROL HORARIO');
+    });
+
+    it('marcas no oficiales como "árbol" o "autocontrol 2" no reciben hdr-mark-text--oficial', () => {
+      const testRows: RoadbookRow[] = [
+        { id: 'row-1', mark: 'árbol', assignedTimeSeconds: 0, speedKmH: 50 },
+        { id: 'row-2', mark: 'autocontrol 2', assignedTimeSeconds: 60, speedKmH: 50 },
+      ];
+
+      const html = renderToString(
+        <RaceProvider initialReader={mockReader}>
+          <HojaDeRutaTab isVisible={true} rows={testRows} />
+        </RaceProvider>
+      );
+
+      expect(html).toContain('árbol');
+      expect(html).toContain('autocontrol 2');
+      expect(html).not.toContain('hdr-mark-text--oficial');
+    });
+
+    it('conserva ESTIPULADO con clase brass y estilo intacto', () => {
+      const testRows: RoadbookRow[] = [
+        { id: 'row-1', mark: 'LARGADA', assignedTimeSeconds: 120, speedKmH: 50 },
+        { id: 'row-2', mark: 'FIN', assignedTimeSeconds: 300, speedKmH: null },
+      ];
+
+      const html = renderToString(
+        <RaceProvider initialReader={mockReader}>
+          <HojaDeRutaTab isVisible={true} rows={testRows} />
+        </RaceProvider>
+      );
+
+      expect(html).toContain('hdr-mark-estipulado brass');
+      expect(html).toContain('ESTIPULADO:');
+      expect(html).toContain('0:02:00');
+    });
+  });
 });

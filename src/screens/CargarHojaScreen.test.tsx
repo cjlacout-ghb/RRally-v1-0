@@ -5,7 +5,7 @@ import { flushSync } from 'react-dom';
 import { renderToString } from 'react-dom/server';
 import { CargarHojaScreen } from './CargarHojaScreen';
 import { PrepararEtapaScreen } from './PrepararEtapaScreen';
-import { createInitialSheet, addSheetRows, type RoadbookRow } from '../logic/roadbookModel';
+import { createInitialSheet, addSheetRows, INITIAL_SHEET_ROWS, type RoadbookRow } from '../logic/roadbookModel';
 import { CONFIRM_RESET_TIMEOUT_MS } from '../hooks/useConfirmReset';
 import { isSetupPending } from '../logic/setupStatus';
 
@@ -348,7 +348,7 @@ describe('CargarHojaScreen Component', () => {
 
   describe('Contador de filas cargadas en Cargar Hoja y Preparar Etapa', () => {
     it('muestra el contador exacto "N DE M FILAS" en ambas pantallas', () => {
-      // 1. Hoja vacía (50 filas, ninguna cargada)
+      // 1. Hoja vacía (20 filas, ninguna cargada)
       const emptySheet = createInitialSheet();
       const htmlCargarEmpty = renderToString(
         <CargarHojaScreen
@@ -367,12 +367,12 @@ describe('CargarHojaScreen Component', () => {
           roadbookRows={emptySheet}
         />
       );
-      expect(htmlCargarEmpty).toContain('0 DE 50 FILAS');
-      expect(htmlPrepararEmpty).toContain('0 DE 50 FILAS');
+      expect(htmlCargarEmpty).toContain('0 DE 20 FILAS');
+      expect(htmlPrepararEmpty).toContain('0 DE 20 FILAS');
 
-      // 2. Hoja parcialmente cargada (38 de 50)
+      // 2. Hoja parcialmente cargada (15 de 20)
       const partialSheet = createInitialSheet();
-      for (let i = 0; i < 38; i++) {
+      for (let i = 0; i < 15; i++) {
         partialSheet[i].assignedTimeSeconds = (i + 1) * 30;
       }
       const htmlCargarPartial = renderToString(
@@ -392,10 +392,10 @@ describe('CargarHojaScreen Component', () => {
           roadbookRows={partialSheet}
         />
       );
-      expect(htmlCargarPartial).toContain('38 DE 50 FILAS');
-      expect(htmlPrepararPartial).toContain('38 DE 50 FILAS');
+      expect(htmlCargarPartial).toContain('15 DE 20 FILAS');
+      expect(htmlPrepararPartial).toContain('15 DE 20 FILAS');
 
-      // 3. Después de agregar 10 filas (38 de 60)
+      // 3. Después de agregar 10 filas (15 de 30)
       const expandedSheet = addSheetRows(partialSheet, 10);
       const htmlCargarExpanded = renderToString(
         <CargarHojaScreen
@@ -414,8 +414,8 @@ describe('CargarHojaScreen Component', () => {
           roadbookRows={expandedSheet}
         />
       );
-      expect(htmlCargarExpanded).toContain('38 DE 60 FILAS');
-      expect(htmlPrepararExpanded).toContain('38 DE 60 FILAS');
+      expect(htmlCargarExpanded).toContain('15 DE 30 FILAS');
+      expect(htmlPrepararExpanded).toContain('15 DE 30 FILAS');
     });
   });
 
@@ -642,7 +642,7 @@ describe('CargarHojaScreen Component', () => {
 
   describe('Botón BORRAR TODO', () => {
     it('renderiza como botón secundario de min 64px debajo de "+ 10 FILAS"', () => {
-      const rows = createInitialSheet(50);
+      const rows = createInitialSheet();
       const html = renderToString(
         <CargarHojaScreen
           rows={rows}
@@ -663,7 +663,7 @@ describe('CargarHojaScreen Component', () => {
 
     it('confirmación de dos pasos: primer toque CONFIRMAR con borde rojo, caduca en 4s', () => {
       vi.useFakeTimers();
-      const rows = createInitialSheet(50);
+      const rows = createInitialSheet();
       const onClearAll = vi.fn();
 
       const container = (globalThis as unknown as { document: { createElement: (tag: string) => Record<string, unknown> } }).document.createElement('div');
@@ -721,8 +721,8 @@ describe('CargarHojaScreen Component', () => {
       vi.useRealTimers();
     });
 
-    it('segundo toque confirma y vacía todo (50 filas vacías, contador 0 DE 50 FILAS)', () => {
-      let rows: RoadbookRow[] = Array.from({ length: 60 }, (_, i) => ({
+    it('segundo toque confirma y vacía todo (20 filas vacías, contador 0 DE 20 FILAS)', () => {
+      let rows: RoadbookRow[] = Array.from({ length: 30 }, (_, i) => ({
         id: `row-${i + 1}`,
         mark: `Marca ${i + 1}`,
         assignedTimeSeconds: (i + 1) * 20,
@@ -730,7 +730,7 @@ describe('CargarHojaScreen Component', () => {
       }));
 
       const onClearAll = vi.fn(() => {
-        rows = createInitialSheet(50);
+        rows = createInitialSheet();
       });
 
       const container = (globalThis as unknown as { document: { createElement: (tag: string) => Record<string, unknown> } }).document.createElement('div');
@@ -772,15 +772,15 @@ describe('CargarHojaScreen Component', () => {
       renderApp();
 
       expect(onClearAll).toHaveBeenCalledTimes(1);
-      expect(rows).toHaveLength(50);
+      expect(rows).toHaveLength(INITIAL_SHEET_ROWS);
       expect(rows.every((r) => r.mark === '' && r.assignedTimeSeconds === null && r.speedKmH === null)).toBe(true);
 
-      // Contador se actualiza a 0 DE 50 FILAS
+      // Contador se actualiza a 0 DE 20 FILAS
       const countEl = findElement(container, (el) => {
         const props = getReactProps(el);
         return String(props?.className || '').includes('cargar-hoja-count');
       });
-      expect(getReactProps(countEl!)?.children).toBe('0 DE 50 FILAS');
+      expect(getReactProps(countEl!)?.children).toBe('0 DE 20 FILAS');
 
       // Botón vuelve a mostrar BORRAR TODO desarmado
       expect(getReactProps(getBorrarBtn()!)?.children).toBe('BORRAR TODO');
@@ -790,7 +790,7 @@ describe('CargarHojaScreen Component', () => {
     });
 
     it('está deshabilitado mientras corre la carrera, con mensaje "DETENÉ LA CARRERA PARA BORRAR"', () => {
-      const rows = createInitialSheet(50);
+      const rows = createInitialSheet();
       const onClearAll = vi.fn();
 
       const container = (globalThis as unknown as { document: { createElement: (tag: string) => Record<string, unknown> } }).document.createElement('div');
@@ -834,6 +834,202 @@ describe('CargarHojaScreen Component', () => {
         (props?.onClick as () => void)?.();
       });
       expect(onClearAll).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('Énfasis de términos oficiales de carrera en filas', () => {
+    it('muestra término oficial en mayúsculas canónicas y clase brass bold (cargar-hoja-row-mark--oficial)', () => {
+      const rows: RoadbookRow[] = [
+        { id: 'row-1', mark: 'AUTOLARGADA', assignedTimeSeconds: null, speedKmH: null },
+        { id: 'row-2', mark: 'autolargada', assignedTimeSeconds: null, speedKmH: null },
+        { id: 'row-3', mark: 'neutralizacion', assignedTimeSeconds: null, speedKmH: null },
+        { id: 'row-4', mark: 'árbol', assignedTimeSeconds: null, speedKmH: null },
+        { id: 'row-5', mark: 'autocontrol 2', assignedTimeSeconds: null, speedKmH: null },
+        { id: 'row-6', mark: 'cartel curva derecha', assignedTimeSeconds: null, speedKmH: null },
+      ];
+
+      const html = renderToString(
+        <CargarHojaScreen
+          rows={rows}
+          onAddRows={() => {}}
+          onUpdateRow={() => {}}
+          onBack={() => {}}
+        />
+      );
+
+      // Fila 1 (AUTOLARGADA): clase oficial y texto canónico
+      expect(html).toContain('cargar-hoja-row-mark--oficial');
+      // Fila 2 ('autolargada' en minúsculas): se renderiza como AUTOLARGADA en mayúsculas
+      // Fila 3 ('neutralizacion' sin acento): se renderiza como NEUTRALIZACIÓN con acento canónico
+      expect(html).toContain('NEUTRALIZACIÓN');
+
+      // Filas 4, 5 y 6 no son términos oficiales y se muestran tal cual
+      expect(html).toContain('árbol');
+      expect(html).toContain('autocontrol 2');
+      expect(html).toContain('cartel curva derecha');
+    });
+
+    it('escribir "autolargada" a mano muestra AUTOLARGADA en brass bold sin cambiar el texto almacenado', () => {
+      const rows: RoadbookRow[] = [
+        { id: 'row-1', mark: '', assignedTimeSeconds: null, speedKmH: null },
+      ];
+      const onUpdateRow = vi.fn((_id: string, changes: Partial<RoadbookRow>) => {
+        Object.assign(rows[0], changes);
+      });
+
+      const container = (globalThis as unknown as { document: { createElement: (tag: string) => Record<string, unknown> } }).document.createElement('div');
+      container.ownerDocument = (globalThis as unknown as { document: unknown }).document;
+      const root = createRoot(container as unknown as HTMLElement);
+
+      function renderApp() {
+        flushSync(() => {
+          root.render(
+            <CargarHojaScreen
+              rows={rows}
+              onAddRows={() => {}}
+              onUpdateRow={onUpdateRow}
+              onBack={() => {}}
+            />
+          );
+        });
+      }
+
+      renderApp();
+
+      // Iniciar edición de la fila 1
+      const markBtn = findElement(container, (el) => {
+        const props = getReactProps(el);
+        return props?.['aria-label'] === 'Editar marca de la fila 1';
+      });
+      flushSync(() => {
+        (getReactProps(markBtn!)?.onClick as () => void)?.();
+      });
+      renderApp();
+
+      // Simular tipear "autolargada" en minúsculas en el input de texto libre
+      const inputEl = findElement(container, (el) => {
+        const props = getReactProps(el);
+        return props?.placeholder === 'Texto libre';
+      });
+      expect(inputEl).not.toBeNull();
+
+      flushSync(() => {
+        (getReactProps(inputEl!)?.onChange as (e: unknown) => void)?.({
+          target: { value: 'autolargada' },
+        });
+      });
+      renderApp();
+
+      // El valor almacenado es exactamente lo que tipeó el usuario
+      expect(onUpdateRow).toHaveBeenCalledWith('row-1', { mark: 'autolargada' });
+      expect(rows[0].mark).toBe('autolargada');
+
+      // Pero el botón de la fila muestra AUTOLARGADA en mayúsculas con la clase de énfasis oficial
+      const updatedMarkBtn = findElement(container, (el) => {
+        const props = getReactProps(el);
+        return props?.['aria-label'] === 'Editar marca de la fila 1';
+      });
+      expect(updatedMarkBtn).not.toBeNull();
+      const markProps = getReactProps(updatedMarkBtn!);
+      expect(String(markProps?.className || '')).toContain('cargar-hoja-row-mark--oficial');
+      expect(markProps?.children).toBe('AUTOLARGADA');
+    });
+
+    it('seleccionar AUTOLARGADA del menú lo muestra en brass bold en la fila', () => {
+      const rows: RoadbookRow[] = [
+        { id: 'row-1', mark: '', assignedTimeSeconds: null, speedKmH: null },
+      ];
+      const onUpdateRow = vi.fn((_id: string, changes: Partial<RoadbookRow>) => {
+        Object.assign(rows[0], changes);
+      });
+
+      const container = (globalThis as unknown as { document: { createElement: (tag: string) => Record<string, unknown> } }).document.createElement('div');
+      container.ownerDocument = (globalThis as unknown as { document: unknown }).document;
+      const root = createRoot(container as unknown as HTMLElement);
+
+      function renderApp() {
+        flushSync(() => {
+          root.render(
+            <CargarHojaScreen
+              rows={rows}
+              onAddRows={() => {}}
+              onUpdateRow={onUpdateRow}
+              onBack={() => {}}
+            />
+          );
+        });
+      }
+
+      renderApp();
+
+      // Iniciar edición
+      const markBtn = findElement(container, (el) => {
+        const props = getReactProps(el);
+        return props?.['aria-label'] === 'Editar marca de la fila 1';
+      });
+      flushSync(() => {
+        (getReactProps(markBtn!)?.onClick as () => void)?.();
+      });
+      renderApp();
+
+      // Seleccionar AUTOLARGADA
+      const autolargadaBtn = findElement(container, (el) => {
+        const props = getReactProps(el);
+        return props?.children === 'AUTOLARGADA';
+      });
+      expect(autolargadaBtn).not.toBeNull();
+
+      flushSync(() => {
+        (getReactProps(autolargadaBtn!)?.onClick as () => void)?.();
+      });
+      renderApp();
+
+      expect(onUpdateRow).toHaveBeenCalledWith('row-1', { mark: 'AUTOLARGADA' });
+      const updatedMarkBtn = findElement(container, (el) => {
+        const props = getReactProps(el);
+        return props?.['aria-label'] === 'Editar marca de la fila 1';
+      });
+      const markProps = getReactProps(updatedMarkBtn!);
+      expect(String(markProps?.className || '')).toContain('cargar-hoja-row-mark--oficial');
+      expect(markProps?.children).toBe('AUTOLARGADA');
+    });
+
+    it('textos no oficiales como "autocontrol 2" o señales de ruta no reciben clase oficial', () => {
+      const rows: RoadbookRow[] = [
+        { id: 'row-1', mark: 'autocontrol 2', assignedTimeSeconds: null, speedKmH: null },
+        { id: 'row-2', mark: 'árbol', assignedTimeSeconds: null, speedKmH: null },
+      ];
+
+      const container = (globalThis as unknown as { document: { createElement: (tag: string) => Record<string, unknown> } }).document.createElement('div');
+      container.ownerDocument = (globalThis as unknown as { document: unknown }).document;
+      const root = createRoot(container as unknown as HTMLElement);
+
+      flushSync(() => {
+        root.render(
+          <CargarHojaScreen
+            rows={rows}
+            onAddRows={() => {}}
+            onUpdateRow={() => {}}
+            onBack={() => {}}
+          />
+        );
+      });
+
+      const markBtn1 = findElement(container, (el) => {
+        const props = getReactProps(el);
+        return props?.['aria-label'] === 'Editar marca de la fila 1';
+      });
+      const props1 = getReactProps(markBtn1!);
+      expect(String(props1?.className || '')).not.toContain('cargar-hoja-row-mark--oficial');
+      expect(props1?.children).toBe('autocontrol 2');
+
+      const markBtn2 = findElement(container, (el) => {
+        const props = getReactProps(el);
+        return props?.['aria-label'] === 'Editar marca de la fila 2';
+      });
+      const props2 = getReactProps(markBtn2!);
+      expect(String(props2?.className || '')).not.toContain('cargar-hoja-row-mark--oficial');
+      expect(props2?.children).toBe('árbol');
     });
   });
 });
